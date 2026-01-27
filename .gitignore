@@ -1,6 +1,6 @@
-.vs
-.idea/*
+**/.vs
+**/.idea/*
 appsettings.Development.json
-*/obj/*
-*/bin/*
-Schichtpilot/Certs/*
+**/obj/*
+**/bin/*
+**/Certs/*
