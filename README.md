@@ -17,16 +17,18 @@ Docker
 Dockerfile
 docker-compose
 
+Svelte as the frontend
 
 ### Links
 
-https://learn.microsoft.com/en-us/aspnet/core/web-api/?view=aspnetcore-10.0
-https://learn.microsoft.com/en-us/ef/core/get-started/overview/first-app?tabs=netcore-cli
-https://learn.microsoft.com/de-de/aspnet/core/security/authentication/customize-identity-model?view=aspnetcore-10.0
-https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/overview
-https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0
-https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0
+- [Web-Api](https://learn.microsoft.com/en-us/aspnet/core/web-api/?view=aspnetcore-10.0)
+- [Getting started](https://learn.microsoft.com/en-us/ef/core/get-started/overview/first-app?tabs=netcore-cli)
+- [Identity](https://learn.microsoft.com/de-de/aspnet/core/security/authentication/customize-identity-model?view=aspnetcore-10.0)
+- [Dependency Injection](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/overview)
+- [Cookie Authentication](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0)
+- [Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-10.0)
 
+- [Svelte](https://svelte.dev/docs/svelte/getting-started)
 
 ## Communication
 
