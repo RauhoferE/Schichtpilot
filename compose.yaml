@@ -1,0 +1,7 @@
+﻿services:
+  schichtpilot:
+    image: schichtpilot
+    build:
+      context: .
+      dockerfile: Schichtpilot/Dockerfile
+

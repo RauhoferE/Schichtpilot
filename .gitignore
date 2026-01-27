@@ -1,1 +1,5 @@
 .vs
+.idea/*
+appsettings.Development.json
+Schichtpilot/obj/*
+Schichtpilot/bin/*
