@@ -3,3 +3,4 @@
 appsettings.Development.json
 Schichtpilot/obj/*
 Schichtpilot/bin/*
+Schichtpilot/Certs/*
