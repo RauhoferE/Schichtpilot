@@ -44,11 +44,18 @@ https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspn
 No TDD required but unit testing should be done.
 Atleast 70% code coverage overall.
 
-### Issues
+### Project Issues
 
 All use cases from the requirement document will be broken done into several issues.
 These issues all have the same time requirement amount.
 For tracking these issues we use a Kanban board in Github Projects.
+
+Code can only be merged after creating a pull request. 
+Before commiting anything to the main branch the code needs:
+
+- Unit tests
+- No failed tests
+- Be reviewed by another person
 
 ## Planning
 
