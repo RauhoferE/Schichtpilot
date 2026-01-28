@@ -1,13 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Data.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Data;
 
-public class SchichtpilotDbContext : DbContext
+public class SchichtpilotDbContext : IdentityDbContext<User>
 {
     public SchichtpilotDbContext(DbContextOptions<SchichtpilotDbContext> options) : base(options)
     {
         
     }
+    
+    public DbSet<User> Users { get; set; }
     
     // Here should be the DBSets
 
