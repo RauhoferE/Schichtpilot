@@ -1,8 +1,10 @@
 using AutoMapper;
 using Core;
+using Data;
 using Data.Entities;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -21,6 +23,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
 
@@ -32,7 +35,7 @@ public class UserServiceTest
             .Setup(manager => manager.FindByEmailAsync(mappedUser.Email!))
             .ReturnsAsync(mappedUser);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
 
         await service.CreateUserAsync(userDto, "password");
 
@@ -47,6 +50,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
 
@@ -62,7 +66,7 @@ public class UserServiceTest
             .Setup(manager => manager.CreateAsync(mappedUser, "password"))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "create failed" }));
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
 
         await Assert.ThrowsAsync<AccountCreationException>(
             () => service.CreateUserAsync(userDto, "password"));
@@ -76,6 +80,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
 
@@ -95,7 +100,7 @@ public class UserServiceTest
             .Setup(manager => manager.AddToRoleAsync(mappedUser, UserRolesClass.User))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "role failed" }));
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
 
         await Assert.ThrowsAsync<AccountCreationException>(
             () => service.CreateUserAsync(userDto, "password"));
@@ -107,6 +112,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
 
@@ -126,12 +132,54 @@ public class UserServiceTest
             .Setup(manager => manager.AddToRoleAsync(mappedUser, UserRolesClass.User))
             .ReturnsAsync(IdentityResult.Success);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
 
         await service.CreateUserAsync(userDto, "password");
 
         userManagerMock.Verify(manager => manager.CreateAsync(mappedUser, "password"), Times.Once);
         userManagerMock.Verify(manager => manager.AddToRoleAsync(mappedUser, UserRolesClass.User), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUserDataAsync_UserNotFound_ThrowsUserNotFoundException()
+    {
+        var userManagerMock = CreateUserManagerMock();
+        var mapperMock = new Mock<IMapper>();
+        var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
+
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+
+        await Assert.ThrowsAsync<UserNotFoundException>(() => service.GetUserDataAsync(999));
+    }
+
+    [Fact]
+    public async Task GetUserDataAsync_UserFound_ReturnsMappedUserDto()
+    {
+        var userManagerMock = CreateUserManagerMock();
+        var mapperMock = new Mock<IMapper>();
+        var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
+        var user = CreateUserWithId(42);
+        var expectedDto = CreateUserDto();
+
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+
+        mapperMock
+            .Setup(mapper => mapper.Map<User, UserDto>(user))
+            .Returns(expectedDto);
+
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+
+        var result = await service.GetUserDataAsync(42);
+
+        Assert.NotNull(result);
+        Assert.Equal(expectedDto.Email, result.Email);
+        Assert.Equal(expectedDto.FirstName, result.FirstName);
+        Assert.Equal(expectedDto.LastName, result.LastName);
+        Assert.Equal(expectedDto.Birthdate, result.Birthdate);
+        Assert.Equal(expectedDto.AddressDto.City, result.AddressDto.City);
     }
 
     private static Mock<UserManager<User>> CreateUserManagerMock()
@@ -147,6 +195,15 @@ public class UserServiceTest
             new IdentityErrorDescriber(),
             new Mock<IServiceProvider>().Object,
             new Mock<ILogger<UserManager<User>>>().Object);
+    }
+
+    private static SchichtpilotDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<SchichtpilotDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        return new SchichtpilotDbContext(options);
     }
 
     private static UserDto CreateUserDto()
@@ -173,7 +230,27 @@ public class UserServiceTest
             Email = "user@test.com",
             UserName = "user@test.com",
             FirstName = "Test",
-            LastName = "User"
+            LastName = "User",
+            StreetAddress = "Main Street 1",
+            City = "Testville",
+            PostalCode = 12345,
+            BirthDate = new DateTime(1990, 1, 1)
+        };
+    }
+
+    private static User CreateUserWithId(long id)
+    {
+        return new User
+        {
+            Id = id,
+            Email = "user@test.com",
+            UserName = "user@test.com",
+            FirstName = "Test",
+            LastName = "User",
+            StreetAddress = "Main Street 1",
+            City = "Testville",
+            PostalCode = 12345,
+            BirthDate = new DateTime(1990, 1, 1)
         };
     }
 

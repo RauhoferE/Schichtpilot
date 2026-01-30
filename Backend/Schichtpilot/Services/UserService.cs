@@ -1,5 +1,6 @@
 using AutoMapper;
 using Core;
+using Data;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Schichtpilot.Exceptions;
@@ -13,12 +14,15 @@ public class UserService : IUserService
     private readonly UserManager<User> _userManager;
     private readonly IMapper _mapper;
     private readonly ILogger<UserService> _logger;
+    private readonly SchichtpilotDbContext _dbContext;
 
-    public UserService(UserManager<User> userManager, IMapper mapper, ILogger<UserService> logger)
+    public UserService(UserManager<User> userManager, IMapper mapper, ILogger<UserService> logger,
+        SchichtpilotDbContext dbContext)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     }
 
     public async Task CreateUserAsync(UserDto userDto, string password)
@@ -43,5 +47,16 @@ public class UserService : IUserService
             throw new AccountCreationException($"Couldn't add user to user role: {creatUserResult.Errors.Select(error => error.Description)}");
         }
         
+    }
+
+    public Task<UserDto> GetUserDataAsync(int userId)
+    {
+        var user = this._dbContext.Users.FirstOrDefault(x => x.Id == userId);
+        if (user == null)
+        {
+            throw new UserNotFoundException();
+        }
+        
+        return Task.FromResult(this._mapper.Map<User, UserDto>(user));
     }
 }
