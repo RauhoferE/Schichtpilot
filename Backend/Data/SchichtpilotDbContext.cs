@@ -1,4 +1,5 @@
-﻿using Data.Entities;
+﻿using Core;
+using Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -27,8 +28,25 @@ IdentityUserClaim<long>,
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        
         // Add data that should be in the database
         // Add attributes to model properties like pk, fk, etc..
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<IdentityRole<long>>(entity =>
+        {
+            entity.HasData(
+                new IdentityRole<long>()
+                {
+                    Id = 1,
+                    Name = UserRolesClass.Admin,
+                },
+                new IdentityRole<long>()
+                {
+                    Id = 2,
+                    Name = UserRolesClass.User,
+                }
+            );
+        });
     }
 }
