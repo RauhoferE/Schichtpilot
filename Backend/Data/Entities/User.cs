@@ -22,4 +22,6 @@ public class User : IdentityUser<long>
     
     [Required]
     public DateTime BirthDate { get; set; }
+    
+    public HashSet<UserJobRoles> JobRoles { get; set; }
 }

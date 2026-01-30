@@ -24,6 +24,14 @@ IdentityUserClaim<long>,
     
     public DbSet<User> Users { get; set; }
     
+    public DbSet<UserJobRoles> UserJobRoles { get; set; }
+    
+    public DbSet<JobRole> JobRoles { get; set; }
+    
+    public DbSet<IdentityRole<long>> AccountRoles { get; set; }
+    
+    public DbSet<IdentityUserRole<long>> UserAccountRoles { get; set; }
+    
     // Here should be the DBSets
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -47,6 +55,11 @@ IdentityUserClaim<long>,
                     Name = UserRolesClass.User,
                 }
             );
+        });
+
+        modelBuilder.Entity<UserJobRoles>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.JobRoleId });
         });
     }
 }

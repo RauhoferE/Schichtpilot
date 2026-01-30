@@ -3,9 +3,12 @@ using Core;
 using Data;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
+using Schichtpilot.Models.Enums;
+using Schichtpilot.Models.Responses;
 
 namespace Schichtpilot.Services;
 
@@ -51,12 +54,117 @@ public class UserService : IUserService
 
     public Task<UserDto> GetUserDataAsync(int userId)
     {
-        var user = this._dbContext.Users.FirstOrDefault(x => x.Id == userId);
+        var user = this._dbContext.Users
+            .Include(x => x.JobRoles)
+            .ThenInclude(x => x.JobRole)
+            .FirstOrDefault(x => x.Id == userId);
+        
         if (user == null)
         {
             throw new UserNotFoundException();
         }
         
         return Task.FromResult(this._mapper.Map<User, UserDto>(user));
+    }
+
+    public async Task<QueryableUserResponse> GetUsersAsync(PaginationDto paginationDto, UserSortingDto userSortingDto, UserFilterDto? userFilterDto)
+    {
+        IQueryable<User> users = this._dbContext.Users
+            .Include(x => x.JobRoles)
+            .ThenInclude(x => x.JobRole)
+            .AsQueryable();
+        
+        if (userFilterDto != null)
+        {
+            users = await this.FilterUsersAsync(users, userFilterDto);
+        }
+        
+        users = await this.SortUsersAsync(users, userSortingDto);
+
+        return new QueryableUserResponse()
+        {
+            Count = users.Count(),
+            Users = users.Select(x => this._mapper.Map<User, UserDto>(x))
+        };
+    }
+
+    private Task<IQueryable<User>> SortUsersAsync(IQueryable<User> users, UserSortingDto userSortingDto)
+    {
+        if (userSortingDto.Ascending)
+        {
+            switch (userSortingDto.SortProperty)
+            {
+                case UserSortEnum.Id:
+                    users = users.OrderBy(x => x.Id);
+                    break;
+                case UserSortEnum.FirstName:
+                    users = users.OrderBy(x => x.FirstName);
+                    break;
+                case UserSortEnum.LastName:
+                    users = users.OrderBy(x => x.LastName);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return Task.FromResult(users);
+        }
+        
+        switch (userSortingDto.SortProperty)
+        {
+            case UserSortEnum.Id:
+                users = users.OrderByDescending(x => x.Id);
+                break;
+            case UserSortEnum.FirstName:
+                users = users.OrderByDescending(x => x.FirstName);
+                break;
+            case UserSortEnum.LastName:
+                users = users.OrderByDescending(x => x.LastName);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        return Task.FromResult(users);
+    }
+
+    private Task<IQueryable<User>> FilterUsersAsync(IQueryable<User> users, UserFilterDto userFilterDto)
+    {
+        if (userFilterDto.JobFilters.Length > 0)
+        {
+            foreach (var job in userFilterDto.JobFilters)
+            {
+                users = users
+                    .Where(u => u.JobRoles.Any(jr => jr.JobRole.Name.ToLower() == job.ToLower()));
+            }
+        }
+
+        if (!string.IsNullOrEmpty(userFilterDto.Searchstring))
+        {
+            users = users.Where(x => x.FirstName.ToLower().Contains(userFilterDto.Searchstring.ToLower()) ||
+                                     x.LastName.ToLower().Contains(userFilterDto.Searchstring.ToLower()));
+        }
+
+        switch (userFilterDto.AccountStatus)
+        {
+            case AccountStatusEnum.None:
+                break;
+            case AccountStatusEnum.EmailVerified:
+                users = users.Where(x => x.EmailConfirmed);
+                break;
+            case AccountStatusEnum.EmailNotVerified:
+                users = users.Where(x => !x.EmailConfirmed);
+                break;
+            case AccountStatusEnum.Locked:
+                users = users.Where(x => x.LockoutEnd.HasValue);
+                break;
+            case AccountStatusEnum.Ok:
+                users = users.Where(x => !x.LockoutEnd.HasValue &&  x.EmailConfirmed);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        return Task.FromResult(users);
     }
 }
