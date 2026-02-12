@@ -15,4 +15,8 @@ public class JobRole
     public DateTime CreatedOn { get; set; }
     
     public HashSet<UserJobRoles> UsersWithRole   {get; set;}
+    
+    public HashSet<JobRoleDependency> Dependencies {get; set;}
+    
+    public HashSet<JobRoleDependency> Prerequisites {get; set;}
 }

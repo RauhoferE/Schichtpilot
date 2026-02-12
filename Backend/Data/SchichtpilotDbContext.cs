@@ -28,9 +28,13 @@ IdentityUserClaim<long>,
     
     public DbSet<JobRole> JobRoles { get; set; }
     
+    public DbSet<JobRoleDependency> JobRoleDependencies { get; set; }
+    
     public DbSet<IdentityRole<long>> AccountRoles { get; set; }
     
     public DbSet<IdentityUserRole<long>> UserAccountRoles { get; set; }
+    
+    
     
     // Here should be the DBSets
 
@@ -60,6 +64,20 @@ IdentityUserClaim<long>,
         modelBuilder.Entity<UserJobRoles>(entity =>
         {
             entity.HasKey(e => new { e.UserId, e.JobRoleId });
+        });
+
+        modelBuilder.Entity<JobRoleDependency>(entity =>
+        {
+            entity.HasKey(d => new { d.JobRoleId, d.DependencyJobRoleId });
+            entity.HasOne(d => d.JobRole)
+                .WithMany(x => x.Dependencies)
+                .HasForeignKey(d => d.DependencyJobRoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne(d => d.Dependency)
+                .WithMany(x => x.Prerequisites)
+                .HasForeignKey(d => d.JobRoleId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
