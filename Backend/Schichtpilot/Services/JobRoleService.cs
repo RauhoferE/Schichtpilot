@@ -208,9 +208,7 @@ public class JobRoleService : IJobRoleService
     {
         var jobRole = await this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
-            .ThenInclude(x => x.Dependency)
             .Include(x => x.Dependencies)
-            .ThenInclude(x => x.JobRole)
             .Include(x => x.UsersWithRole)
             .ThenInclude(x => x.User)
             .FirstOrDefaultAsync(jr => jr.Id == id);
@@ -227,9 +225,7 @@ public class JobRoleService : IJobRoleService
     {
         var jobRoles = this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
-            .ThenInclude(x => x.Dependency)
             .Include(x => x.Dependencies)
-            .ThenInclude(x => x.JobRole)
             .Include(x => x.UsersWithRole)
             .ThenInclude(x => x.User)
             .OrderBy(x => x.Name)
