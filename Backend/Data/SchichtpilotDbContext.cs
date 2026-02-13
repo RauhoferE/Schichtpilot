@@ -34,6 +34,12 @@ IdentityUserClaim<long>,
     
     public DbSet<IdentityUserRole<long>> UserAccountRoles { get; set; }
     
+    public DbSet<ShiftRequirement> ShiftRequirements { get; set; }
+    
+    public DbSet<Shift> Shifts { get; set; }
+    
+    public DbSet<Timeslot> Timeslots { get; set; }
+    
     
     
     // Here should be the DBSets
@@ -64,6 +70,10 @@ IdentityUserClaim<long>,
         modelBuilder.Entity<UserJobRoles>(entity =>
         {
             entity.HasKey(e => new { e.UserId, e.JobRoleId });
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.JobRoles);
+            entity.HasOne(x => x.JobRole)
+                .WithMany(x => x.UsersWithRole);
         });
 
         modelBuilder.Entity<JobRoleDependency>(entity =>
@@ -79,5 +89,22 @@ IdentityUserClaim<long>,
                 .HasForeignKey(d => d.JobRoleId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<JobRole>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasMany(x => x.UsersWithRole).WithOne(x => x.JobRole);
+        });
+
+        modelBuilder.Entity<Shift>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.HasMany(x => x.Timeslots).WithOne(x => x.Shift);
+            entity.HasMany(x => x.JobRequirements).WithOne(x => x.Shift);
+        });
+        
+        
     }
 }
