@@ -184,7 +184,7 @@ public class UserServiceTest
     }
 
     [Fact]
-    public async Task GetUsersAsync_SortByLastNameAscending_ReturnsOrderedUsers()
+    public async Task GetUsersAsync_SortByLastNameAscending_ReturnsPagedAndOrderedUsers()
     {
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
@@ -221,18 +221,19 @@ public class UserServiceTest
         var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
 
         var result = await service.GetUsersAsync(
-            new PaginationDto { Page = 1, PageSize = 10 },
+            new PaginationDto { Page = 2, PageSize = 1 },
             new UserSortingDto { SortProperty = UserSortEnum.LastName, Ascending = true },
             null);
 
         var users = result.Users.ToList();
 
         Assert.Equal(2, result.Count);
-        Assert.Equal(new[] { "Adams", "Zimmer" }, users.Select(u => u.LastName).ToArray());
+        Assert.Single(users);
+        Assert.Equal("Zimmer", users[0].LastName);
     }
 
     [Fact]
-    public async Task GetUsersAsync_FilterByJobRoleStatusAndSearch_ReturnsMatchingUsers()
+    public async Task GetUsersAsync_FilterByJobRoleStatusAndSearch_ReturnsPagedMatchingUsers()
     {
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
@@ -271,14 +272,28 @@ public class UserServiceTest
             CreatedOn = DateTime.UtcNow
         };
 
-        var matchingUser = CreateUserWithId(10);
-        matchingUser.FirstName = "Alice";
-        matchingUser.LastName = "Miller";
-        matchingUser.EmailConfirmed = true;
-        matchingUser.LockoutEnd = null;
-        matchingUser.JobRoles = new HashSet<UserJobRoles>
+        var matchingUser1 = CreateUserWithId(10);
+        matchingUser1.Email = "alice1@test.com";
+        matchingUser1.UserName = "alice1@test.com";
+        matchingUser1.FirstName = "Alice";
+        matchingUser1.LastName = "Miller";
+        matchingUser1.EmailConfirmed = true;
+        matchingUser1.LockoutEnd = null;
+        matchingUser1.JobRoles = new HashSet<UserJobRoles>
         {
-            new UserJobRoles { User = matchingUser, UserId = (int)matchingUser.Id, JobRole = nurseRole, JobRoleId = nurseRole.Id }
+            new UserJobRoles { User = matchingUser1, UserId = (int)matchingUser1.Id, JobRole = nurseRole, JobRoleId = nurseRole.Id }
+        };
+
+        var matchingUser2 = CreateUserWithId(13);
+        matchingUser2.Email = "alice2@test.com";
+        matchingUser2.UserName = "alice2@test.com";
+        matchingUser2.FirstName = "Alice";
+        matchingUser2.LastName = "Miles";
+        matchingUser2.EmailConfirmed = true;
+        matchingUser2.LockoutEnd = null;
+        matchingUser2.JobRoles = new HashSet<UserJobRoles>
+        {
+            new UserJobRoles { User = matchingUser2, UserId = (int)matchingUser2.Id, JobRole = nurseRole, JobRoleId = nurseRole.Id }
         };
 
         var nonMatchingStatus = CreateUserWithId(11);
@@ -299,7 +314,7 @@ public class UserServiceTest
             new UserJobRoles { User = nonMatchingRole, UserId = (int)nonMatchingRole.Id, JobRole = doctorRole, JobRoleId = doctorRole.Id }
         };
 
-        dbContext.Users.AddRange(matchingUser, nonMatchingStatus, nonMatchingRole);
+        dbContext.Users.AddRange(matchingUser1, matchingUser2, nonMatchingStatus, nonMatchingRole);
         await dbContext.SaveChangesAsync();
 
         var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
@@ -312,15 +327,15 @@ public class UserServiceTest
         };
 
         var result = await service.GetUsersAsync(
-            new PaginationDto { Page = 1, PageSize = 10 },
+            new PaginationDto { Page = 2, PageSize = 1 },
             new UserSortingDto { SortProperty = UserSortEnum.Id, Ascending = true },
             filter);
 
         var users = result.Users.ToList();
 
-        Assert.Equal(1, result.Count);
+        Assert.Equal(2, result.Count);
         Assert.Single(users);
-        Assert.Equal(matchingUser.Email, users[0].Email);
+        Assert.Equal(matchingUser2.Email, users[0].Email);
     }
 
     private static Mock<UserManager<User>> CreateUserManagerMock()
