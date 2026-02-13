@@ -18,8 +18,8 @@ public class JobRoleService : IJobRoleService
 
     private readonly SchichtpilotDbContext _dbContext;
     private readonly IMapper _mapper;
-    
-    
+
+
     public async Task CreateJobRoleAsync(CreateJobRoleDto jobRole)
     {
         if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name))
@@ -34,7 +34,7 @@ public class JobRoleService : IJobRoleService
         });
 
         await this._dbContext.SaveChangesAsync();
-        
+
         var createdJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Name == jobRole.Name);
 
         foreach (var jobRoleIds in jobRole.DependentOnJobRoleIds)
@@ -61,14 +61,14 @@ public class JobRoleService : IJobRoleService
         {
             throw new AlreadyExistsException($"Jobrole  with name {jobRole.Name} already exists");
         }
-        
+
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
         if (jobRoleToModify == null)
         {
             throw new NotFoundException("Jobrole not found!");
         }
-        
+
         jobRoleToModify.Name = jobRole.Name;
         jobRoleToModify.Description = jobRole.Description;
 
@@ -84,12 +84,12 @@ public class JobRoleService : IJobRoleService
         {
             throw new NotFoundException("Jobrole not found!");
         }
-        
+
         if (dependencyJobRole == null)
         {
             throw new NotFoundException("Dependency not found!");
         }
-        
+
         var dependency =
             this._dbContext.JobRoleDependencies.FirstOrDefault(x =>
                 x.JobRoleId == jobRoleId && x.DependencyJobRoleId == dependencyId);
@@ -98,7 +98,7 @@ public class JobRoleService : IJobRoleService
         {
             throw new AlreadyExistsException("Dependency already exisits!");
         }
-        
+
         if (await this.WouldCreateCycle(dependencyId, jobRoleId))
         {
             throw new InvalidOperationException("Circular dependency detected!");
@@ -122,7 +122,7 @@ public class JobRoleService : IJobRoleService
         {
             throw new NotFoundException("Jobrole not found!");
         }
-        
+
         if (dependencyJobRole == null)
         {
             throw new NotFoundException("Dependency not found!");
@@ -155,14 +155,16 @@ public class JobRoleService : IJobRoleService
             {
                 throw new NotFoundException("User not found!");
             }
-            
+
             // Check if user doesnt already have the role
             if (user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id) == null)
             {
                 user.JobRoles.Add(new UserJobRoles()
                 {
-                    JobRole =  jobRoleToModify,
-                    User =  user
+                    JobRole = jobRoleToModify,
+                    JobRoleId = jobRoleToModify.Id,
+                    User = user,
+                    UserId = (int)user.Id
                 });
             }
         }
@@ -194,7 +196,7 @@ public class JobRoleService : IJobRoleService
                 user.JobRoles.Remove(jobRoleToRemove);
             }
         }
-        
+
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -213,8 +215,8 @@ public class JobRoleService : IJobRoleService
         {
             throw new NotFoundException("Jobrole not found!");
         }
-        
-        return this._mapper.Map<JobRole,JobRoleDto>(jobRole);
+
+        return this._mapper.Map<JobRole, JobRoleDto>(jobRole);
     }
 
     public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString)
@@ -243,7 +245,7 @@ public class JobRoleService : IJobRoleService
                 .Select(x => this._mapper.Map<JobRole, JobRoleShortDto>(x)).ToList()
         };
     }
-    
+
     private async Task<bool> WouldCreateCycle(int roleId, int prerequisiteId)
     {
         // If you are trying to make a role dependent on itself
@@ -256,7 +258,7 @@ public class JobRoleService : IJobRoleService
 
         if (prerequisite == null) return false;
 
-        // Recursively check if the current 'roleId' appears anywhere 
+        // Recursively check if the current 'roleId' appears anywhere
         // in the prerequisite's own upstream chain
         foreach (var link in prerequisite.Prerequisites)
         {
