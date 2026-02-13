@@ -19,5 +19,5 @@ public interface IJobRoleService
     
     Task<JobRoleDto> GetJobRoleAsync(int id);
     
-    Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto);
+    Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString);
 }

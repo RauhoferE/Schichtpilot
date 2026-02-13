@@ -217,7 +217,7 @@ public class JobRoleService : IJobRoleService
         return this._mapper.Map<JobRole,JobRoleDto>(jobRole);
     }
 
-    public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto)
+    public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString)
     {
         var jobRoles = this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
@@ -228,6 +228,11 @@ public class JobRoleService : IJobRoleService
             .ThenInclude(x => x.User)
             .OrderBy(x => x.Name)
             .AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            jobRoles = jobRoles.Where(x => x.Name.ToLower().Contains(searchString.ToLower()));
+        }
 
         return new QueryableJobRoleResponse()
         {
