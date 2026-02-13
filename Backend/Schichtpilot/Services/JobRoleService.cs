@@ -39,7 +39,8 @@ public class JobRoleService : IJobRoleService
 
         foreach (var jobRoleIds in jobRole.DependentOnJobRoleIds)
         {
-            var dependentJobRole = this._dbContext.JobRoles.FirstOrDefault(jr => jr.Id == jobRoleIds);
+            var dependentJobRole = this._dbContext.JobRoles
+                .FirstOrDefault(jr => jr.Id == jobRoleIds);
             if (dependentJobRole != null)
             {
                 this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
@@ -49,36 +50,115 @@ public class JobRoleService : IJobRoleService
                 });
             }
         }
+
+        await this._dbContext.SaveChangesAsync();
     }
 
-    public Task UpdateJobRoleAsync(int id, EditJobRoleDto jobRole)
+    // This just updates the name and description
+    public async Task UpdateJobRoleAsync(int id, EditJobRoleDto jobRole)
+    {
+        if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name))
+        {
+            throw new AlreadyExistsException($"Jobrole  with name {jobRole.Name} already exists");
+        }
+        
+        var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
+
+        if (jobRoleToModify == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+        
+        jobRoleToModify.Name = jobRole.Name;
+        jobRoleToModify.Description = jobRole.Description;
+
+        await this._dbContext.SaveChangesAsync();
+    }
+
+    public async Task AddDependenciesToJobRole(int jobRoleId, int dependencyId)
     {
         throw new NotImplementedException();
     }
 
-    public Task AddDependenciesToJobRole(int jobRoleId, int dependencyId)
+    public async Task RemoveDependenciesToJobRole(int jobRoleId, int dependencyId)
     {
         throw new NotImplementedException();
     }
 
-    public Task RemoveDependenciesToJobRole(int jobRoleId, int dependencyId)
+    public async Task AddUsersToJobRoleAsync(int id, List<int> userIds)
     {
-        throw new NotImplementedException();
+        var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
+
+        if (jobRoleToModify == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+
+        foreach (var userId in userIds)
+        {
+            var user = await this._dbContext.Users.Include(x => x.JobRoles).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                throw new NotFoundException("User not found!");
+            }
+            
+            // Check if user doesnt already have the role
+            if (user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id) == null)
+            {
+                user.JobRoles.Add(new UserJobRoles()
+                {
+                    JobRole =  jobRoleToModify,
+                    User =  user
+                });
+            }
+        }
+
+        await this._dbContext.SaveChangesAsync();
     }
 
-    public Task AddUsersToJobRoleAsync(int id, List<int> userIds)
+    public async Task RemoveUsersFromJobRoleAsync(int id, List<int> userIds)
     {
-        throw new NotImplementedException();
+        var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
+
+        if (jobRoleToModify == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+
+        foreach (var userId in userIds)
+        {
+            var user = await this._dbContext.Users.Include(x => x.JobRoles).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                throw new NotFoundException("User not found!");
+            }
+
+            var jobRoleToRemove = user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id);
+            // Check if user has the role
+            if (jobRoleToRemove != null)
+            {
+                user.JobRoles.Remove(jobRoleToRemove);
+            }
+        }
+        
+        await this._dbContext.SaveChangesAsync();
     }
 
-    public Task RemoveUsersFromJobRoleAsync(int id, List<int> userIds)
+    public async Task<JobRoleDto> GetJobRoleAsync(int id)
     {
-        throw new NotImplementedException();
-    }
+        var jobRole = await this._dbContext.JobRoles
+            .Include(x => x.Prerequisites)
+            .Include(x => x.Dependencies)
+            .Include(x => x.UsersWithRole)
+            .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(jr => jr.Id == id);
 
-    public Task<JobRoleDto> GetJobRoleAsync(int id)
-    {
-        throw new NotImplementedException();
+        if (jobRole == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+        
+        return this._mapper.Map<JobRole,JobRoleDto>(jobRole);
     }
 
     public Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto)
