@@ -45,8 +45,10 @@ public class JobRoleService : IJobRoleService
             {
                 this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
                 {
+                    DependencyJobRoleId = dependentJobRole.Id,
                     Dependency = dependentJobRole,
-                    JobRole = createdJobRole
+                    JobRole = createdJobRole,
+                    JobRoleId = createdJobRole.Id
                 });
             }
         }
@@ -106,8 +108,10 @@ public class JobRoleService : IJobRoleService
 
         this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
         {
+            DependencyJobRoleId = dependencyJobRole.Id,
             Dependency = dependencyJobRole,
-            JobRole = jobRole
+            JobRole = jobRole,
+            JobRoleId = jobRole.Id
         });
 
         await this._dbContext.SaveChangesAsync();
