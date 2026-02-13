@@ -77,7 +77,40 @@ public class JobRoleService : IJobRoleService
 
     public async Task AddDependenciesToJobRole(int jobRoleId, int dependencyId)
     {
-        throw new NotImplementedException();
+        var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
+        var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);
+
+        if (jobRole == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+        
+        if (dependencyJobRole == null)
+        {
+            throw new NotFoundException("Dependency not found!");
+        }
+        
+        var dependency =
+            this._dbContext.JobRoleDependencies.FirstOrDefault(x =>
+                x.JobRoleId == jobRoleId && x.DependencyJobRoleId == dependencyId);
+
+        if (dependency != null)
+        {
+            throw new AlreadyExistsException("Dependency already exisits!");
+        }
+        
+        if (await this.WouldCreateCycle(dependencyId, jobRoleId))
+        {
+            throw new InvalidOperationException("Circular dependency detected!");
+        }
+
+        this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
+        {
+            Dependency = dependencyJobRole,
+            JobRole = jobRole
+        });
+
+        await this._dbContext.SaveChangesAsync();
     }
 
     public async Task RemoveDependenciesToJobRole(int jobRoleId, int dependencyId)
@@ -182,7 +215,7 @@ public class JobRoleService : IJobRoleService
         return this._mapper.Map<JobRole,JobRoleDto>(jobRole);
     }
 
-    public Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto)
+    public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto)
     {
         throw new NotImplementedException();
     }
