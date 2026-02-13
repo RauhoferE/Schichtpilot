@@ -202,7 +202,9 @@ public class JobRoleService : IJobRoleService
     {
         var jobRole = await this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
+            .ThenInclude(x => x.Dependency)
             .Include(x => x.Dependencies)
+            .ThenInclude(x => x.JobRole)
             .Include(x => x.UsersWithRole)
             .ThenInclude(x => x.User)
             .FirstOrDefaultAsync(jr => jr.Id == id);
@@ -217,7 +219,24 @@ public class JobRoleService : IJobRoleService
 
     public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto)
     {
-        throw new NotImplementedException();
+        var jobRoles = this._dbContext.JobRoles
+            .Include(x => x.Prerequisites)
+            .ThenInclude(x => x.Dependency)
+            .Include(x => x.Dependencies)
+            .ThenInclude(x => x.JobRole)
+            .Include(x => x.UsersWithRole)
+            .ThenInclude(x => x.User)
+            .OrderBy(x => x.Name)
+            .AsQueryable();
+
+        return new QueryableJobRoleResponse()
+        {
+            Count = jobRoles.Count(),
+            JobRoles = jobRoles
+                .Skip((paginationDto.Page - 1) * paginationDto.PageSize)
+                .Take(paginationDto.PageSize)
+                .Select(x => this._mapper.Map<JobRole, JobRoleShortDto>(x)).ToList()
+        };
     }
     
     private async Task<bool> WouldCreateCycle(int roleId, int prerequisiteId)
