@@ -84,7 +84,10 @@ public class UserService : IUserService
         return new QueryableUserResponse()
         {
             Count = users.Count(),
-            Users = users.Select(x => this._mapper.Map<User, UserDto>(x))
+            Users = users
+                .Skip((paginationDto.Page - 1) * paginationDto.PageSize)
+                .Take(paginationDto.PageSize)
+                .Select(x => this._mapper.Map<User, UserDto>(x))
         };
     }
 
@@ -141,7 +144,7 @@ public class UserService : IUserService
 
         if (!string.IsNullOrEmpty(userFilterDto.Searchstring))
         {
-            users = users.Where(x => x.FirstName.ToLower().Contains(userFilterDto.Searchstring.ToLower()) ||
+            users = users.Where(x => x.Email.ToLower().Contains(userFilterDto.Searchstring.ToLower()) ||
                                      x.LastName.ToLower().Contains(userFilterDto.Searchstring.ToLower()));
         }
 
