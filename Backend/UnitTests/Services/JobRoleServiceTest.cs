@@ -379,8 +379,7 @@ public class JobRoleServiceTest
             {
                 Id = role.Id,
                 Name = role.Name,
-                Description = role.Description,
-                UsersWithRoleCount = 0
+                Description = role.Description
             });
 
         var service = new JobRoleService(dbContext, mapperMock.Object);

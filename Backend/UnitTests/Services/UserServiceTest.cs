@@ -204,7 +204,8 @@ public class UserServiceTest
                     Street = user.StreetAddress,
                     City = user.City,
                     PostalCode = user.PostalCode
-                }
+                },
+                AssignedJobRoles = new List<JobRoleShortDto>()
             });
 
         var userA = CreateUserWithId(1);
@@ -253,7 +254,8 @@ public class UserServiceTest
                     Street = user.StreetAddress,
                     City = user.City,
                     PostalCode = user.PostalCode
-                }
+                },
+                AssignedJobRoles = new List<JobRoleShortDto>()
             });
 
         var nurseRole = new JobRole
@@ -375,7 +377,8 @@ public class UserServiceTest
                 Street = "Main Street 1",
                 City = "Testville",
                 PostalCode = 12345
-            }
+            },
+            AssignedJobRoles = new List<JobRoleShortDto>()
         };
     }
 
