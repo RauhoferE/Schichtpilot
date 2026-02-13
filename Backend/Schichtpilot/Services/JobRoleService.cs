@@ -82,7 +82,28 @@ public class JobRoleService : IJobRoleService
 
     public async Task RemoveDependenciesToJobRole(int jobRoleId, int dependencyId)
     {
-        throw new NotImplementedException();
+        var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
+        var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);
+
+        if (jobRole == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+        
+        if (dependencyJobRole == null)
+        {
+            throw new NotFoundException("Dependency not found!");
+        }
+
+        var dependency =
+            this._dbContext.JobRoleDependencies.FirstOrDefault(x =>
+                x.JobRoleId == jobRoleId && x.DependencyJobRoleId == dependencyId);
+
+        if (dependency != null)
+        {
+            this._dbContext.JobRoleDependencies.Remove(dependency);
+            await this._dbContext.SaveChangesAsync();
+        }
     }
 
     public async Task AddUsersToJobRoleAsync(int id, List<int> userIds)
