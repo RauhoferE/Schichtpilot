@@ -59,7 +59,7 @@ public class JobRoleService : IJobRoleService
     // This just updates the name and description
     public async Task UpdateJobRoleAsync(int id, EditJobRoleDto jobRole)
     {
-        if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name))
+        if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name && jr.Id != id))
         {
             throw new AlreadyExistsException($"Jobrole  with name {jobRole.Name} already exists");
         }
@@ -77,8 +77,9 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task AddDependenciesToJobRole(int jobRoleId, int dependencyId)
+    public async Task AddDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
+        //TODO: Check if jobrole is used in a schedule
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
         var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);
 
@@ -117,7 +118,7 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveDependenciesToJobRole(int jobRoleId, int dependencyId)
+    public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
         var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);
@@ -178,6 +179,7 @@ public class JobRoleService : IJobRoleService
 
     public async Task RemoveUsersFromJobRoleAsync(int id, List<int> userIds)
     {
+        //TODO: Check if user is used in a schedule
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
         if (jobRoleToModify == null)
