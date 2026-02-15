@@ -334,8 +334,36 @@ public class ShiftService : IShiftService
             .Include(x => x.JobRequirements)
             .Include(x => x.Timeslots)
             .AsQueryable();
+
+        if (filter != null)
+        {
+            query = await this.FilterShiftsAsync(query, filter);
+        }
+
+        return new QueryableShiftResponse()
+        {
+            Count = query.Count(),
+            Shift = query
+                .Skip((pagination.Page - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
+                .Select(x => this._mapper.Map<Shift, ShortShiftDto>(x))
+        };
+    }
+
+    private async Task<IQueryable<Shift>> FilterShiftsAsync(IQueryable<Shift> query, ShiftFilterDto filter)
+    {
+        if (!string.IsNullOrEmpty(filter.Searchstring))
+        {
+            query = query.Where(x => x.Name.ToLower().Contains(filter.Searchstring.ToLower()));
+        }
+
+        if (filter.WeekDays.Count > 0)
+        {
+            query = query.Where(x => x.Timeslots.Any(y =>  filter.WeekDays.Contains(y.DayOfWeek)));
+        }
         
-        throw new NotImplementedException();
+        //TODO: Add schedule status as filter
+        return query;
     }
 
     public async Task<ShiftDto> GetShiftAsync(int shiftId)
