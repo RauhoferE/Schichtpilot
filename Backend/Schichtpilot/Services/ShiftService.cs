@@ -126,12 +126,11 @@ public class ShiftService : IShiftService
         }
         
         // Check if there is already a timeslot here
-        var timeSlotsOnSameDays = shiftToModiy.Timeslots
-            .Where(x => x.DayOfWeek == timeSlot.DayOfWeek && timeSlot.StartTime < x.EndTime 
-                                                          && x.StartTime < timeSlot.EndTime)
-            .ToList();
+        var timeSlotsOnSameDay = shiftToModiy.Timeslots
+            .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek && timeSlot.StartTime < x.EndTime 
+                                                          && x.StartTime < timeSlot.EndTime);
 
-        if (timeSlotsOnSameDays != null)
+        if (timeSlotsOnSameDay != null)
         {
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
         }
@@ -146,10 +145,40 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public Task EditTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
+    public async Task EditTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
     {
         //TODO: Check if shift is used in a schedule
-        throw new NotImplementedException();
+        var shiftToModiy = this._dbContext.Shifts
+            .Include(x => x.Timeslots)
+            .FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToModiy == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+        
+        var timeSlotToModify = shiftToModiy.Timeslots.FirstOrDefault(x => x.Id == timeSlot.Id);
+
+        if (timeSlotToModify == null)
+        {
+            throw new NotFoundException($"Timeslot with ${timeSlot.Id} not found.");
+        }
+        
+        // Check if there is already a timeslot here thats not the current one
+        var timeSlotsOnSameDay = shiftToModiy.Timeslots
+            .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek && timeSlot.StartTime < x.EndTime 
+                                                          && x.StartTime < timeSlot.EndTime && x.Id != timeSlot.Id);
+
+        if (timeSlotsOnSameDay != null)
+        {
+            throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
+        }
+
+        timeSlotToModify.DayOfWeek = timeSlot.DayOfWeek;
+        timeSlotToModify.StartTime = timeSlot.StartTime;
+        timeSlotToModify.EndTime = timeSlot.EndTime;
+
+        await this._dbContext.SaveChangesAsync();
     }
 
     public Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement)
