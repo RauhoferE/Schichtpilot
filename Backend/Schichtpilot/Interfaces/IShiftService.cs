@@ -17,6 +17,8 @@ public interface IShiftService
     
     Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement);
     
+    Task ChangeRequiredStaffAsync(int shiftId, int jobRequirementId, int requiredStaffCount);
+    
     Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId);
     
     Task DeleteShiftAsync(int shiftId);

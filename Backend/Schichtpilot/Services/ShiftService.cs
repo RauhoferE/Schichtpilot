@@ -181,10 +181,65 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement)
+    public async Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement)
     {
         //TODO: Check if shift is used in a schedule
-        throw new NotImplementedException();
+        var shiftToModiy = this._dbContext.Shifts
+            .Include(x => x.JobRequirements)
+            .ThenInclude(x => x.JobRole)
+            .FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToModiy == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+
+        // Job already added as requirement
+        if (shiftToModiy.JobRequirements.FirstOrDefault(x => x.JobRoleId == jobRequirement.JobId)  != null)
+        {
+            throw new AlreadyExistsException($"Job already added to shift!");
+        }
+        
+        var jobRole = this._dbContext.JobRoles.FirstOrDefault(x => x.Id == jobRequirement.JobId);
+
+        if (jobRole == null)
+        {
+            throw new NotFoundException($"Job role with id {jobRequirement.JobId} does not exist");
+        }
+
+        shiftToModiy.JobRequirements.Add(new ShiftRequirement()
+        {
+            JobRole = jobRole,
+            JobRoleId = jobRequirement.JobId,
+            RequiredStaffCount = jobRequirement.RequiredStaffCount,
+
+        });
+        
+        await this._dbContext.SaveChangesAsync();
+    }
+
+    public async Task ChangeRequiredStaffAsync(int shiftId, int jobRequirementId, int requiredStaffCount)
+    {
+        //TODO: Check if shift is used in a schedule
+        var shiftToModiy = this._dbContext.Shifts
+            .Include(x => x.JobRequirements)
+            .ThenInclude(x => x.JobRole)
+            .FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToModiy == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+        
+        var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.Id == jobRequirementId);
+
+        if (jobRequirement == null)
+        {
+            throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
+        }
+        
+        jobRequirement.RequiredStaffCount = requiredStaffCount;
+        await this._dbContext.SaveChangesAsync();
     }
 
     public Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId)
