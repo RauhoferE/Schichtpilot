@@ -90,6 +90,31 @@ public class JobRoleServiceTest
     }
 
     [Fact]
+    public async Task UpdateJobRoleAsync_SameNameSameId_DoesNotThrow()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        dbContext.JobRoles.Add(role);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var service = new JobRoleService(dbContext, mapperMock.Object);
+
+        var dto = new EditJobRoleDto
+        {
+            Name = "Nurse",
+            Description = "Updated"
+        };
+
+        await service.UpdateJobRoleAsync(role.Id, dto);
+
+        var updated = await dbContext.JobRoles.FirstOrDefaultAsync(x => x.Id == role.Id);
+        Assert.NotNull(updated);
+        Assert.Equal("Nurse", updated.Name);
+        Assert.Equal("Updated", updated.Description);
+    }
+
+    [Fact]
     public async Task UpdateJobRoleAsync_NotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
