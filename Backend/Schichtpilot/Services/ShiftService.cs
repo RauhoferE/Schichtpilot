@@ -149,10 +149,18 @@ public class ShiftService : IShiftService
     
     }
 
-    public Task DeleteShiftAsync(int shiftId)
+    public async Task DeleteShiftAsync(int shiftId)
     {
         //TODO: Check if shift is used in a schedule
-        throw new NotImplementedException();
+        var shiftToDelete = this._dbContext.Shifts.FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToDelete == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+        
+        this._dbContext.Shifts.Remove(shiftToDelete);
+        await this._dbContext.SaveChangesAsync();
     }
 
     public Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
