@@ -116,17 +116,17 @@ public class ShiftService : IShiftService
     public async Task AddTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
     {
         //TODO: Check if shift is used in a schedule
-        var shiftToDelete = this._dbContext.Shifts
+        var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.Timeslots)
             .FirstOrDefault(x => x.Id == shiftId);
 
-        if (shiftToDelete == null)
+        if (shiftToModiy == null)
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
         
         // Check if there is already a timeslot here
-        var timeSlotsOnSameDays = shiftToDelete.Timeslots
+        var timeSlotsOnSameDays = shiftToModiy.Timeslots
             .Where(x => x.DayOfWeek == timeSlot.DayOfWeek && timeSlot.StartTime < x.EndTime 
                                                           && x.StartTime < timeSlot.EndTime)
             .ToList();
@@ -136,7 +136,7 @@ public class ShiftService : IShiftService
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
         }
 
-        shiftToDelete.Timeslots.Add(new Timeslot()
+        shiftToModiy.Timeslots.Add(new Timeslot()
         {
             DayOfWeek = timeSlot.DayOfWeek,
             StartTime = timeSlot.StartTime,
