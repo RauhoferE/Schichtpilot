@@ -5,22 +5,14 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AQueryable_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003F_002E_002E_003F_002E_002E_003F_002Econfig_003FJetBrains_003FRider2025_002E3_003Fresharper_002Dhost_003FSourcesCache_003F52d7b18e9e47f29962a01451d3e3197ba3ead2eb264f29f1677cc7016b24c33_003FQueryable_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestProjectMapping/=6CA18A65_002DA798_002D4B5F_002DA1A0_002D1A4A99C4E819/@EntryIndexedValue">01D0BABE-3E66-4F0C-A040-E2FE75CF827C</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestTemplateMapping/=xUnit/@EntryIndexedValue">33ff99d8-b1ad-4ed5-a4fd-376b97c2c841</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=58c56b00_002Df81e_002D48fd_002Da74f_002Dc8e84271fcf4/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Continuous Testing" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;And&gt;
-    &lt;TestAncestor&gt;
-      &lt;TestId&gt;xUnit::01D0BABE-3E66-4F0C-A040-E2FE75CF827C::net10.0::UnitTests.Services.UserServiceTest&lt;/TestId&gt;
-    &lt;/TestAncestor&gt;
-    &lt;TestAncestor&gt;
-      &lt;TestId&gt;xUnit::01D0BABE-3E66-4F0C-A040-E2FE75CF827C::net10.0::UnitTests.Services.UserServiceTest.GetUsersAsync_FilterByJobRoleStatusAndSearch_ReturnsMatchingUsers&lt;/TestId&gt;
-    &lt;/TestAncestor&gt;
-  &lt;/And&gt;
-&lt;/SessionState&gt;</s:String>
+	
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=613da480_002Da6e9_002D4f50_002D86c9_002D371cc9585b8a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="UserServiceTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
     &lt;TestAncestor&gt;
       &lt;TestId&gt;xUnit::01D0BABE-3E66-4F0C-A040-E2FE75CF827C::net10.0::UnitTests.Services.UserServiceTest&lt;/TestId&gt;
     &lt;/TestAncestor&gt;
     &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Services/f:JobRoleServiceTest.cs&lt;/ProjectFile&gt;
+    &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Services/f:ShiftServiceTest.cs&lt;/ProjectFile&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	</wpf:ResourceDictionary>
