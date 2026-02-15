@@ -92,11 +92,13 @@ public class ShiftService : IShiftService
 
     public Task ManageTimeSlots(int shiftId, List<TimeSlotDto> slots)
     {
+        //TODO: Check if shift is used in a schedule
         throw new NotImplementedException();
     }
 
     public Task ManageJobRequirements(int shiftId, List<ShiftRequirementDto> requirements)
     {
+        //TODO: Check if shift is used in a schedule
         throw new NotImplementedException();
     }
 
@@ -147,23 +149,21 @@ public class ShiftService : IShiftService
     
     }
 
-    public Task ManageShiftAsync(int shiftId, CreateShiftDto shift)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteShiftAsync(int shiftId)
     {
+        //TODO: Check if shift is used in a schedule
         throw new NotImplementedException();
     }
 
     public Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
     {
+        //TODO: Add if shift is used in a schedule.
         throw new NotImplementedException();
     }
 
     public Task<ShiftDto> GetShiftAsync(int shiftId)
     {
+        //TODO: Return schedules that use this shift
         throw new NotImplementedException();
     }
 }

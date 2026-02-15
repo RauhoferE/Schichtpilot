@@ -7,6 +7,4 @@ public class ShortShiftDto
     public string Name { get; set; }
     
     public string ColorAsHex { get; set; }
-    
-    public bool InSchedule { get; set; }
 }

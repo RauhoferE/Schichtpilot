@@ -54,6 +54,7 @@ public class UserService : IUserService
 
     public Task<UserDto> GetUserDataAsync(int userId)
     {
+        //TODO: Return schedules of users
         var user = this._dbContext.Users
             .Include(x => x.JobRoles)
             .ThenInclude(x => x.JobRole)
