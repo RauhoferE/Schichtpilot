@@ -8,9 +8,16 @@ public interface IShiftService
     Task CreateShiftAsync(CreateShiftDto shift);
     
     Task ManageShiftAsync(int shiftId, EditShiftDto shift);
-    Task ManageTimeSlots(int shiftId, List<TimeSlotDto> slots);
     
-    Task ManageJobRequirements(int shiftId, List<ShiftRequirementDto> requirements);
+    Task DeleteTimeSlotAsync(int shiftId, int timeSlotId);
+    
+    Task AddTimeSlotAsync(int shiftId, TimeSlotDto timeSlot);
+    
+    Task EditTimeSlotAsync(int shiftId, TimeSlotDto timeSlot);
+    
+    Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement);
+    
+    Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId);
     
     Task DeleteShiftAsync(int shiftId);
     Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter);

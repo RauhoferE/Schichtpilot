@@ -90,7 +90,7 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task ManageTimeSlots(int shiftId, List<TimeSlotDto> slots)
+    public async Task DeleteTimeSlotAsync(int shiftId, int timeSlotId)
     {
         //TODO: Check if shift is used in a schedule
         var shiftToDelete = this._dbContext.Shifts
@@ -101,27 +101,37 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
-        // Since changing the timeslots would require to check each one its simpler to remove all previous ones
-        // and add the modified or new ones back with the previous ones
-        foreach (var slot in shiftToDelete.Timeslots)
+
+        var timeSlot = shiftToDelete.Timeslots.FirstOrDefault(x => x.Id == timeSlotId);
+
+        if (timeSlot == null)
         {
-            this._dbContext.Timeslots.Remove(slot);
+            throw new NotFoundException($"Timeslot with {timeSlotId} does not exist!");
         }
         
-        await this._dbContext.SaveChangesAsync();
-
-        shiftToDelete.Timeslots = slots.Select(x => new Timeslot()
-        {
-            DayOfWeek = x.DayOfWeek,
-            StartTime = x.StartTime,
-            EndTime = x.EndTime
-        }).ToHashSet();
-        
+        shiftToDelete.Timeslots.Remove(timeSlot);
         await this._dbContext.SaveChangesAsync();
     }
 
-    public Task ManageJobRequirements(int shiftId, List<ShiftRequirementDto> requirements)
+    public Task AddTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
+    {
+        //TODO: Check if shift is used in a schedule
+        throw new NotImplementedException();
+    }
+
+    public Task EditTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
+    {
+        //TODO: Check if shift is used in a schedule
+        throw new NotImplementedException();
+    }
+
+    public Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement)
+    {
+        //TODO: Check if shift is used in a schedule
+        throw new NotImplementedException();
+    }
+
+    public Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId)
     {
         //TODO: Check if shift is used in a schedule
         throw new NotImplementedException();
