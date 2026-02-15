@@ -68,7 +68,38 @@ public class ShiftService : IShiftService
 
         await this._dbContext.SaveChangesAsync();
     }
-    
+
+    public async Task ManageShiftAsync(int shiftId, EditShiftDto shift)
+    {
+        var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x =>  x.Name == shift.Name && x.Id != shiftId);
+
+        if (shiftWithSameName != null)
+        {
+            throw new AlreadyExistsException($"Shift with name {shift.Name} already exists");
+        }
+
+        var shiftToModify = this._dbContext.Shifts.FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToModify == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+        
+        shiftToModify.Name = shift.Name;
+        shiftToModify.ColorAsHex = shift.ColorAsHex;
+        await this._dbContext.SaveChangesAsync();
+    }
+
+    public Task ManageTimeSlots(int shiftId, List<TimeSlotDto> slots)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task ManageJobRequirements(int shiftId, List<ShiftRequirementDto> requirements)
+    {
+        throw new NotImplementedException();
+    }
+
     private async Task<List<string>> GetMissingPrerequisites(List<ShiftRequirementDto> requirements)
     {
         var requestedJobIds = requirements.Select(r => r.JobId).ToHashSet();
