@@ -90,10 +90,35 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public Task ManageTimeSlots(int shiftId, List<TimeSlotDto> slots)
+    public async Task ManageTimeSlots(int shiftId, List<TimeSlotDto> slots)
     {
         //TODO: Check if shift is used in a schedule
-        throw new NotImplementedException();
+        var shiftToDelete = this._dbContext.Shifts
+            .Include(x => x.Timeslots)
+            .FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToDelete == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+        
+        // Since changing the timeslots would require to check each one its simpler to remove all previous ones
+        // and add the modified or new ones back with the previous ones
+        foreach (var slot in shiftToDelete.Timeslots)
+        {
+            this._dbContext.Timeslots.Remove(slot);
+        }
+        
+        await this._dbContext.SaveChangesAsync();
+
+        shiftToDelete.Timeslots = slots.Select(x => new Timeslot()
+        {
+            DayOfWeek = x.DayOfWeek,
+            StartTime = x.StartTime,
+            EndTime = x.EndTime
+        }).ToHashSet();
+        
+        await this._dbContext.SaveChangesAsync();
     }
 
     public Task ManageJobRequirements(int shiftId, List<ShiftRequirementDto> requirements)
