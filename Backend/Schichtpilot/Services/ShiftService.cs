@@ -327,15 +327,30 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
+    public async Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
     {
         //TODO: Add if shift is used in a schedule.
+        IQueryable<Shift> query = this._dbContext.Shifts
+            .Include(x => x.JobRequirements)
+            .Include(x => x.Timeslots)
+            .AsQueryable();
+        
         throw new NotImplementedException();
     }
 
-    public Task<ShiftDto> GetShiftAsync(int shiftId)
+    public async Task<ShiftDto> GetShiftAsync(int shiftId)
     {
         //TODO: Return schedules that use this shift
-        throw new NotImplementedException();
+        var shift = this._dbContext.Shifts
+            .Include(x => x.JobRequirements)
+            .ThenInclude(x => x.JobRole)
+            .FirstOrDefault(x => x.Id == shiftId);
+
+        if (shift == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+
+        return this._mapper.Map<Shift, ShiftDto>(shift);
     }
 }
