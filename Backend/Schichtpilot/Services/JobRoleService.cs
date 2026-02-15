@@ -59,7 +59,7 @@ public class JobRoleService : IJobRoleService
     // This just updates the name and description
     public async Task UpdateJobRoleAsync(int id, EditJobRoleDto jobRole)
     {
-        if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name))
+        if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name && jr.Id != id))
         {
             throw new AlreadyExistsException($"Jobrole  with name {jobRole.Name} already exists");
         }
