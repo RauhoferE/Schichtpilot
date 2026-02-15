@@ -77,7 +77,7 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task AddDependenciesToJobRole(int jobRoleId, int dependencyId)
+    public async Task AddDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
         //TODO: Check if jobrole is used in a schedule
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
@@ -118,7 +118,7 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveDependenciesToJobRole(int jobRoleId, int dependencyId)
+    public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
         var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);

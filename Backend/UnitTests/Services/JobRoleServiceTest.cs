@@ -140,7 +140,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.AddDependenciesToJobRole(999, 1));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.AddDependenciesToJobRoleAsync(999, 1));
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.AddDependenciesToJobRole(1, 999));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.AddDependenciesToJobRoleAsync(1, 999));
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await Assert.ThrowsAsync<AlreadyExistsException>(() => service.AddDependenciesToJobRole(jobRole.Id, dependency.Id));
+        await Assert.ThrowsAsync<AlreadyExistsException>(() => service.AddDependenciesToJobRoleAsync(jobRole.Id, dependency.Id));
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddDependenciesToJobRole(role.Id, role.Id));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddDependenciesToJobRoleAsync(role.Id, role.Id));
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await service.AddDependenciesToJobRole(jobRole.Id, dependency.Id);
+        await service.AddDependenciesToJobRoleAsync(jobRole.Id, dependency.Id);
 
         var saved = await dbContext.JobRoleDependencies
             .Include(x => x.JobRole)
@@ -230,7 +230,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await service.RemoveDependenciesToJobRole(jobRole.Id, dependency.Id);
+        await service.RemoveDependenciesToJobRoleAsync(jobRole.Id, dependency.Id);
 
         var remaining = await dbContext.JobRoleDependencies.ToListAsync();
         Assert.Empty(remaining);
@@ -243,7 +243,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = new JobRoleService(dbContext, mapperMock.Object);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.RemoveDependenciesToJobRole(999, 1));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.RemoveDependenciesToJobRoleAsync(999, 1));
     }
 
     [Fact]
