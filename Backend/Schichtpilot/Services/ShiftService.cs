@@ -242,10 +242,28 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId)
+    public async Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId)
     {
         //TODO: Check if shift is used in a schedule
-        throw new NotImplementedException();
+        var shiftToModiy = this._dbContext.Shifts
+            .Include(x => x.JobRequirements)
+            .ThenInclude(x => x.JobRole)
+            .FirstOrDefault(x => x.Id == shiftId);
+
+        if (shiftToModiy == null)
+        {
+            throw new NotFoundException($"Shift with id {shiftId} does not exist");
+        }
+        
+        var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.Id == jobRequirementId);
+
+        if (jobRequirement == null)
+        {
+            throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
+        }
+        
+        shiftToModiy.JobRequirements.Remove(jobRequirement);
+        await this._dbContext.SaveChangesAsync();
     }
 
     private async Task<List<string>> GetMissingPrerequisites(List<ShiftRequirementDto> requirements)
