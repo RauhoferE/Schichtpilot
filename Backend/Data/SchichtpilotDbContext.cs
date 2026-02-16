@@ -40,6 +40,7 @@ IdentityUserClaim<long>,
     
     public DbSet<Timeslot> Timeslots { get; set; }
     
+    public DbSet<Absence> Absences { get; set; }
     
     
     // Here should be the DBSets
@@ -105,6 +106,16 @@ IdentityUserClaim<long>,
             entity.HasMany(x => x.JobRequirements).WithOne(x => x.Shift);
         });
         
+        modelBuilder.Entity<Absence>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(a => a.Reason).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.Status).HasMaxLength(20);
+        });
+
+        base.OnModelCreating(modelBuilder); 
         
     }
 }
