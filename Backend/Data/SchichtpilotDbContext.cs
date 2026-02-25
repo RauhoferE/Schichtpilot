@@ -111,7 +111,7 @@ IdentityUserClaim<long>,
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
-            entity.Property(a => a.Reason).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.AbsenceType).IsRequired().HasMaxLength(100);
             entity.Property(a => a.Status).HasMaxLength(20);
         });
 

@@ -2,6 +2,6 @@
 
 public class StatusUpdateDto
 {
-    public required string Status { get; set; } // Approved, Denied
-    public string? Message { get; set; }        // Required for Denied (validated in service)
+    public required string Status { get; set; } //Pending, Approved, Denied
+    public string? ManagerMessage { get; set; }        // optional for Approved, Required for Denied (validated in service)
 }
