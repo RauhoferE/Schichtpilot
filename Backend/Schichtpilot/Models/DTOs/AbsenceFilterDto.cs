@@ -1,13 +1,13 @@
-﻿namespace Schichtpilot.Models.DTOs;
+﻿using Schichtpilot.Models.Enums;
 
+namespace Schichtpilot.Models.DTOs;
 public class AbsenceFilterDto
 {
-    public DateTime? StartFrom { get; set; }
-    public string? EmployeeEmail { get; set; }
-    public string? Reason { get; set; }
-    public string? Status { get; set; }
-    
-    // Excel column sorting ↑↓
-    public string? SortBy { get; set; } = "StartDate";     // EmployeeName, StartDate, EndDate, Reason, Status
-    public string? SortDir { get; set; } = "desc";         // asc, desc
+    public List<AbsenceStatusEnum>? Status { get; set; }
+    public List<AbsenceTypeEnum>? AbsenceType { get; set; }
+    public DateTime? CreatedFrom { get; set; }
+    public DateTime? CreatedTo { get; set; }
+    public DateTime? StartDateFrom { get; set; }
+    public DateTime? StartDateTo { get; set; }
+    public string? Searchstring { get; set; } // employee/type
 }

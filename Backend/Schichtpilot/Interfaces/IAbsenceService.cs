@@ -1,15 +1,17 @@
 ﻿using Schichtpilot.Models.DTOs;
-
+using Schichtpilot.Models.Responses;
 namespace Schichtpilot.Interfaces;
-
-using Data.Entities;
-
 
 public interface IAbsenceService
 {
-    Task<long> CreateAbsenceRequestAsync(CreateAbsenceDto dto, long userId);
-    Task<List<Absence>> GetMyAbsenceRequestsAsync(long userId);
-    Task DeleteMyAbsenceRequestAsync(long id, long userId);
-    Task<List<Absence>> GetAllAbsenceRequestsAsync(AbsenceFilterDto filter); // Sorting here!
-    Task UpdateStatusAsync(long id, StatusUpdateDto dto);
+    // Employee UCs
+    Task CreateAbsenceRequestAsync(CreateAbsenceDto dto, int userId); // UC-02-01-01
+    Task DeleteOwnAbsenceAsync(int id, int userId); // UC-02-01-02
+    Task<QueryableAbsenceResponse> ViewOwnAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, int userId); // UC-02-01-04
+    
+    // Manager UCs  
+    Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter); // UC-02-01-03
+    Task<AbsenceDto> GetAbsenceDetailAsync(int id); // FR160
+    Task UpdateAbsenceStatusAsync(int id, StatusUpdateDto dto);  // Single method for approve/deny
+
 }

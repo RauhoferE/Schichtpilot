@@ -4,7 +4,6 @@ using Schichtpilot.Models.Enums;
 
 public class EditAbsenceDto
 {
-    public string? Reason { get; set; }
-    
-    public required AbsenceStatusEnum Status { get; set; }
+    public AbsenceTypeEnum? AbsenceTypeEnum { get; set; }
+    public string? Message { get; set; }
 }
