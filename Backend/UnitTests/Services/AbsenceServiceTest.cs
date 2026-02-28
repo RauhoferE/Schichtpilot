@@ -48,7 +48,7 @@ public class AbsenceServiceTest
 
         _emailServiceMock = new Mock<IEmailService>();
     }
-    private SchichtpilotDbContext CreateDbContext()
+    private static SchichtpilotDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<SchichtpilotDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
