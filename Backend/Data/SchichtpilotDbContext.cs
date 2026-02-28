@@ -114,7 +114,7 @@ IdentityUserClaim<long>,
             entity.Property(a => a.AbsenceType).IsRequired().HasMaxLength(100);
             entity.Property(a => a.Status).HasMaxLength(20);
         });
-
+        
         base.OnModelCreating(modelBuilder); 
         
     }
