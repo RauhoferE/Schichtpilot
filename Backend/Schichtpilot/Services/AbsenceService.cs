@@ -50,7 +50,7 @@ public class AbsenceService : IAbsenceService
             StartDate = dto.StartDate.Date,
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
-            Message = dto.Message ?? "",
+            Message = dto.Message,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow
         };
@@ -62,7 +62,7 @@ public class AbsenceService : IAbsenceService
             // FR145: Notify (uniform sick/other)
             await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName);
         }
-        catch { throw new Exception("Failed to create absence request"); } // FR146
+        catch { new Exception("Failed to create absence request"); } // FR146
     }
 
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
@@ -73,7 +73,7 @@ public class AbsenceService : IAbsenceService
 
         _dbContext.Absences.Remove(absence);
         try { await _dbContext.SaveChangesAsync(); }
-        catch { throw new Exception("Failed to delete"); }
+        catch { new Exception("Failed to delete"); }
     }
     
     public async Task<QueryableAbsenceResponse> ViewOwnAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId)
@@ -124,7 +124,7 @@ public class AbsenceService : IAbsenceService
             throw new ValidationException("Denial requires message");
 
         absence.Status = dto.Status;
-        absence.ManagerMessage = dto.ManagerMessage ?? "";
+        absence.ManagerMessage = dto.ManagerMessage;
         try { await _dbContext.SaveChangesAsync(); }
         catch { throw new Exception("Failed to update status"); } 
     }
