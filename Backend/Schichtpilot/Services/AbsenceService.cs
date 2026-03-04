@@ -29,20 +29,20 @@ public class AbsenceService : IAbsenceService
     {
         // FR141: Dates + type (DTO required validates)
         if (dto.StartDate == default || dto.EndDate == default)
-            throw new ValidationException("Valid dates and type required");
+        {throw new ValidationException("Valid dates and type required");}
 
         // FR142: Not past/valid
         if (dto.StartDate.Date < DateTime.UtcNow.Date || dto.EndDate.Date < dto.StartDate.Date)
-            throw new ValidationException("Dates must be future and End >= Start");
+        {throw new ValidationException("Dates must be future and End >= Start");}
 
         // FR149: User exists (Identity handles lockout, controller auth)
         var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null) throw new UserNotFoundException("User not found");
+        if (user == null) {throw new UserNotFoundException("User not found");}
 
         // Overlap check
         var overlapping = await _dbContext.Absences.AnyAsync(x => x.UserId == userId &&
             x.Status != nameof(AbsenceStatusEnum.Denied) && dto.StartDate < x.EndDate && dto.EndDate > x.StartDate);
-        if (overlapping) throw new AlreadyExistsException("Overlapping absence exists");
+        if (overlapping) {throw new AlreadyExistsException("Overlapping absence exists");}
 
         // FR143-144: Pending persist
         var absence = new Absence
@@ -77,7 +77,7 @@ public class AbsenceService : IAbsenceService
     {
         var absence = await _dbContext.Absences
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.Status == nameof(AbsenceStatusEnum.Pending));
-        if (absence == null) throw new NotFoundException("Own pending absence not found");
+        if (absence == null) {throw new NotFoundException("Own pending absence not found");}
 
         _dbContext.Absences.Remove(absence);
          await _dbContext.SaveChangesAsync();
@@ -118,26 +118,26 @@ public class AbsenceService : IAbsenceService
     {
      
         var absence = await _dbContext.Absences.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
-        if (absence == null) throw new NotFoundException("Absence not found");
+        if (absence == null) {throw new NotFoundException("Absence not found");}
         return _mapper.Map<AbsenceDto>(absence);
     }
 
     public async Task UpdateAbsenceStatusAsync(int id, StatusUpdateDto dto)
     {
         var absence = await _dbContext.Absences.FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
-        if (absence == null) throw new NotFoundException("Pending absence not found");
+        if (absence == null) {throw new NotFoundException("Pending absence not found");}
 
         if (dto.Status == nameof(AbsenceStatusEnum.Denied) && string.IsNullOrEmpty(dto.ManagerMessage))
-            throw new ValidationException("Denial requires message");
+        {throw new ValidationException("Denial requires message");}
 
         absence.Status = dto.Status;
         absence.ManagerMessage = dto.ManagerMessage;
         await _dbContext.SaveChangesAsync(); 
     }
 
-    private Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
+    private static Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
     {
-        if (filter == null) return Task.FromResult(query);
+        if (filter == null) {return Task.FromResult(query);}
 
         // FR148: Date/emp/type search (UserName via FirstName/LastName/Email)
         if (!string.IsNullOrEmpty(filter.Searchstring))
@@ -150,13 +150,15 @@ public class AbsenceService : IAbsenceService
         }
 
         if (filter.Status?.Any() == true)
-            query = query.Where(x => filter.Status.Select(s => s.ToString()).Contains(x.Status));
+        { query = query.Where(x => filter.Status.Select(s => s.ToString()).Contains(x.Status));}
 
         if (filter.AbsenceType?.Any() == true)
+        {
             query = query.Where(x => filter.AbsenceType.Select(t => t.ToString()).Contains(x.AbsenceType));
-        
-        if (filter.StartDateFrom.HasValue) query = query.Where(x => x.StartDate >= filter.StartDateFrom.Value);
-        if (filter.StartDateTo.HasValue) query = query.Where(x => x.StartDate <= filter.StartDateTo.Value);
+        }
+
+        if (filter.StartDateFrom.HasValue) {query = query.Where(x => x.StartDate >= filter.StartDateFrom.Value);}
+        if (filter.StartDateTo.HasValue) {query = query.Where(x => x.StartDate <= filter.StartDateTo.Value);}
 
         return Task.FromResult(query);
     }
