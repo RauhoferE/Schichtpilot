@@ -2,7 +2,6 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Data;
-using Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
@@ -27,14 +26,6 @@ public class AbsenceService : IAbsenceService
 
     public async Task CreateAbsenceRequestAsync(CreateAbsenceDto dto, long userId)
     {
-        // FR141: Dates + type (DTO required validates)
-        if (dto.StartDate == default || dto.EndDate == default)
-        {throw new ValidationException("Valid dates and type required");}
-
-        // FR142: Not past/valid
-        if (dto.StartDate.Date < DateTime.UtcNow.Date || dto.EndDate.Date < dto.StartDate.Date)
-        {throw new ValidationException("Dates must be future and End >= Start");}
-
         // FR149: User exists (Identity handles lockout, controller auth)
         var user = await _dbContext.Users.FindAsync(userId);
         if (user == null) {throw new UserNotFoundException("User not found");}
