@@ -8,6 +8,7 @@ using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Responses;
+using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Services;
 
@@ -40,7 +41,7 @@ public class AbsenceService : IAbsenceService
 
         // Overlap check
         var overlapping = await _dbContext.Absences.AnyAsync(x => x.UserId == userId &&
-            x.Status != "Denied" && dto.StartDate < x.EndDate && dto.EndDate > x.StartDate);
+            x.Status != nameof(AbsenceStatusEnum.Denied) && dto.StartDate < x.EndDate && dto.EndDate > x.StartDate);
         if (overlapping) throw new AlreadyExistsException("Overlapping absence exists");
 
         // FR143-144: Pending persist
@@ -51,7 +52,7 @@ public class AbsenceService : IAbsenceService
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
             Message = dto.Message,
-            Status = "Pending",
+            Status = dto.Status,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -62,13 +63,16 @@ public class AbsenceService : IAbsenceService
             // FR145: Notify (uniform sick/other)
             await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName);
         }
-        catch { new Exception("Failed to create absence request"); } // FR146
+        catch (Exception e)
+        {
+            throw new Exception("Failed to create absence request");
+        }; // FR146
     }
 
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
     {
         var absence = await _dbContext.Absences
-            .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.Status == "Pending");
+            .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.Status == nameof(AbsenceStatusEnum.Pending));
         if (absence == null) throw new NotFoundException("Own pending absence not found");
 
         _dbContext.Absences.Remove(absence);
@@ -117,10 +121,10 @@ public class AbsenceService : IAbsenceService
 
     public async Task UpdateAbsenceStatusAsync(int id, StatusUpdateDto dto)
     {
-        var absence = await _dbContext.Absences.FirstOrDefaultAsync(x => x.Id == id && x.Status == "Pending");
+        var absence = await _dbContext.Absences.FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
         if (absence == null) throw new NotFoundException("Pending absence not found");
 
-        if (dto.Status == "Denied" && string.IsNullOrEmpty(dto.ManagerMessage))
+        if (dto.Status == nameof(AbsenceStatusEnum.Denied) && string.IsNullOrEmpty(dto.ManagerMessage))
             throw new ValidationException("Denial requires message");
 
         absence.Status = dto.Status;
