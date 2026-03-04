@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Data.Entities;
+using Data.Entities;
 
 public class Absence
 {
@@ -20,7 +20,7 @@ public class Absence
     public string AbsenceType { get; set; } = string.Empty; // "Vacation", "SickLeave", etc.
     
     [MaxLength(255)]
-    public string Message { get; set; } = string.Empty; // optional FR142
+    public string Message { get; set; } = string.Empty; // optional when accepted FR142
     
     [MaxLength(25)]
     public string Status { get; set; } = "Pending"; // string in DB, enum in DTOs
