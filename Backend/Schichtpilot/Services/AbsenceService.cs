@@ -63,10 +63,14 @@ public class AbsenceService : IAbsenceService
             // FR145: Notify (uniform sick/other)
             await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName);
         }
-        catch (Exception e)
+        catch (Exception emailEx)
         {
-            throw new Exception("Failed to create absence request");
-        }; // FR146
+            // ROLLBACK absence if email fails
+            _dbContext.Absences.Remove(absence);
+            await _dbContext.SaveChangesAsync();
+    
+            throw new EmailNotificationException("Failed to notify managers", emailEx);
+        } // FR146
     }
 
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
@@ -76,8 +80,7 @@ public class AbsenceService : IAbsenceService
         if (absence == null) throw new NotFoundException("Own pending absence not found");
 
         _dbContext.Absences.Remove(absence);
-        try { await _dbContext.SaveChangesAsync(); }
-        catch { new Exception("Failed to delete"); }
+         await _dbContext.SaveChangesAsync();
     }
     
     public async Task<QueryableAbsenceResponse> ViewOwnAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId)
@@ -129,8 +132,7 @@ public class AbsenceService : IAbsenceService
 
         absence.Status = dto.Status;
         absence.ManagerMessage = dto.ManagerMessage;
-        try { await _dbContext.SaveChangesAsync(); }
-        catch { throw new Exception("Failed to update status"); } 
+        await _dbContext.SaveChangesAsync(); 
     }
 
     private Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
