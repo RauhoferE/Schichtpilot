@@ -154,9 +154,7 @@ public class AbsenceService : IAbsenceService
 
         if (filter.AbsenceType?.Any() == true)
             query = query.Where(x => filter.AbsenceType.Select(t => t.ToString()).Contains(x.AbsenceType));
-
-        if (filter.CreatedFrom.HasValue) query = query.Where(x => x.CreatedAt >= filter.CreatedFrom.Value);
-        if (filter.CreatedTo.HasValue) query = query.Where(x => x.CreatedAt <= filter.CreatedTo.Value);
+        
         if (filter.StartDateFrom.HasValue) query = query.Where(x => x.StartDate >= filter.StartDateFrom.Value);
         if (filter.StartDateTo.HasValue) query = query.Where(x => x.StartDate <= filter.StartDateTo.Value);
 
