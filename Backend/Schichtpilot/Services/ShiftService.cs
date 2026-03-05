@@ -92,7 +92,6 @@ public class ShiftService : IShiftService
 
     public async Task DeleteTimeSlotAsync(int shiftId, int timeSlotId)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToDelete = this._dbContext.Shifts
             .Include(x => x.Timeslots)
             .FirstOrDefault(x => x.Id == shiftId);
