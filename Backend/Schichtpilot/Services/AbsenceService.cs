@@ -57,23 +57,6 @@ public class AbsenceService : IAbsenceService
 // Email fire-and-forget (no rollback - acceptable for notifications)
         _ = Task.Run(async () => 
             await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName));
-
-        /**
-        try
-        {
-            await _dbContext.SaveChangesAsync();
-            // FR145: Notify (uniform sick/other)
-            await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName);
-        }
-        catch (Exception emailEx)
-        {
-            // ROLLBACK absence if email fails
-            _dbContext.Absences.Remove(absence);
-            await _dbContext.SaveChangesAsync();
-    
-            throw new EmailNotificationException("Failed to notify managers", emailEx);
-        }
-        **/
     }
 
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
@@ -104,6 +87,7 @@ public class AbsenceService : IAbsenceService
 
     public async Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
     {
+        //TODO: Missing filtering after employee
         IQueryable<Absence> query = _dbContext.Absences
             .OrderByDescending(x => x.CreatedAt)
             .Include(x => x.User);
