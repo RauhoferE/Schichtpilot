@@ -69,7 +69,7 @@ public class AbsenceService : IAbsenceService
          await _dbContext.SaveChangesAsync();
     }
     
-    public async Task<QueryableAbsenceResponse> ViewOwnAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId)
+    public async Task<QueryableAbsenceResponse> ViewUserAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId)
     {
         IQueryable<Absence> query = _dbContext.Absences
             .Where(x => x.UserId == userId)
@@ -103,7 +103,6 @@ public class AbsenceService : IAbsenceService
 
     public async Task<AbsenceDto> GetAbsenceDetailAsync(int id)
     {
-     
         var absence = await _dbContext.Absences.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
         if (absence == null) {throw new NotFoundException("Absence not found");}
         return _mapper.Map<AbsenceDto>(absence);
