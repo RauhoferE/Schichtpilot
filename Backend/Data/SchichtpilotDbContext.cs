@@ -113,6 +113,9 @@ IdentityUserClaim<long>,
             entity.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
             entity.Property(a => a.AbsenceType).IsRequired().HasMaxLength(100);
             entity.Property(a => a.Status).HasMaxLength(20);
+            entity.Property(e => e.Status)
+                .HasConversion<string>()  // Enum → "Pending"[web:1]
+                .HasDefaultValue("Pending");
         });
         
         base.OnModelCreating(modelBuilder); 

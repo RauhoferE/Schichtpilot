@@ -22,6 +22,7 @@ public class AbsenceService : IAbsenceService
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+
     }
 
     public async Task CreateAbsenceRequestAsync(CreateAbsenceDto dto, long userId)
@@ -43,11 +44,21 @@ public class AbsenceService : IAbsenceService
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
             Message = dto.Message,
-            Status = dto.Status,
+            Status = "Pending",
             CreatedAt = DateTime.UtcNow
         };
 
         _dbContext.Absences.Add(absence);
+        
+        // Save first (idempotent)
+        //_dbContext.Absences.Add(absence);
+        await _dbContext.SaveChangesAsync();
+
+// Email fire-and-forget (no rollback - acceptable for notifications)
+        _ = Task.Run(async () => 
+            await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName));
+
+        /**
         try
         {
             await _dbContext.SaveChangesAsync();
@@ -61,7 +72,8 @@ public class AbsenceService : IAbsenceService
             await _dbContext.SaveChangesAsync();
     
             throw new EmailNotificationException("Failed to notify managers", emailEx);
-        } // FR146
+        }
+        **/
     }
 
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
@@ -125,7 +137,7 @@ public class AbsenceService : IAbsenceService
         absence.ManagerMessage = dto.ManagerMessage;
         await _dbContext.SaveChangesAsync(); 
     }
-
+   
     private static Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
     {
         if (filter == null) {return Task.FromResult(query);}
