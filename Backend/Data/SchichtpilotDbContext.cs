@@ -44,6 +44,10 @@ IdentityUserClaim<long>,
     
     public DbSet<Absence> Absences { get; set; }
     
+    public DbSet<WorkPolicy>  WorkPolicies { get; set; }
+    
+    public DbSet<Holiday> Holidays { get; set; }
+    
     
     // Here should be the DBSets
 
@@ -131,6 +135,16 @@ IdentityUserClaim<long>,
             entity.Property(e => e.Status)
                 .HasConversion<string>()  // Enum → "Pending"[web:1]
                 .HasDefaultValue("Pending");
+        });
+        
+        modelBuilder.Entity<WorkPolicy>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+        });
+        
+        modelBuilder.Entity<Holiday>(entity =>
+        {
+            entity.HasKey(e => e.Id);
         });
         
         base.OnModelCreating(modelBuilder); 

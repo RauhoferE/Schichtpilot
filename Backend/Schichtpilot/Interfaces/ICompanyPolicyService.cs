@@ -1,10 +1,16 @@
+using Schichtpilot.Models.DTOs;
+
 namespace Schichtpilot.Interfaces;
 
 public interface ICompanyPolicyService
 {
-    Task SetHolidaysAsync();
-    Task RemoveHolidaysAsync();
-    Task SetMaximumConsecutiveWorkHoursAsync();
-
-    Task SetRequiredRestPeriodAsync();
+    Task AddHolidaysAsync(HolidaysDto holidays);
+    
+    Task RemoveHolidaysAsync(HolidaysDto holidays);
+    
+    Task<HolidaysDto> GetHolidaysAsync();
+    
+    Task SetPolicyAsync(CompanyPolicyDto policyDto);
+    
+    Task<CompanyPolicyDto> GetPolicyAsync();
 }
