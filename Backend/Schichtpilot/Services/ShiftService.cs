@@ -61,7 +61,14 @@ public class ShiftService : IShiftService
             {
                 DayOfWeek = x.DayOfWeek,
                 StartTime = x.StartTime,
-                EndTime = x.EndTime
+                EndTime = x.EndTime,
+                Breaks = x.Breaks.Select(b =>
+                    new Break()
+                    {
+                        StartTime = b.StartTime,
+                        EndTime = b.EndTime
+                    }
+                ).ToHashSet()
             }).ToHashSet(),
             JobRequirements = jobRoleRequirementsForShift.ToHashSet()
         });
@@ -94,6 +101,7 @@ public class ShiftService : IShiftService
     {
         var shiftToDelete = this._dbContext.Shifts
             .Include(x => x.Timeslots)
+            .ThenInclude(x => x.Breaks)
             .FirstOrDefault(x => x.Id == shiftId);
 
         if (shiftToDelete == null)
@@ -138,7 +146,12 @@ public class ShiftService : IShiftService
         {
             DayOfWeek = timeSlot.DayOfWeek,
             StartTime = timeSlot.StartTime,
-            EndTime = timeSlot.EndTime
+            EndTime = timeSlot.EndTime,
+            Breaks = timeSlot.Breaks.Select(x => new Break()
+            {
+                StartTime = x.StartTime,
+                EndTime = x.EndTime
+            }).ToHashSet()
         });
 
         await this._dbContext.SaveChangesAsync();
@@ -149,6 +162,7 @@ public class ShiftService : IShiftService
         //TODO: Check if shift is used in a schedule
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.Timeslots)
+            .ThenInclude(x => x.Breaks)
             .FirstOrDefault(x => x.Id == shiftId);
 
         if (shiftToModiy == null)
@@ -172,10 +186,18 @@ public class ShiftService : IShiftService
         {
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
         }
+        
+        this._dbContext.Breaks.RemoveRange(timeSlotToModify.Breaks);
+        await this._dbContext.SaveChangesAsync();
 
         timeSlotToModify.DayOfWeek = timeSlot.DayOfWeek;
         timeSlotToModify.StartTime = timeSlot.StartTime;
         timeSlotToModify.EndTime = timeSlot.EndTime;
+        timeSlotToModify.Breaks = timeSlot.Breaks.Select(x => new Break()
+        {
+            StartTime = x.StartTime,
+            EndTime = x.EndTime
+        }).ToHashSet();
 
         await this._dbContext.SaveChangesAsync();
     }
@@ -315,7 +337,11 @@ public class ShiftService : IShiftService
     public async Task DeleteShiftAsync(int shiftId)
     {
         //TODO: Check if shift is used in a schedule
-        var shiftToDelete = this._dbContext.Shifts.FirstOrDefault(x => x.Id == shiftId);
+        var shiftToDelete = this._dbContext.Shifts
+            .Include(x => x.Timeslots)
+            .ThenInclude(x=> x.Breaks)
+            .Include(x => x.JobRequirements)
+            .FirstOrDefault(x => x.Id == shiftId);
 
         if (shiftToDelete == null)
         {
@@ -371,6 +397,8 @@ public class ShiftService : IShiftService
         var shift = this._dbContext.Shifts
             .Include(x => x.JobRequirements)
             .ThenInclude(x => x.JobRole)
+            .Include(x => x.Timeslots)
+            .ThenInclude(x => x.Breaks )
             .FirstOrDefault(x => x.Id == shiftId);
 
         if (shift == null)

@@ -40,6 +40,8 @@ IdentityUserClaim<long>,
     
     public DbSet<Timeslot> Timeslots { get; set; }
     
+    public DbSet<Break> Breaks { get; set; }
+    
     public DbSet<Absence> Absences { get; set; }
     
     
@@ -102,8 +104,28 @@ IdentityUserClaim<long>,
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.HasMany(x => x.Timeslots).WithOne(x => x.Shift);
-            entity.HasMany(x => x.JobRequirements).WithOne(x => x.Shift);
+            entity.HasMany(x => x.Timeslots)
+                .WithOne(x => x.Shift)
+                .HasForeignKey(x => x.ShiftId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(x => x.JobRequirements)
+                .WithOne(x => x.Shift)
+                .HasForeignKey(x => x.ShiftId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        modelBuilder.Entity<Timeslot>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.HasMany(x => x.Breaks).WithOne(x => x.Timeslot).HasForeignKey(x => x.Timeslot);
+        });
+
+        modelBuilder.Entity<Break>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.HasOne(e => e.Timeslot).WithMany(t => t.Breaks).OnDelete(DeleteBehavior.Cascade);
         });
         
         modelBuilder.Entity<Absence>(entity =>
