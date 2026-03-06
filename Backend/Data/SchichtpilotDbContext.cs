@@ -113,13 +113,6 @@ IdentityUserClaim<long>,
                 .HasForeignKey(x => x.ShiftId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        
-        modelBuilder.Entity<Timeslot>(entity =>
-        {
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.HasMany(x => x.Breaks).WithOne(x => x.Timeslot).HasForeignKey(x => x.Timeslot);
-        });
 
         modelBuilder.Entity<Break>(entity =>
         {

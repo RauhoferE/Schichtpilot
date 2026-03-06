@@ -703,7 +703,13 @@ public class ShiftServiceTest
                     Id = x.Id,
                     DayOfWeek = x.DayOfWeek,
                     StartTime = x.StartTime,
-                    EndTime = x.EndTime
+                    EndTime = x.EndTime,
+                    Breaks = x.Breaks?.Select(b => new BreakDto
+                    {
+                        Id = b.Id,
+                        StartTime = b.StartTime,
+                        EndTime = b.EndTime
+                    }).ToList() ?? new List<BreakDto>()
                 }).ToList() ?? new List<TimeSlotDto>(),
                 JobRequirements = shift.JobRequirements?.Select(x => new ShiftRequirementDto
                 {
@@ -743,7 +749,8 @@ public class ShiftServiceTest
         {
             DayOfWeek = day,
             StartTime = start,
-            EndTime = end
+            EndTime = end,
+            Breaks = new List<BreakDto>()
         };
     }
 
@@ -754,7 +761,8 @@ public class ShiftServiceTest
             Id = id,
             DayOfWeek = day,
             StartTime = start,
-            EndTime = end
+            EndTime = end,
+            Breaks = new HashSet<Break>()
         };
     }
 
