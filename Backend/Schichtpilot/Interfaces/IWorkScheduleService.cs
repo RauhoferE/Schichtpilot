@@ -22,13 +22,17 @@ public interface IWorkScheduleService
     // Check if users can be assigned with max working hours
     // Throws special exception when generation is not possible
     Task GenerateSchedule(GenerateScheduleDto generateScheduleDto);
-
+    
+    // Cannot be done on active schedule or deleted schedule
     Task ReGenerateSchedule(int scheduleId);
 
+    // Can only be done on active schedule
     Task PublishSchedule(int scheduleId);
     
+    // Dont show deleted schedule
     Task ViewSchedules(PaginationDto paginationDto);
     
+    // Cannot be done on active schedule or deleted schedule
     Task ViewSchedule(int  scheduleId);
 
     Task DeleteSchedule(int scheduleId);
@@ -113,7 +117,6 @@ public class WorkScheduleService : IWorkScheduleService
             StartDate = generateScheduleDto.StartDate.Date,
             EndDate = generateScheduleDto.EndDate.Date,
             IsActive = false,
-            IsDeleted = false,
             IsValid = true,
             ShiftAssignments = new HashSet<ShiftAssignment>(),
             Shifts = new HashSet<WorkScheduleShifts>()

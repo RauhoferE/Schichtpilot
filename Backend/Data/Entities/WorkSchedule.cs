@@ -21,5 +21,4 @@ public class WorkSchedule
     // All others are considered drafts
     public bool IsActive { get; set; }
     public bool IsValid { get; set; }
-    public bool IsDeleted { get; set; }
 }

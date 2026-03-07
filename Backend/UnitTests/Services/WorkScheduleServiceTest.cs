@@ -465,7 +465,6 @@ public class WorkScheduleServiceTest
         Assert.Equal(new DateTime(2026, 1, 11), createdSchedule.EndDate.Date);
         Assert.True(createdSchedule.IsValid);
         Assert.False(createdSchedule.IsActive);
-        Assert.False(createdSchedule.IsDeleted);
         Assert.Single(createdSchedule.Shifts);
         Assert.Equal(2, createdSchedule.ShiftAssignments.Count);
     }
