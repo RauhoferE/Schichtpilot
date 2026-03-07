@@ -57,13 +57,32 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task GenerateSchedule(GenerateScheduleDto generateScheduleDto)
     {
+        var schedule = new WorkSchedule
+        {
+            Name = generateScheduleDto.Name,
+            StartDate = generateScheduleDto.StartDate.Date,
+            EndDate = generateScheduleDto.EndDate.Date,
+            IsActive = false,
+            IsValid = true,
+            ShiftAssignments = new HashSet<ShiftAssignment>(),
+            Shifts = new HashSet<WorkScheduleShifts>()
+        };
+        
+        await CreateShiftAssignmentsAsync(schedule, generateScheduleDto.ShiftIds);
+    }
+
+    private async Task CreateShiftAssignmentsAsync(WorkSchedule schedule, List<int> shiftIds)
+    {
+        var endDateOfSchedule = schedule.EndDate;
+        var startDateOfSchedule = schedule.StartDate;
+        
         var shifts = await _dbContext.Shifts
             .Include(s => s.Timeslots)
             .Include(s => s.JobRequirements)
-            .Where(s => generateScheduleDto.ShiftIds.Contains(s.Id))
+            .Where(s => shiftIds.Contains(s.Id))
             .ToListAsync();
 
-        if (shifts.Count != generateScheduleDto.ShiftIds.Count)
+        if (shifts.Count != shiftIds.Count)
         {
             throw new Exception("One or more shifts were not found.");
         }
@@ -78,7 +97,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new Exception("Shifts have intersections with each other.");
         }
-
+        
         var workPolicy = await _dbContext.WorkPolicies.FirstOrDefaultAsync();
         if (workPolicy == null)
         {
@@ -100,28 +119,17 @@ public class WorkScheduleService : IWorkScheduleService
         var approvedAbsences = await _dbContext.Absences
             .Where(a =>
                 a.Status == AbsenceStatusEnum.Approved.ToString() &&
-                a.StartDate < generateScheduleDto.EndDate.AddDays(1) &&
-                generateScheduleDto.StartDate < a.EndDate)
+                a.StartDate < endDateOfSchedule.AddDays(1) &&
+                startDateOfSchedule < a.EndDate)
             .ToListAsync();
 
         var pendingAbsences = await _dbContext.Absences
             .Where(a =>
                 a.Status == AbsenceStatusEnum.Pending.ToString() &&
-                a.StartDate < generateScheduleDto.EndDate.AddDays(1) &&
-                generateScheduleDto.StartDate < a.EndDate)
+                a.StartDate < endDateOfSchedule.AddDays(1) &&
+                startDateOfSchedule < a.EndDate)
             .ToListAsync();
-
-        var schedule = new WorkSchedule
-        {
-            Name = generateScheduleDto.Name,
-            StartDate = generateScheduleDto.StartDate.Date,
-            EndDate = generateScheduleDto.EndDate.Date,
-            IsActive = false,
-            IsValid = true,
-            ShiftAssignments = new HashSet<ShiftAssignment>(),
-            Shifts = new HashSet<WorkScheduleShifts>()
-        };
-
+        
         foreach (var shift in shifts)
         {
             schedule.Shifts.Add(new WorkScheduleShifts
@@ -144,7 +152,7 @@ public class WorkScheduleService : IWorkScheduleService
             var timeslot = item.Timeslot;
             var shift = item.Shift;
 
-            var currentDate = generateScheduleDto.StartDate.Date
+            var currentDate = startDateOfSchedule.Date
                 .AddDays(((int)timeslot.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7);
 
             var slotStart = currentDate.Add(timeslot.StartTime.ToTimeSpan());
@@ -223,13 +231,11 @@ public class WorkScheduleService : IWorkScheduleService
                 }
             }
         }
-
+        
         _dbContext.WorkSchedules.Add(schedule);
         await _dbContext.SaveChangesAsync();
-        
-        
     }
-    
+
     private bool RespectsMaximumConsecutiveHours(
         List<(DateTime Start, DateTime End)> userAssignments,
         DateTime newStart,
@@ -298,7 +304,17 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task ReGenerateSchedule(int scheduleId)
     {
-        throw new NotImplementedException();
+        var schedule = this._dbContext.WorkSchedules
+            .Include(x => x.Shifts)
+            .ThenInclude(x => x.Shift)
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+        
+        await CreateShiftAssignmentsAsync(schedule, schedule.Shifts.Select(x=> x.ShiftId).ToList());
     }
 
     public async Task PublishSchedule(int scheduleId)
