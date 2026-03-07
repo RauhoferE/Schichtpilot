@@ -355,12 +355,39 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task SetScheduleActive(int scheduleId)
     {
-        throw new NotImplementedException();
+        var schedule = this._dbContext.WorkSchedules
+            .Include(x => x.Shifts)
+            .Include(x => x.ShiftAssignments)
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+
+        if (!schedule.IsValid)
+        {
+            throw new Exception($"Schedule with id {scheduleId} is invalid.");
+        }
+        
+        schedule.IsActive = true;
+        await this._dbContext.SaveChangesAsync();
     }
 
     public async Task SetScheduleOffline(int scheduleId)
     {
-        throw new NotImplementedException();
+        var schedule = this._dbContext.WorkSchedules
+            .Include(x => x.Shifts)
+            .Include(x => x.ShiftAssignments)
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+        
+        schedule.IsActive = false;
+        await this._dbContext.SaveChangesAsync();
     }
 
     public async Task CloneSchedule(int scheduleId, DateTime startDate, DateTime endDate)
