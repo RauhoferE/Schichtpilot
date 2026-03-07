@@ -44,7 +44,7 @@ public class AbsenceService : IAbsenceService
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
             Message = dto.Message,
-            Status = "Pending",
+            Status = "Pending", //TODO: Change this to the enum
             CreatedAt = DateTime.UtcNow
         };
 
