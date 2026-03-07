@@ -1,3 +1,4 @@
+using AutoMapper;
 using Data;
 using Data.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ public interface IWorkScheduleService
     Task PublishSchedule(int scheduleId);
     
     // Dont show deleted schedule
-    Task ViewSchedules(PaginationDto paginationDto);
+    Task<QueryableSchedules> ViewSchedules(PaginationDto paginationDto, ScheduleFilterDot? filter);
     
     // Cannot be done on active schedule or deleted schedule
     Task ViewSchedule(int  scheduleId);
@@ -44,13 +45,57 @@ public interface IWorkScheduleService
     Task ChangeScheduleDate(int  scheduleId, DateTime startDate, DateTime endDate);
 }
 
+public class ScheduleFilterDot
+{
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? Searchstring { get; set; }
+    public List<int> ShiftIds { get; set; }
+    public ScheduleStatusEnum Status { get; set; }
+}
+
+public enum ScheduleStatusEnum
+{
+    All,
+    Active,
+    Inactive,
+    Valid,
+    Invalid
+}
+
+public class QueryableSchedules
+{
+    public int Count { get; set; }
+    public IEnumerable<WorkScheduleShortDto> WorkSchedules { get; set; }
+}
+
+public class WorkScheduleShortDto
+{
+    public int Id { get; set; }
+    
+    public string Name { get; set; }
+    
+    public DateTime StartDate { get; set; }
+    
+    public DateTime EndDate { get; set; }
+    
+    public bool IsActive { get; set; }
+    
+    public bool IsValid { get; set; }
+    
+    public int ShiftCount { get; set; }
+}
+
 public class WorkScheduleService : IWorkScheduleService
 {
     private readonly SchichtpilotDbContext _dbContext;
+    
+    private readonly IMapper _mapper;
 
-    public WorkScheduleService(SchichtpilotDbContext dbContext)
+    public WorkScheduleService(SchichtpilotDbContext dbContext, IMapper mapper)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
     public async Task GenerateSchedule(GenerateScheduleDto generateScheduleDto)
@@ -333,12 +378,75 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task PublishSchedule(int scheduleId)
     {
+        //TODO: Send via emailservice
         throw new NotImplementedException();
     }
 
-    public async Task ViewSchedules(PaginationDto paginationDto)
+    public async Task<QueryableSchedules> ViewSchedules(PaginationDto paginationDto, ScheduleFilterDot? filter)
     {
-        throw new NotImplementedException();
+        IQueryable<WorkSchedule> query = this._dbContext.WorkSchedules
+            .Include(x => x.Shifts)
+            .ThenInclude(x => x.Shift)
+            .AsQueryable();
+        
+        if (filter != null)
+        {
+            query = await this.FilterSchedulesAsync(query, filter);
+        }
+        
+        return new QueryableSchedules()
+        {
+            Count = query.Count(),
+            WorkSchedules = query
+                .Skip((paginationDto.Page - 1) * paginationDto.PageSize)
+                .Take(paginationDto.PageSize)
+                .Select(x => this._mapper.Map<WorkSchedule, WorkScheduleShortDto>(x))
+        };
+    }
+
+    private async Task<IQueryable<WorkSchedule>> FilterSchedulesAsync(IQueryable<WorkSchedule> query, ScheduleFilterDot filter)
+    {
+        if (!string.IsNullOrEmpty(filter.Searchstring))
+        {
+            query = query.Where(x => x.Name.ToLower().Contains(filter.Searchstring.ToLower()));
+        }
+
+        if (filter.StartDate != null)
+        {
+            query = query.Where(x => x.StartDate >= filter.StartDate);
+        }
+
+        if (filter.EndDate != null)
+        {
+            query = query.Where(x => x.StartDate <= filter.EndDate);
+        }
+
+        switch (filter.Status)  
+        {
+            case ScheduleStatusEnum.All:
+                break;
+            case ScheduleStatusEnum.Active:
+                query = query.Where(x => x.IsActive);
+                break;
+            case ScheduleStatusEnum.Inactive:
+                query = query.Where(x => !x.IsActive);
+                break;
+            case ScheduleStatusEnum.Valid:
+                query = query.Where(x => x.IsValid);
+                break;
+            case ScheduleStatusEnum.Invalid:
+                query = query.Where(x => !x.IsValid);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        if (filter.ShiftIds.Count > 0)
+        {
+            query = query.Where(x => x.Shifts.Any(y => filter.ShiftIds.Contains(y.ShiftId)));
+        }
+        
+        return query;
     }
 
     public async Task ViewSchedule(int scheduleId)
