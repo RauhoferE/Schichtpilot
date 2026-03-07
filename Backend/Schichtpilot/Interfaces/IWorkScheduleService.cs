@@ -384,6 +384,15 @@ public class WorkScheduleService : IWorkScheduleService
             throw new Exception($"Schedule with id {scheduleId} is invalid.");
         }
         
+        var overlappingSchedule = this._dbContext.WorkSchedules
+            .FirstOrDefault(x => schedule.StartDate < x.EndDate && x.StartDate < schedule.EndDate 
+                                                     && schedule.Id != x.Id && schedule.IsActive);
+
+        if (overlappingSchedule != null)
+        {
+            throw new Exception($"Schedule is overlapping with another active schedule {overlappingSchedule.Name}.");
+        }
+        
         schedule.IsActive = true;
         await this._dbContext.SaveChangesAsync();
     }
