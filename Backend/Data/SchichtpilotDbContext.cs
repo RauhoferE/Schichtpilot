@@ -48,6 +48,12 @@ IdentityUserClaim<long>,
     
     public DbSet<Holiday> Holidays { get; set; }
     
+    public DbSet<WorkSchedule> WorkSchedules { get; set; }
+    
+    public DbSet<ShiftAssignment> ShiftAssignments { get; set; }
+    
+    public DbSet<WorkScheduleShifts> WorkScheduleShifts { get; set; }
+    
     
     // Here should be the DBSets
 
@@ -116,6 +122,8 @@ IdentityUserClaim<long>,
                 .WithOne(x => x.Shift)
                 .HasForeignKey(x => x.ShiftId)
                 .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasMany(e => e.ShiftAssignments).WithOne(e => e.Shift);
         });
 
         modelBuilder.Entity<Break>(entity =>
@@ -140,11 +148,42 @@ IdentityUserClaim<long>,
         modelBuilder.Entity<WorkPolicy>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
         });
         
         modelBuilder.Entity<Holiday>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<WorkSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasMany(e => e.Shifts).WithOne(e => e.WorkSchedule);
+            entity.HasMany(e => e.ShiftAssignments).WithOne(e => e.WorkSchedule);
+        });
+
+        modelBuilder.Entity<WorkScheduleShifts>(entity =>
+        {
+            entity.HasKey(e => new { e.WorkScheduleId, e.ShiftId });
+        });
+
+        modelBuilder.Entity<ShiftAssignment>(entity =>
+        {
+            entity.HasKey(e => new { e.TimeslotId, e.WorkScheduleId });
+            entity.HasOne(e => e.WorkSchedule)
+                .WithMany(s => s.ShiftAssignments)
+                .HasForeignKey(e => e.WorkScheduleId);
+            
+            entity.HasOne(e => e.Timeslot)
+                .WithMany(s => s.ShiftAssignments)
+                .HasForeignKey(e => e.TimeslotId);
+
+            entity.HasOne(e => e.UserJobRole)
+                .WithMany(s => s.ShiftAssignments);
+
         });
         
         base.OnModelCreating(modelBuilder); 

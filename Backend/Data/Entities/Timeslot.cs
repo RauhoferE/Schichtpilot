@@ -25,7 +25,9 @@ public class Timeslot
     
     public HashSet<Break> Breaks { get; set; }
     
-    public int ShiftAssignmentId { get; set; }
+    public HashSet<ShiftAssignment> ShiftAssignments { get; set; }
     
-    public ShiftAssignment ShiftAssignment { get; set; }
+    // public int ShiftAssignmentId { get; set; }
+    //
+    // public ShiftAssignment ShiftAssignment { get; set; }
 }

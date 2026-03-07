@@ -1,17 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Data.Entities;
 
 public class ShiftAssignment
 {
-    public int Id { get; set; }
-    
     public Timeslot Timeslot { get; set; }
     
     public int TimeslotId { get; set; }
     
     public UserJobRoles  UserJobRole { get; set; }
     
+    [Required]
     public DateTime StartTime { get; set; }
     
+    [Required]
     public DateTime EndTime { get; set; }
     
     public WorkSchedule WorkSchedule { get; set; }
