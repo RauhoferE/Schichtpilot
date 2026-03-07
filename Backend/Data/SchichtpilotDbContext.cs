@@ -172,7 +172,7 @@ IdentityUserClaim<long>,
 
         modelBuilder.Entity<ShiftAssignment>(entity =>
         {
-            entity.HasKey(e => new { e.TimeslotId, e.WorkScheduleId });
+            entity.HasKey(e => new { e.TimeslotId, e.WorkScheduleId,  e.UserId, e.JobRoleId });
             entity.HasOne(e => e.WorkSchedule)
                 .WithMany(s => s.ShiftAssignments)
                 .HasForeignKey(e => e.WorkScheduleId);
@@ -182,7 +182,8 @@ IdentityUserClaim<long>,
                 .HasForeignKey(e => e.TimeslotId);
 
             entity.HasOne(e => e.UserJobRole)
-                .WithMany(s => s.ShiftAssignments);
+                .WithMany(s => s.ShiftAssignments)
+                .HasForeignKey(e => new {e.UserId, e.JobRoleId});
 
         });
         
