@@ -3,7 +3,9 @@ using Data.Entities;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Interfaces;
+using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Enums;
+using Schichtpilot.Services;
 
 namespace UnitTests.Services;
 
