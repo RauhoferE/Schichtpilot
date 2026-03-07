@@ -41,8 +41,6 @@ public interface IWorkScheduleService
     
     Task SetScheduleOffline(int scheduleId);
 
-    Task CloneSchedule(int scheduleId, DateTime startDate, DateTime endDate);
-
     Task ChangeScheduleDate(int  scheduleId, DateTime startDate, DateTime endDate);
 }
 
@@ -63,10 +61,13 @@ public class WorkScheduleService : IWorkScheduleService
             StartDate = generateScheduleDto.StartDate.Date,
             EndDate = generateScheduleDto.EndDate.Date,
             IsActive = false,
-            IsValid = true,
+            IsValid = false,
             ShiftAssignments = new HashSet<ShiftAssignment>(),
             Shifts = new HashSet<WorkScheduleShifts>()
         };
+        
+        this._dbContext.WorkSchedules.Add(schedule);
+        await this._dbContext.SaveChangesAsync();
         
         await CreateShiftAssignmentsAsync(schedule, generateScheduleDto.ShiftIds);
     }
@@ -231,8 +232,9 @@ public class WorkScheduleService : IWorkScheduleService
                 }
             }
         }
-        
-        _dbContext.WorkSchedules.Add(schedule);
+
+        schedule.IsValid = true;
+        _dbContext.WorkSchedules.Update(schedule);
         await _dbContext.SaveChangesAsync();
     }
 
@@ -307,6 +309,7 @@ public class WorkScheduleService : IWorkScheduleService
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
             .ThenInclude(x => x.Shift)
+            .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
 
         if (schedule == null)
@@ -314,6 +317,17 @@ public class WorkScheduleService : IWorkScheduleService
             throw new Exception($"Schedule with id {scheduleId} not found.");
         }
         
+        // Set to inactive since we dont know if generation is possible
+        schedule.IsActive = false;
+        schedule.IsValid = false;
+        
+        // Remove all previous assignments
+        foreach (var shiftAssignment in schedule.ShiftAssignments)
+        {
+            this._dbContext.ShiftAssignments.Remove(shiftAssignment);
+        }
+        
+        await this._dbContext.SaveChangesAsync();
         await CreateShiftAssignmentsAsync(schedule, schedule.Shifts.Select(x=> x.ShiftId).ToList());
     }
 
@@ -390,13 +404,21 @@ public class WorkScheduleService : IWorkScheduleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task CloneSchedule(int scheduleId, DateTime startDate, DateTime endDate)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task ChangeScheduleDate(int scheduleId, DateTime startDate, DateTime endDate)
     {
-        throw new NotImplementedException();
+        var schedule = this._dbContext.WorkSchedules
+            .Include(x => x.Shifts)
+            .Include(x => x.ShiftAssignments)
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+        
+        schedule.StartDate = startDate;
+        schedule.EndDate = endDate;
+        await this._dbContext.SaveChangesAsync();
+        await this.ReGenerateSchedule(schedule.Id);
     }
 }
