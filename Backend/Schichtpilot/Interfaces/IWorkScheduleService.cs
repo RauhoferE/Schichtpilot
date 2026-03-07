@@ -334,7 +334,23 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task DeleteSchedule(int scheduleId)
     {
-        throw new NotImplementedException();
+        var schedule = this._dbContext.WorkSchedules
+            .Include(x => x.Shifts)
+            .Include(x => x.ShiftAssignments)
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+
+        if (schedule.IsActive)
+        {
+            throw new Exception("Cannot delete active schedule");
+        }
+        
+        this._dbContext.WorkSchedules.Remove(schedule);
+        await this._dbContext.SaveChangesAsync();
     }
 
     public async Task SetScheduleActive(int scheduleId)
