@@ -93,9 +93,16 @@ public class WorkScheduleService : IWorkScheduleService
             .OrderBy(ujr => ujr.UserId) // first-fit deterministic
             .ToListAsync();
 
-        var relevantAbsences = await _dbContext.Absences
+        var approvedAbsences = await _dbContext.Absences
             .Where(a =>
                 a.Status == AbsenceStatusEnum.Approved.ToString() &&
+                a.StartDate < generateScheduleDto.EndDate.AddDays(1) &&
+                generateScheduleDto.StartDate < a.EndDate)
+            .ToListAsync();
+
+        var pendingAbsences = await _dbContext.Absences
+            .Where(a =>
+                a.Status == AbsenceStatusEnum.Pending.ToString() &&
                 a.StartDate < generateScheduleDto.EndDate.AddDays(1) &&
                 generateScheduleDto.StartDate < a.EndDate)
             .ToListAsync();
@@ -142,8 +149,20 @@ public class WorkScheduleService : IWorkScheduleService
 
             foreach (var req in shift.JobRequirements)
             {
+
                 var candidates = usersByRole
                     .Where(u => u.JobRoleId == req.JobRoleId)
+                    .Select(u => new
+                    {
+                        UserJobRole = u,
+                        HasPendingOverlap = pendingAbsences.Any(a =>
+                            a.UserId == u.UserId &&
+                            a.StartDate < slotEnd &&
+                            slotStart < a.EndDate)
+                    })
+                    .OrderBy(x => x.HasPendingOverlap) // false first => no pending absence first
+                    .ThenBy(x => x.UserJobRole.UserId) // first-fit deterministic
+                    .Select(x => x.UserJobRole)
                     .ToList();
 
                 var assignedCount = 0;
@@ -153,12 +172,13 @@ public class WorkScheduleService : IWorkScheduleService
                     if (assignedCount >= req.RequiredStaffCount)
                         break;
 
-                    var candidateAbsenceOverlap = relevantAbsences.Any(a =>
+                    // Approved absences still block assignment
+                    var candidateApprovedAbsenceOverlap = approvedAbsences.Any(a =>
                         a.UserId == candidate.UserId &&
                         a.StartDate < slotEnd &&
                         slotStart < a.EndDate);
 
-                    if (candidateAbsenceOverlap)
+                    if (candidateApprovedAbsenceOverlap)
                         continue;
 
                     if (!assignmentsByUser.TryGetValue(candidate.UserId, out var userAssignments))
