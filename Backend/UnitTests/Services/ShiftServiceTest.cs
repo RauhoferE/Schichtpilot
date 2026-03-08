@@ -111,6 +111,7 @@ public class ShiftServiceTest
 
         var role = CreateJobRole(1, "Nurse");
         dbContext.JobRoles.Add(role);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
         var service = new ShiftService(dbContext, mapperMock.Object);
@@ -140,6 +141,50 @@ public class ShiftServiceTest
         Assert.Single(created.Timeslots);
         Assert.Single(created.JobRequirements);
         Assert.Equal("123456", created.ColorAsHex);
+    }
+
+    [Fact]
+    public async Task CreateShiftAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var role = CreateJobRole(1, "Nurse");
+        dbContext.JobRoles.Add(role);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = new ShiftService(dbContext, mapperMock.Object);
+
+        var dto = new CreateShiftDto
+        {
+            Name = "LongShift",
+            ColorAsHex = "999999",
+            TimeSlots = new List<TimeSlotDto>
+            {
+                new TimeSlotDto
+                {
+                    DayOfWeek = DayOfWeek.Monday,
+                    StartTime = new TimeOnly(8, 0),
+                    EndTime = new TimeOnly(14, 0),
+                    Breaks = new List<BreakDto>
+                    {
+                        new BreakDto
+                        {
+                            StartTime = new TimeOnly(10, 0),
+                            EndTime = new TimeOnly(10, 15)
+                        }
+                    }
+                }
+            },
+            JobRequirements = new List<ShiftRequirementDto>
+            {
+                new ShiftRequirementDto { JobId = role.Id, Name = role.Name, RequiredStaffCount = 1 }
+            }
+        };
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateShiftAsync(dto));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
     [Fact]
@@ -232,6 +277,7 @@ public class ShiftServiceTest
         var shift = CreateShift(1, "AddTime");
         shift.Timeslots = new HashSet<Timeslot>();
         dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
         var service = new ShiftService(dbContext, mapperMock.Object);
@@ -242,6 +288,39 @@ public class ShiftServiceTest
 
         var updated = await dbContext.Shifts.Include(x => x.Timeslots).FirstAsync(x => x.Id == 1);
         Assert.Single(updated.Timeslots);
+    }
+
+    [Fact]
+    public async Task AddTimeSlotAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var shift = CreateShift(1, "AddTimeBreakFail");
+        shift.Timeslots = new HashSet<Timeslot>();
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = new ShiftService(dbContext, mapperMock.Object);
+
+        var timeSlot = new TimeSlotDto
+        {
+            DayOfWeek = DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(14, 0),
+            Breaks = new List<BreakDto>
+            {
+                new BreakDto
+                {
+                    StartTime = new TimeOnly(10, 0),
+                    EndTime = new TimeOnly(10, 15)
+                }
+            }
+        };
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddTimeSlotAsync(1, timeSlot));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
     [Fact]
@@ -311,6 +390,7 @@ public class ShiftServiceTest
             CreateTimeSlotEntity(1, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0))
         };
         dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
         var service = new ShiftService(dbContext, mapperMock.Object);
@@ -326,6 +406,57 @@ public class ShiftServiceTest
         Assert.Equal(DayOfWeek.Tuesday, updatedSlot.DayOfWeek);
         Assert.Equal(new TimeOnly(9, 0), updatedSlot.StartTime);
         Assert.Equal(new TimeOnly(11, 0), updatedSlot.EndTime);
+    }
+
+    [Fact]
+    public async Task EditTimeSlotAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var shift = CreateShift(1, "EditBreakFail");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new Timeslot
+            {
+                Id = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(12, 0),
+                Breaks = new HashSet<Break>
+                {
+                    new Break
+                    {
+                        StartTime = new TimeOnly(10, 0),
+                        EndTime = new TimeOnly(10, 30)
+                    }
+                }
+            }
+        };
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = new ShiftService(dbContext, mapperMock.Object);
+
+        var timeSlot = new TimeSlotDto
+        {
+            Id = 1,
+            DayOfWeek = DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(14, 0),
+            Breaks = new List<BreakDto>
+            {
+                new BreakDto
+                {
+                    StartTime = new TimeOnly(10, 0),
+                    EndTime = new TimeOnly(10, 15)
+                }
+            }
+        };
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.EditTimeSlotAsync(1, timeSlot));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
     [Fact]
@@ -364,6 +495,7 @@ public class ShiftServiceTest
             CreateTimeSlotEntity(1, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0))
         };
         dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
         var service = new ShiftService(dbContext, mapperMock.Object);
@@ -372,6 +504,49 @@ public class ShiftServiceTest
 
         var updated = await dbContext.Shifts.Include(x => x.Timeslots).FirstAsync(x => x.Id == 1);
         Assert.Empty(updated.Timeslots);
+    }
+
+    [Fact]
+    public async Task DeleteTimeSlotAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var shift = CreateShift(1, "DeleteBreakFail");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new Timeslot
+            {
+                Id = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(10, 0),
+                Breaks = new HashSet<Break>()
+            },
+            new Timeslot
+            {
+                Id = 2,
+                DayOfWeek = DayOfWeek.Tuesday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(14, 0),
+                Breaks = new HashSet<Break>
+                {
+                    new Break
+                    {
+                        StartTime = new TimeOnly(10, 0),
+                        EndTime = new TimeOnly(10, 15)
+                    }
+                }
+            }
+        };
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = new ShiftService(dbContext, mapperMock.Object);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteTimeSlotAsync(1, 1));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
     [Fact]
@@ -719,6 +894,22 @@ public class ShiftServiceTest
                 }).ToList() ?? new List<ShiftRequirementDto>()
             });
 
+        mapperMock
+            .Setup(mapper => mapper.Map<Timeslot, TimeSlotDto>(It.IsAny<Timeslot>()))
+            .Returns((Timeslot timeslot) => new TimeSlotDto
+            {
+                Id = timeslot.Id,
+                DayOfWeek = timeslot.DayOfWeek,
+                StartTime = timeslot.StartTime,
+                EndTime = timeslot.EndTime,
+                Breaks = timeslot.Breaks?.Select(b => new BreakDto
+                {
+                    Id = b.Id,
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime
+                }).ToList() ?? new List<BreakDto>()
+            });
+
         return mapperMock;
     }
 
@@ -729,6 +920,16 @@ public class ShiftServiceTest
             .Options;
 
         return new SchichtpilotDbContext(options);
+    }
+
+    private static WorkPolicy CreateWorkPolicy(int restPeriodMinutes = 30, int restPeriodThresholdMinutes = 240)
+    {
+        return new WorkPolicy
+        {
+            MaximumConsecutiveWorkHours = 8,
+            RestPeriodInMinutes = restPeriodMinutes,
+            RestPeriodThresholdInMinutes = restPeriodThresholdMinutes
+        };
     }
 
     private static Shift CreateShift(int id, string name)
