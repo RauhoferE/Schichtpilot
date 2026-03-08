@@ -58,25 +58,30 @@ public class AbsenceService : IAbsenceService
 
         if (absence.Status == nameof(AbsenceStatusEnum.Approved))
         {
-            var schedulesWithUser = this._dbContext.ShiftAssignments
-                .Include(x => x.UserJobRole)
-                .ThenInclude(x => x.User)
-                .Include(x => x.WorkSchedule)
-                .Where(x => dto.StartDate.Date < x.EndTime.Date && x.StartTime.Date < dto.EndDate.Date &&
-                            x.UserJobRole.UserId == x.UserId)
-                .ToList()
-                .Select(x => x.WorkSchedule);
-
-            foreach (var schedule in schedulesWithUser)
-            {
-                await this._workScheduleService.SetScheduleOfflineAsync(schedule.Id);
-                await this._workScheduleService.SetScheduleAsInvalidAsync(schedule.Id);
-            }
+            await SetWorkSchedulesWithUserAsInvalid(userId, dto.StartDate, dto.EndDate);
         }
 
 // Email fire-and-forget (no rollback - acceptable for notifications)
         _ = Task.Run(async () => 
             await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName));
+    }
+
+    private async Task SetWorkSchedulesWithUserAsInvalid(long userId, DateTime startDate, DateTime endDate)
+    {
+        var schedulesWithUser = this._dbContext.ShiftAssignments
+            .Include(x => x.UserJobRole)
+            .ThenInclude(x => x.User)
+            .Include(x => x.WorkSchedule)
+            .Where(x => startDate < x.EndTime.Date && x.StartTime.Date < endDate &&
+                        userId == x.UserId)
+            .ToList()
+            .Select(x => x.WorkSchedule);
+
+        foreach (var schedule in schedulesWithUser)
+        {
+            await this._workScheduleService.SetScheduleOfflineAsync(schedule.Id);
+            await this._workScheduleService.SetScheduleAsInvalidAsync(schedule.Id);
+        }
     }
 
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
@@ -130,7 +135,9 @@ public class AbsenceService : IAbsenceService
 
     public async Task UpdateAbsenceStatusAsync(int id, StatusUpdateDto dto)
     {
-        var absence = await _dbContext.Absences.FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
+        var absence = await _dbContext.Absences
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
         if (absence == null) {throw new NotFoundException("Pending absence not found");}
 
         if (dto.Status == nameof(AbsenceStatusEnum.Denied) && string.IsNullOrEmpty(dto.ManagerMessage))
@@ -138,7 +145,14 @@ public class AbsenceService : IAbsenceService
 
         absence.Status = dto.Status;
         absence.ManagerMessage = dto.ManagerMessage;
-        await _dbContext.SaveChangesAsync(); 
+        await _dbContext.SaveChangesAsync();
+
+        if (dto.Status ==  nameof(AbsenceStatusEnum.Approved))
+        {
+            await this.SetWorkSchedulesWithUserAsInvalid(absence.UserId, absence.StartDate, absence.EndDate);
+        }
+        
+        //TODO: Send email
     }
    
     private static Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)

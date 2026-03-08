@@ -358,26 +358,187 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new StatusUpdateDto { Status = nameof(AbsenceStatusEnum.Denied) };
 
-        await Assert.ThrowsAsync<ValidationException>(
+        await Assert.ThrowsAsync<NotFoundException>(
             () => service.UpdateAbsenceStatusAsync(1, dto));
     }
 
     [Fact]
-    public async Task UpdateAbsenceStatusAsync_ValidUpdate_SavesChanges()
+    public async Task UpdateAbsenceStatusAsync_Approved_UpdatesSchedulesAndSavesChanges()
     {
         await using var dbContext = CreateDbContext();
-        var absence = new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Pending) };
+        var user = CreateCompleteUser(1);
+        user.JobRoles = new HashSet<UserJobRoles>();
+
+        var role = new JobRole
+        {
+            Id = 1,
+            Name = "Nurse",
+            Description = "Nurse role",
+            CreatedOn = DateTime.UtcNow,
+            UsersWithRole = new HashSet<UserJobRoles>(),
+            Dependencies = new HashSet<JobRoleDependency>(),
+            Prerequisites = new HashSet<JobRoleDependency>()
+        };
+
+        var userJobRole = new UserJobRoles
+        {
+            User = user,
+            UserId = user.Id,
+            JobRole = role,
+            JobRoleId = role.Id
+        };
+        user.JobRoles.Add(userJobRole);
+
+        var schedule = new WorkSchedule
+        {
+            Id = 10,
+            Name = "Schedule A",
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 7),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        var assignment = new ShiftAssignment
+        {
+            WorkSchedule = schedule,
+            WorkScheduleId = schedule.Id,
+            UserJobRole = userJobRole,
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            TimeslotId = 1,
+            StartTime = new DateTime(2026, 1, 2, 8, 0, 0),
+            EndTime = new DateTime(2026, 1, 3, 12, 0, 0)
+        };
+        schedule.ShiftAssignments.Add(assignment);
+
+        var absence = new Absence
+        {
+            Id = 1,
+            UserId = user.Id,
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 4),
+            Status = nameof(AbsenceStatusEnum.Pending)
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(userJobRole);
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.ShiftAssignments.Add(assignment);
+        dbContext.Absences.Add(absence);
+        await dbContext.SaveChangesAsync();
+
+        _workScheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        _workScheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext);
+        var dto = new StatusUpdateDto
+        {
+            Status = nameof(AbsenceStatusEnum.Approved),
+            ManagerMessage = "Approved by manager"
+        };
+
+        await service.UpdateAbsenceStatusAsync(absence.Id, dto);
+
+        var updated = await dbContext.Absences.FindAsync(absence.Id);
+        Assert.Equal(nameof(AbsenceStatusEnum.Approved), updated.Status);
+        Assert.Equal("Approved by manager", updated.ManagerMessage);
+
+        _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAbsenceStatusAsync_Denied_DoesNotUpdateSchedules()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = CreateCompleteUser(1);
+        user.JobRoles = new HashSet<UserJobRoles>();
+
+        var role = new JobRole
+        {
+            Id = 1,
+            Name = "Nurse",
+            Description = "Nurse role",
+            CreatedOn = DateTime.UtcNow,
+            UsersWithRole = new HashSet<UserJobRoles>(),
+            Dependencies = new HashSet<JobRoleDependency>(),
+            Prerequisites = new HashSet<JobRoleDependency>()
+        };
+
+        var userJobRole = new UserJobRoles
+        {
+            User = user,
+            UserId = user.Id,
+            JobRole = role,
+            JobRoleId = role.Id
+        };
+        user.JobRoles.Add(userJobRole);
+
+        var schedule = new WorkSchedule
+        {
+            Id = 10,
+            Name = "Schedule A",
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 7),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        var assignment = new ShiftAssignment
+        {
+            WorkSchedule = schedule,
+            WorkScheduleId = schedule.Id,
+            UserJobRole = userJobRole,
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            TimeslotId = 1,
+            StartTime = new DateTime(2026, 1, 2, 8, 0, 0),
+            EndTime = new DateTime(2026, 1, 3, 12, 0, 0)
+        };
+        schedule.ShiftAssignments.Add(assignment);
+
+        var absence = new Absence
+        {
+            Id = 1,
+            UserId = user.Id,
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 4),
+            Status = nameof(AbsenceStatusEnum.Pending)
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(userJobRole);
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.ShiftAssignments.Add(assignment);
         dbContext.Absences.Add(absence);
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
-        var dto = new StatusUpdateDto { Status = nameof(AbsenceStatusEnum.Approved), ManagerMessage = "Approved by manager" };
+        var dto = new StatusUpdateDto
+        {
+            Status = nameof(AbsenceStatusEnum.Denied),
+            ManagerMessage = "Not approved"
+        };
 
-        await service.UpdateAbsenceStatusAsync(1, dto);
+        await service.UpdateAbsenceStatusAsync(absence.Id, dto);
 
-        var updated = await dbContext.Absences.FindAsync(1);
-        Assert.Equal(nameof(AbsenceStatusEnum.Approved), updated.Status);
-        Assert.Equal("Approved by manager", updated.ManagerMessage);
+        var updated = await dbContext.Absences.FindAsync(absence.Id);
+        Assert.Equal(nameof(AbsenceStatusEnum.Denied), updated.Status);
+        Assert.Equal("Not approved", updated.ManagerMessage);
+
+        _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(It.IsAny<int>()), Times.Never);
+        _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
