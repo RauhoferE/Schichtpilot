@@ -10,8 +10,10 @@ public class WorkPolicy
     public int RestPeriodInMinutes { get; set; }
     
     [Required]
-    public int RestPeriodThresholdInMinutes { get; set; }
+    public int RestPeriodThresholdInMinutes { get; set; }// After so many minutes a break of atleast RestPeriodInMinutes must be defined
     
     [Required]
     public int MaximumConsecutiveWorkHours  { get; set; }
+    
+    // Optional: Maybe add multiple policies and then let the user choose which one
 }

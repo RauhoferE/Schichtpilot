@@ -53,6 +53,12 @@ public class ShiftService : IShiftService
             throw new NotFoundException($"The following Job roles are missing: {string.Join(", ", missingPrerequisiteJobs)}");
         }
 
+        if (!(await this.HasRequiredBreak(shift.TimeSlots)))
+        {
+            //TODO: Add Custom Exception
+            throw new Exception($"Not enough breaks added in the shifts");
+        }
+
         this._dbContext.Shifts.Add(new Shift()
         {
             Name = shift.Name,
@@ -74,6 +80,68 @@ public class ShiftService : IShiftService
         });
 
         await this._dbContext.SaveChangesAsync();
+    }
+
+    private async Task<bool> HasRequiredBreak(List<TimeSlotDto> shiftTimeSlots)
+    {
+        var companyPolicy = this._dbContext.WorkPolicies.FirstOrDefault();
+
+        if (companyPolicy == null)
+        {
+            //TODO: Add custom exception
+            throw new Exception($"Company policy needs to be defined first");
+        }
+        
+// 1. Order slots chronologically to handle the "Midnight Stitch"
+        // We use a helper to turn DayOfWeek + TimeOnly into a relative linear offset
+        var sortedSlots = shiftTimeSlots
+            .OrderBy(s => (int)s.DayOfWeek)
+            .ThenBy(s => s.StartTime)
+            .ToList();
+
+        for (int i = 0; i < sortedSlots.Count; i++)
+        {
+            var currentSlot = sortedSlots[i];
+            
+            // 2. Identify Continuous Work Block (Stitching)
+            var workBlockEnd = currentSlot.EndTime;
+            var combinedBreaks = new List<BreakDto>(currentSlot.Breaks);
+            
+            // Look ahead to see if the next slot "stitches" (Midnight wrap)
+            int nextIndex = (i + 1) % sortedSlots.Count;
+            var nextSlot = sortedSlots[nextIndex];
+
+            // If current ends at 23:59:59 and next starts at 00:00:00 on the following day
+            if (currentSlot.EndTime.Hour == 23 && currentSlot.EndTime.Minute == 59 &&
+                nextSlot.StartTime.Hour == 0 && nextSlot.StartTime.Minute == 0 &&
+                (int)nextSlot.DayOfWeek == ((int)currentSlot.DayOfWeek + 1) % 7)
+            {
+                workBlockEnd = nextSlot.EndTime;
+                combinedBreaks.AddRange(nextSlot.Breaks);
+            }
+
+            // 3. Validate the 4-hour rule
+            if (!ValidateBlock(currentSlot.StartTime, workBlockEnd, combinedBreaks, companyPolicy))
+                return false;
+        }
+
+        return true;
+    }
+
+    private bool ValidateBlock(TimeOnly start, TimeOnly end, List<BreakDto> combinedBreaks, WorkPolicy policy)
+    {
+        double workDurationHours = (end - start).TotalMinutes;
+        
+        // If the total work session is less than 4 hours, no break is strictly required by this rule
+        if (workDurationHours <= policy.RestPeriodThresholdInMinutes) return true;
+
+        // Check if ANY break in this block is >= 30 minutes
+        // And ensure that break starts BEFORE the 4-hour mark
+        bool hasValidBreak = combinedBreaks.Any(b => 
+            (b.EndTime - b.StartTime).TotalMinutes >= policy.RestPeriodInMinutes && 
+            (b.StartTime - start).TotalMinutes <= policy.RestPeriodThresholdInMinutes);
+
+        return hasValidBreak;
     }
 
     public async Task ManageShiftAsync(int shiftId, EditShiftDto shift)
@@ -116,6 +184,12 @@ public class ShiftService : IShiftService
             throw new NotFoundException($"Timeslot with {timeSlotId} does not exist!");
         }
         
+        if (!(await this.HasRequiredBreak(shiftToDelete.Timeslots.Where(x => x.Id != timeSlotId).Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList())))
+        {
+            //TODO: Add Custom Exception
+            throw new Exception($"Not enough breaks added in the shifts");
+        }
+        
         shiftToDelete.Timeslots.Remove(timeSlot);
         await this._dbContext.SaveChangesAsync();
     }
@@ -133,14 +207,16 @@ public class ShiftService : IShiftService
         }
         
         // Check if there is already a timeslot here
+        // Only one timeslot per day
         var timeSlotsOnSameDay = shiftToModiy.Timeslots
-            .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek && timeSlot.StartTime < x.EndTime 
-                                                          && x.StartTime < timeSlot.EndTime);
+            .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek);
 
         if (timeSlotsOnSameDay != null)
         {
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
         }
+        
+
 
         shiftToModiy.Timeslots.Add(new Timeslot()
         {
@@ -153,6 +229,12 @@ public class ShiftService : IShiftService
                 EndTime = x.EndTime
             }).ToHashSet()
         });
+        
+        if (!(await this.HasRequiredBreak(shiftToModiy.Timeslots.Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList())))
+        {
+            //TODO: Add Custom Exception
+            throw new Exception($"Not enough breaks added in the shifts");
+        }
 
         await this._dbContext.SaveChangesAsync();
     }
@@ -179,12 +261,24 @@ public class ShiftService : IShiftService
         
         // Check if there is already a timeslot here thats not the current one
         var timeSlotsOnSameDay = shiftToModiy.Timeslots
-            .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek && timeSlot.StartTime < x.EndTime 
-                                                          && x.StartTime < timeSlot.EndTime && x.Id != timeSlot.Id);
+            .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek && x.Id != timeSlot.Id);
 
         if (timeSlotsOnSameDay != null)
         {
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
+        }
+
+        var timeSlotsToCheck = shiftToModiy.Timeslots.Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList();
+        var indexOfTimeSlotToModify = timeSlotsToCheck.FindIndex(x => x.Id == timeSlot.Id);
+        timeSlotsToCheck[indexOfTimeSlotToModify].DayOfWeek = timeSlot.DayOfWeek;
+        timeSlotsToCheck[indexOfTimeSlotToModify].StartTime = timeSlot.StartTime;
+        timeSlotsToCheck[indexOfTimeSlotToModify].EndTime = timeSlot.EndTime;
+        timeSlotsToCheck[indexOfTimeSlotToModify].Breaks = timeSlot.Breaks;
+        
+        if (!(await this.HasRequiredBreak(timeSlotsToCheck)))
+        {
+            //TODO: Add Custom Exception
+            throw new Exception($"Not enough breaks added in the shifts");
         }
         
         this._dbContext.Breaks.RemoveRange(timeSlotToModify.Breaks);
