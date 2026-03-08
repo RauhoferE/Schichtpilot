@@ -458,6 +458,68 @@ public class JobRoleServiceTest
     }
 
     [Fact]
+    public async Task DeleteRoleAsync_NotFound_ThrowsNotFoundException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = new Mock<IMapper>();
+        var service = CreateService(dbContext, mapperMock);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteRoleAsync(999));
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_WhenUsedInShifts_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        var shift = new Shift
+        {
+            Id = 1,
+            Name = "Shift A",
+            ColorAsHex = "FFFFFF",
+            Timeslots = new HashSet<Timeslot>(),
+            JobRequirements = new HashSet<ShiftRequirement>()
+        };
+        var requirement = new ShiftRequirement
+        {
+            Id = 1,
+            ShiftId = shift.Id,
+            Shift = shift,
+            JobRoleId = role.Id,
+            JobRole = role,
+            RequiredStaffCount = 1
+        };
+        shift.JobRequirements.Add(requirement);
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.ShiftRequirements.Add(requirement);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var service = CreateService(dbContext, mapperMock);
+
+        await Assert.ThrowsAsync<Exception>(() => service.DeleteRoleAsync(role.Id));
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_Success_RemovesRole()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        dbContext.JobRoles.Add(role);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var service = CreateService(dbContext, mapperMock);
+
+        await service.DeleteRoleAsync(role.Id);
+
+        var deleted = await dbContext.JobRoles.FirstOrDefaultAsync(x => x.Id == role.Id);
+        Assert.Null(deleted);
+    }
+
+    [Fact]
     public async Task GetJobRoleAsync_NotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();

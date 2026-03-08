@@ -17,6 +17,8 @@ public interface IJobRoleService
     
     Task RemoveUsersFromJobRoleAsync(int id, List<long> userIds);
     
+    Task DeleteRoleAsync(int id);
+    
     Task<JobRoleDto> GetJobRoleAsync(int id);
     
     Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString);

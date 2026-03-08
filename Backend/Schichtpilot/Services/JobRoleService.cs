@@ -256,6 +256,34 @@ public class JobRoleService : IJobRoleService
         }
     }
 
+    public async Task DeleteRoleAsync(int id)
+    {
+        var jobRoleToModify = await this._dbContext.JobRoles
+            .Include(x => x.UsersWithRole)
+            .Include(x=> x.Dependencies)
+            .Include(x=> x.Dependencies)
+            .FirstOrDefaultAsync(jr => jr.Id == id);
+
+        if (jobRoleToModify == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+        
+        var usedInShifts = this._dbContext.ShiftRequirements
+            .Include(x => x.JobRole)
+            .Include(x => x.JobRole)
+            .Any(x => x.JobRoleId == jobRoleToModify.Id) ;
+
+        if (usedInShifts)
+        {
+            //TODO: Exception
+            throw new Exception("Jobrole still active in shift!");
+        }
+        
+        this._dbContext.JobRoles.Remove(jobRoleToModify);
+        await this._dbContext.SaveChangesAsync();
+    }
+
     public async Task<JobRoleDto> GetJobRoleAsync(int id)
     {
         var jobRole = await this._dbContext.JobRoles
