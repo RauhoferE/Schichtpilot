@@ -240,6 +240,52 @@ public class JobRoleServiceTest
     }
 
     [Fact]
+    public async Task AddDependenciesToJobRole_WhenRoleUsedInShift_CallsShiftService()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        var dependency = CreateJobRole(2, "Doctor");
+        var shift = new Shift
+        {
+            Id = 1,
+            Name = "Shift A",
+            ColorAsHex = "FFFFFF",
+            Timeslots = new HashSet<Timeslot>(),
+            JobRequirements = new HashSet<ShiftRequirement>()
+        };
+        var requirement = new ShiftRequirement
+        {
+            Id = 1,
+            ShiftId = shift.Id,
+            Shift = shift,
+            JobRoleId = role.Id,
+            JobRole = role,
+            RequiredStaffCount = 1
+        };
+        shift.JobRequirements.Add(requirement);
+
+        dbContext.JobRoles.AddRange(role, dependency);
+        dbContext.Shifts.Add(shift);
+        dbContext.ShiftRequirements.Add(requirement);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var shiftServiceMock = new Mock<IShiftService>();
+        shiftServiceMock
+            .Setup(x => x.AddJobRequirementAsync(shift.Id, It.IsAny<ShiftRequirementDto>()))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, shiftServiceMock: shiftServiceMock);
+
+        await service.AddDependenciesToJobRoleAsync(role.Id, dependency.Id);
+
+        shiftServiceMock.Verify(x => x.AddJobRequirementAsync(
+            shift.Id,
+            It.Is<ShiftRequirementDto>(dto => dto.JobId == role.Id && dto.RequiredStaffCount == 1)
+        ), Times.Once);
+    }
+
+    [Fact]
     public async Task RemoveDependenciesToJobRole_RemovesWhenExists()
     {
         await using var dbContext = CreateDbContext();

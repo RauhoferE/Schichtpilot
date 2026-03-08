@@ -83,7 +83,6 @@ public class JobRoleService : IJobRoleService
 
     public async Task AddDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
-        //TODO: Check if jobrole is used in a schedule
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
         var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);
 
@@ -120,20 +119,35 @@ public class JobRoleService : IJobRoleService
         });
 
         await this._dbContext.SaveChangesAsync();
-        //
-        // var schedulesWithRole = this._dbContext.ShiftAssignments
-        //     .Include(x => x.WorkSchedule)
-        //     .Include(x => x.UserJobRole)
-        //     .ThenInclude(x => x.JobRole)
-        //     .Where(x => x.UserJobRole.JobRoleId == jobRoleId)
-        //     .ToList()
-        //     .Select(x => x.WorkSchedule);
-        //
-        // foreach (var workSchedule in schedulesWithRole)
-        // {
-        //     await this._workScheduleService.SetScheduleOfflineAsync(workSchedule.Id);
-        //     await this._workScheduleService.SetScheduleAsInvalidAsync(workSchedule.Id);
-        // }
+
+        var shiftsToModify = this._dbContext.ShiftRequirements
+            .Include(x => x.JobRole)
+            .Include(x => x.JobRole)
+            .Where(x => x.JobRoleId == jobRole.Id)
+            .Select(x => x.Shift);
+
+        foreach (var shift in shiftsToModify)
+        {
+            await this._shiftService.AddJobRequirementAsync(shift.Id, new ShiftRequirementDto()
+            {
+                JobId = jobRole.Id,
+                RequiredStaffCount = 1
+            });
+        }
+        
+        var schedulesWithRole = this._dbContext.ShiftAssignments
+            .Include(x => x.WorkSchedule)
+            .Include(x => x.UserJobRole)
+            .ThenInclude(x => x.JobRole)
+            .Where(x => x.UserJobRole.JobRoleId == jobRoleId)
+            .ToList()
+            .Select(x => x.WorkSchedule);
+        
+        foreach (var workSchedule in schedulesWithRole)
+        {
+            await this._workScheduleService.SetScheduleOfflineAsync(workSchedule.Id);
+            await this._workScheduleService.SetScheduleAsInvalidAsync(workSchedule.Id);
+        }
     }
 
     public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
