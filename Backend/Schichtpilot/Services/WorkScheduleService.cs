@@ -20,8 +20,19 @@ public class WorkScheduleService : IWorkScheduleService
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    public async Task GenerateSchedule(GenerateScheduleDto generateScheduleDto)
+    public async Task GenerateScheduleAsync(GenerateScheduleDto generateScheduleDto)
     {
+        var shifts = await _dbContext.Shifts
+            .Include(s => s.Timeslots)
+            .Include(s => s.JobRequirements)
+            .Where(s => generateScheduleDto.ShiftIds.Contains(s.Id))
+            .ToListAsync();
+
+        if (shifts.Count != generateScheduleDto.ShiftIds.Count)
+        {
+            throw new Exception("One or more shifts were not found.");
+        }
+        
         var schedule = new WorkSchedule
         {
             Name = generateScheduleDto.Name,
@@ -33,27 +44,25 @@ public class WorkScheduleService : IWorkScheduleService
             Shifts = new HashSet<WorkScheduleShifts>()
         };
         
+        foreach (var shift in shifts)
+        {
+            schedule.Shifts.Add(new WorkScheduleShifts
+            {
+                ShiftId = shift.Id,
+                WorkSchedule = schedule
+            });
+        }
+        
         this._dbContext.WorkSchedules.Add(schedule);
         await this._dbContext.SaveChangesAsync();
         
-        await CreateShiftAssignmentsAsync(schedule, generateScheduleDto.ShiftIds);
+        await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
-    private async Task CreateShiftAssignmentsAsync(WorkSchedule schedule, List<int> shiftIds)
+    private async Task CreateShiftAssignmentsAsync(WorkSchedule schedule, List<Shift> shifts)
     {
         var endDateOfSchedule = schedule.EndDate;
         var startDateOfSchedule = schedule.StartDate;
-        
-        var shifts = await _dbContext.Shifts
-            .Include(s => s.Timeslots)
-            .Include(s => s.JobRequirements)
-            .Where(s => shiftIds.Contains(s.Id))
-            .ToListAsync();
-
-        if (shifts.Count != shiftIds.Count)
-        {
-            throw new Exception("One or more shifts were not found.");
-        }
 
         var allTimeslots = shifts
             .SelectMany(s => s.Timeslots)
@@ -97,15 +106,6 @@ public class WorkScheduleService : IWorkScheduleService
                 a.StartDate < endDateOfSchedule.AddDays(1) &&
                 startDateOfSchedule < a.EndDate)
             .ToListAsync();
-        
-        foreach (var shift in shifts)
-        {
-            schedule.Shifts.Add(new WorkScheduleShifts
-            {
-                ShiftId = shift.Id,
-                WorkSchedule = schedule
-            });
-        }
 
         var assignmentsByUser = new Dictionary<long, List<(DateTime Start, DateTime End)>>();
 
@@ -271,18 +271,25 @@ public class WorkScheduleService : IWorkScheduleService
         return false;
     }
 
-    public async Task ReGenerateSchedule(int scheduleId)
+    public async Task ReGenerateScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
             .ThenInclude(x => x.Shift)
+            .ThenInclude(x => x.Timeslots)
+            .Include(x => x.Shifts)
+            .ThenInclude(x => x.Shift)
+            .ThenInclude(x => x.JobRequirements)
             .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
+        
 
         if (schedule == null)
         {
             throw new Exception($"Schedule with id {scheduleId} not found.");
         }
+
+        var shifts = schedule.Shifts.Select(x => x.Shift).ToList();
         
         // Set to inactive since we dont know if generation is possible
         schedule.IsActive = false;
@@ -295,16 +302,16 @@ public class WorkScheduleService : IWorkScheduleService
         }
         
         await this._dbContext.SaveChangesAsync();
-        await CreateShiftAssignmentsAsync(schedule, schedule.Shifts.Select(x=> x.ShiftId).ToList());
+        await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
-    public async Task PublishSchedule(int scheduleId)
+    public async Task PublishScheduleAsync(int scheduleId)
     {
         //TODO: Send via emailservice
         throw new NotImplementedException();
     }
 
-    public async Task<QueryableSchedules> ViewSchedules(PaginationDto paginationDto, ScheduleFilterDot? filter)
+    public async Task<QueryableSchedules> ViewSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter)
     {
         IQueryable<WorkSchedule> query = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -371,7 +378,7 @@ public class WorkScheduleService : IWorkScheduleService
         return query;
     }
 
-    public async Task<WorkScheduleDto> ViewSchedule(int scheduleId)
+    public async Task<WorkScheduleDto> ViewScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -392,7 +399,7 @@ public class WorkScheduleService : IWorkScheduleService
         return this._mapper.Map<WorkSchedule, WorkScheduleDto>(schedule);
     }
 
-    public async Task DeleteSchedule(int scheduleId)
+    public async Task DeleteScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -413,7 +420,7 @@ public class WorkScheduleService : IWorkScheduleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task SetScheduleActive(int scheduleId)
+    public async Task SetScheduleActiveAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -443,7 +450,7 @@ public class WorkScheduleService : IWorkScheduleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task SetScheduleOffline(int scheduleId)
+    public async Task SetScheduleOfflineAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -459,7 +466,7 @@ public class WorkScheduleService : IWorkScheduleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task ChangeScheduleDate(int scheduleId, DateTime startDate, DateTime endDate)
+    public async Task ChangeScheduleDateAsync(int scheduleId, DateTime startDate, DateTime endDate)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -474,6 +481,6 @@ public class WorkScheduleService : IWorkScheduleService
         schedule.StartDate = startDate;
         schedule.EndDate = endDate;
         await this._dbContext.SaveChangesAsync();
-        await this.ReGenerateSchedule(schedule.Id);
+        await this.ReGenerateScheduleAsync(schedule.Id);
     }
 }

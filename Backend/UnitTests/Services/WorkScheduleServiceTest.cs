@@ -1,7 +1,9 @@
+using AutoMapper;
 using Data;
 using Data.Entities;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Enums;
@@ -24,7 +26,7 @@ public class WorkScheduleServiceTest
         });
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -34,7 +36,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 999 }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateSchedule(dto));
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
         Assert.Equal("One or more shifts were not found.", ex.Message);
     }
 
@@ -108,7 +110,7 @@ public class WorkScheduleServiceTest
         });
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -118,7 +120,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1, 2 }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateSchedule(dto));
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
         Assert.Equal("Shifts have intersections with each other.", ex.Message);
     }
 
@@ -163,7 +165,7 @@ public class WorkScheduleServiceTest
 
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -173,7 +175,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateSchedule(dto));
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
         Assert.Equal("WorkPolicy not configured.", ex.Message);
     }
 
@@ -226,7 +228,7 @@ public class WorkScheduleServiceTest
 
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -236,7 +238,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateSchedule(dto));
+        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -300,7 +302,7 @@ public class WorkScheduleServiceTest
 
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -310,7 +312,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateSchedule(dto));
+        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -372,7 +374,7 @@ public class WorkScheduleServiceTest
 
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -382,7 +384,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateSchedule(dto));
+        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -444,7 +446,7 @@ public class WorkScheduleServiceTest
 
         await dbContext.SaveChangesAsync();
 
-        var service = new WorkScheduleService(dbContext);
+        var service = CreateService(dbContext);
 
         var dto = new GenerateScheduleDto
         {
@@ -454,7 +456,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await service.GenerateSchedule(dto);
+        await service.GenerateScheduleAsync(dto);
 
         var createdSchedule = await dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -470,32 +472,32 @@ public class WorkScheduleServiceTest
         Assert.Single(createdSchedule.Shifts);
         Assert.Equal(2, createdSchedule.ShiftAssignments.Count);
     }
-    
+
     [Fact]
-public async Task GenerateSchedule_WithFiveUsers_TwoShifts_TwoRequirementsEach_AssignsExactRequiredCounts()
-{
-    await using var dbContext = CreateDbContext();
-
-    // Roles
-    var nurseRole = CreateJobRole(1, "Nurse");
-    var doctorRole = CreateJobRole(2, "Doctor");
-    dbContext.JobRoles.AddRange(nurseRole, doctorRole);
-
-    // Shift 1 - Monday
-    var shift1 = CreateShift(1, "Shift-Monday");
-    var shift1Timeslot = new Timeslot
+    public async Task GenerateSchedule_WithFiveUsers_TwoShifts_TwoRequirementsEach_AssignsExactRequiredCounts()
     {
-        Id = 101,
-        ShiftId = 1,
-        DayOfWeek = DayOfWeek.Monday,
-        StartTime = new TimeOnly(8, 0),
-        EndTime = new TimeOnly(12, 0),
-        Breaks = new HashSet<Data.Entities.Break>(),
-        ShiftAssignments = new HashSet<ShiftAssignment>()
-    };
+        await using var dbContext = CreateDbContext();
 
-    shift1.Timeslots = new HashSet<Timeslot> { shift1Timeslot };
-    shift1.JobRequirements = new HashSet<ShiftRequirement>
+        // Roles
+        var nurseRole = CreateJobRole(1, "Nurse");
+        var doctorRole = CreateJobRole(2, "Doctor");
+        dbContext.JobRoles.AddRange(nurseRole, doctorRole);
+
+        // Shift 1 - Monday
+        var shift1 = CreateShift(1, "Shift-Monday");
+        var shift1Timeslot = new Timeslot
+        {
+            Id = 101,
+            ShiftId = 1,
+            DayOfWeek = DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(12, 0),
+            Breaks = new HashSet<Data.Entities.Break>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        shift1.Timeslots = new HashSet<Timeslot> { shift1Timeslot };
+        shift1.JobRequirements = new HashSet<ShiftRequirement>
     {
         new()
         {
@@ -515,21 +517,21 @@ public async Task GenerateSchedule_WithFiveUsers_TwoShifts_TwoRequirementsEach_A
         }
     };
 
-    // Shift 2 - Wednesday (different day)
-    var shift2 = CreateShift(2, "Shift-Wednesday");
-    var shift2Timeslot = new Timeslot
-    {
-        Id = 102,
-        ShiftId = 2,
-        DayOfWeek = DayOfWeek.Wednesday,
-        StartTime = new TimeOnly(9, 0),
-        EndTime = new TimeOnly(13, 0),
-        Breaks = new HashSet<Data.Entities.Break>(),
-        ShiftAssignments = new HashSet<ShiftAssignment>()
-    };
+        // Shift 2 - Wednesday (different day)
+        var shift2 = CreateShift(2, "Shift-Wednesday");
+        var shift2Timeslot = new Timeslot
+        {
+            Id = 102,
+            ShiftId = 2,
+            DayOfWeek = DayOfWeek.Wednesday,
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(13, 0),
+            Breaks = new HashSet<Data.Entities.Break>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
 
-    shift2.Timeslots = new HashSet<Timeslot> { shift2Timeslot };
-    shift2.JobRequirements = new HashSet<ShiftRequirement>
+        shift2.Timeslots = new HashSet<Timeslot> { shift2Timeslot };
+        shift2.JobRequirements = new HashSet<ShiftRequirement>
     {
         new()
         {
@@ -549,90 +551,90 @@ public async Task GenerateSchedule_WithFiveUsers_TwoShifts_TwoRequirementsEach_A
         }
     };
 
-    dbContext.Shifts.AddRange(shift1, shift2);
+        dbContext.Shifts.AddRange(shift1, shift2);
 
-    // Work policy
-    dbContext.WorkPolicies.Add(new WorkPolicy
+        // Work policy
+        dbContext.WorkPolicies.Add(new WorkPolicy
+        {
+            MaximumConsecutiveWorkHours = 8,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360
+        });
+
+        // 5 Users total:
+        // u1, u2, u3 = nurses
+        // u4, u5 = doctors
+        var u1 = CreateUser(1);
+        var u2 = CreateUser(2);
+        var u3 = CreateUser(3);
+        var u4 = CreateUser(4);
+        var u5 = CreateUser(5);
+
+        dbContext.Users.AddRange(u1, u2, u3, u4, u5);
+
+        dbContext.UserJobRoles.AddRange(
+            new UserJobRoles { UserId = u1.Id, User = u1, JobRoleId = nurseRole.Id, JobRole = nurseRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
+            new UserJobRoles { UserId = u2.Id, User = u2, JobRoleId = nurseRole.Id, JobRole = nurseRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
+            new UserJobRoles { UserId = u3.Id, User = u3, JobRoleId = nurseRole.Id, JobRole = nurseRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
+            new UserJobRoles { UserId = u4.Id, User = u4, JobRoleId = doctorRole.Id, JobRole = doctorRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
+            new UserJobRoles { UserId = u5.Id, User = u5, JobRoleId = doctorRole.Id, JobRole = doctorRole, ShiftAssignments = new HashSet<ShiftAssignment>() }
+        );
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = new GenerateScheduleDto
+        {
+            Name = "Complex Week",
+            StartDate = new DateTime(2026, 1, 5), // Monday
+            EndDate = new DateTime(2026, 1, 11),  // Sunday
+            ShiftIds = new List<int> { shift1.Id, shift2.Id }
+        };
+
+        await service.GenerateScheduleAsync(dto);
+
+        var schedule = await dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .Include(x => x.Shifts)
+            .SingleAsync(x => x.Name == "Complex Week");
+
+        Assert.NotNull(schedule);
+        Assert.Equal(2, schedule.Shifts.Count);
+
+        // Strict assertions by Timeslot + JobRole:
+        // Monday timeslot (101): Nurse=2, Doctor=1
+        // Wednesday timeslot (102): Nurse=2, Doctor=1
+        var grouped = schedule.ShiftAssignments
+            .GroupBy(a => new { a.TimeslotId, a.JobRoleId })
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        Assert.Equal(2, grouped[new { TimeslotId = 101, JobRoleId = nurseRole.Id }]);
+        Assert.Equal(1, grouped[new { TimeslotId = 101, JobRoleId = doctorRole.Id }]);
+        Assert.Equal(2, grouped[new { TimeslotId = 102, JobRoleId = nurseRole.Id }]);
+        Assert.Equal(1, grouped[new { TimeslotId = 102, JobRoleId = doctorRole.Id }]);
+
+        // Total expected assignments: 6
+        Assert.Equal(6, schedule.ShiftAssignments.Count);
+
+        // Optional sanity: no duplicate same user-role in same timeslot
+        var duplicates = schedule.ShiftAssignments
+            .GroupBy(a => new { a.TimeslotId, a.UserId, a.JobRoleId })
+            .Any(g => g.Count() > 1);
+
+        Assert.False(duplicates);
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_WhenTwoUsersHavePendingAbsence_PicksOneOfThem()
     {
-        MaximumConsecutiveWorkHours = 8,
-        RestPeriodInMinutes = 30,
-        RestPeriodThresholdInMinutes = 360
-    });
+        await using var dbContext = CreateDbContext();
 
-    // 5 Users total:
-    // u1, u2, u3 = nurses
-    // u4, u5 = doctors
-    var u1 = CreateUser(1);
-    var u2 = CreateUser(2);
-    var u3 = CreateUser(3);
-    var u4 = CreateUser(4);
-    var u5 = CreateUser(5);
+        var nurseRole = CreateJobRole(20, "Nurse");
+        dbContext.JobRoles.Add(nurseRole);
 
-    dbContext.Users.AddRange(u1, u2, u3, u4, u5);
-
-    dbContext.UserJobRoles.AddRange(
-        new UserJobRoles { UserId = u1.Id, User = u1, JobRoleId = nurseRole.Id, JobRole = nurseRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
-        new UserJobRoles { UserId = u2.Id, User = u2, JobRoleId = nurseRole.Id, JobRole = nurseRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
-        new UserJobRoles { UserId = u3.Id, User = u3, JobRoleId = nurseRole.Id, JobRole = nurseRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
-        new UserJobRoles { UserId = u4.Id, User = u4, JobRoleId = doctorRole.Id, JobRole = doctorRole, ShiftAssignments = new HashSet<ShiftAssignment>() },
-        new UserJobRoles { UserId = u5.Id, User = u5, JobRoleId = doctorRole.Id, JobRole = doctorRole, ShiftAssignments = new HashSet<ShiftAssignment>() }
-    );
-
-    await dbContext.SaveChangesAsync();
-
-    var service = new WorkScheduleService(dbContext);
-
-    var dto = new GenerateScheduleDto
-    {
-        Name = "Complex Week",
-        StartDate = new DateTime(2026, 1, 5), // Monday
-        EndDate = new DateTime(2026, 1, 11),  // Sunday
-        ShiftIds = new List<int> { shift1.Id, shift2.Id }
-    };
-
-    await service.GenerateSchedule(dto);
-
-    var schedule = await dbContext.WorkSchedules
-        .Include(x => x.ShiftAssignments)
-        .Include(x => x.Shifts)
-        .SingleAsync(x => x.Name == "Complex Week");
-
-    Assert.NotNull(schedule);
-    Assert.Equal(2, schedule.Shifts.Count);
-
-    // Strict assertions by Timeslot + JobRole:
-    // Monday timeslot (101): Nurse=2, Doctor=1
-    // Wednesday timeslot (102): Nurse=2, Doctor=1
-    var grouped = schedule.ShiftAssignments
-        .GroupBy(a => new { a.TimeslotId, a.JobRoleId })
-        .ToDictionary(g => g.Key, g => g.Count());
-
-    Assert.Equal(2, grouped[new { TimeslotId = 101, JobRoleId = nurseRole.Id }]);
-    Assert.Equal(1, grouped[new { TimeslotId = 101, JobRoleId = doctorRole.Id }]);
-    Assert.Equal(2, grouped[new { TimeslotId = 102, JobRoleId = nurseRole.Id }]);
-    Assert.Equal(1, grouped[new { TimeslotId = 102, JobRoleId = doctorRole.Id }]);
-
-    // Total expected assignments: 6
-    Assert.Equal(6, schedule.ShiftAssignments.Count);
-
-    // Optional sanity: no duplicate same user-role in same timeslot
-    var duplicates = schedule.ShiftAssignments
-        .GroupBy(a => new { a.TimeslotId, a.UserId, a.JobRoleId })
-        .Any(g => g.Count() > 1);
-
-    Assert.False(duplicates);
-}
-
-[Fact]
-public async Task GenerateSchedule_WhenTwoUsersHavePendingAbsence_PicksOneOfThem()
-{
-    await using var dbContext = CreateDbContext();
-
-    var nurseRole = CreateJobRole(20, "Nurse");
-    dbContext.JobRoles.Add(nurseRole);
-
-    var shift = CreateShift(20, "TuesdayShift");
-    shift.Timeslots = new HashSet<Timeslot>
+        var shift = CreateShift(20, "TuesdayShift");
+        shift.Timeslots = new HashSet<Timeslot>
     {
         new()
         {
@@ -646,7 +648,7 @@ public async Task GenerateSchedule_WhenTwoUsersHavePendingAbsence_PicksOneOfThem
         }
     };
 
-    shift.JobRequirements = new HashSet<ShiftRequirement>
+        shift.JobRequirements = new HashSet<ShiftRequirement>
     {
         new()
         {
@@ -658,99 +660,99 @@ public async Task GenerateSchedule_WhenTwoUsersHavePendingAbsence_PicksOneOfThem
         }
     };
 
-    dbContext.Shifts.Add(shift);
+        dbContext.Shifts.Add(shift);
 
-    dbContext.WorkPolicies.Add(new WorkPolicy
-    {
-        MaximumConsecutiveWorkHours = 8,
-        RestPeriodInMinutes = 30,
-        RestPeriodThresholdInMinutes = 360
-    });
-
-    var pendingUser1 = CreateUser(201);
-    var pendingUser2 = CreateUser(202);
-
-    dbContext.Users.AddRange(pendingUser1, pendingUser2);
-
-    dbContext.UserJobRoles.AddRange(
-        new UserJobRoles
+        dbContext.WorkPolicies.Add(new WorkPolicy
         {
-            UserId = pendingUser1.Id,
-            User = pendingUser1,
-            JobRoleId = nurseRole.Id,
-            JobRole = nurseRole,
-            ShiftAssignments = new HashSet<ShiftAssignment>()
-        },
-        new UserJobRoles
-        {
-            UserId = pendingUser2.Id,
-            User = pendingUser2,
-            JobRoleId = nurseRole.Id,
-            JobRole = nurseRole,
-            ShiftAssignments = new HashSet<ShiftAssignment>()
+            MaximumConsecutiveWorkHours = 8,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360
         });
 
-    dbContext.Absences.AddRange(
-        new Absence
+        var pendingUser1 = CreateUser(201);
+        var pendingUser2 = CreateUser(202);
+
+        dbContext.Users.AddRange(pendingUser1, pendingUser2);
+
+        dbContext.UserJobRoles.AddRange(
+            new UserJobRoles
+            {
+                UserId = pendingUser1.Id,
+                User = pendingUser1,
+                JobRoleId = nurseRole.Id,
+                JobRole = nurseRole,
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            },
+            new UserJobRoles
+            {
+                UserId = pendingUser2.Id,
+                User = pendingUser2,
+                JobRoleId = nurseRole.Id,
+                JobRole = nurseRole,
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            });
+
+        dbContext.Absences.AddRange(
+            new Absence
+            {
+                UserId = pendingUser1.Id,
+                User = pendingUser1,
+                StartDate = new DateTime(2026, 1, 6, 0, 0, 0), // Tuesday
+                EndDate = new DateTime(2026, 1, 7, 0, 0, 0),
+                AbsenceType = "Vacation",
+                Status = AbsenceStatusEnum.Pending.ToString(),
+                Message = "",
+                ManagerMessage = ""
+            },
+            new Absence
+            {
+                UserId = pendingUser2.Id,
+                User = pendingUser2,
+                StartDate = new DateTime(2026, 1, 6, 0, 0, 0),
+                EndDate = new DateTime(2026, 1, 7, 0, 0, 0),
+                AbsenceType = "Vacation",
+                Status = AbsenceStatusEnum.Pending.ToString(),
+                Message = "",
+                ManagerMessage = ""
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = new GenerateScheduleDto
         {
-            UserId = pendingUser1.Id,
-            User = pendingUser1,
-            StartDate = new DateTime(2026, 1, 6, 0, 0, 0), // Tuesday
-            EndDate = new DateTime(2026, 1, 7, 0, 0, 0),
-            AbsenceType = "Vacation",
-            Status = AbsenceStatusEnum.Pending.ToString(),
-            Message = "",
-            ManagerMessage = ""
-        },
-        new Absence
-        {
-            UserId = pendingUser2.Id,
-            User = pendingUser2,
-            StartDate = new DateTime(2026, 1, 6, 0, 0, 0),
-            EndDate = new DateTime(2026, 1, 7, 0, 0, 0),
-            AbsenceType = "Vacation",
-            Status = AbsenceStatusEnum.Pending.ToString(),
-            Message = "",
-            ManagerMessage = ""
-        });
+            Name = "PendingOnlyWeek",
+            StartDate = new DateTime(2026, 1, 5), // Monday
+            EndDate = new DateTime(2026, 1, 11),  // Sunday
+            ShiftIds = new List<int> { shift.Id }
+        };
 
-    await dbContext.SaveChangesAsync();
+        await service.GenerateScheduleAsync(dto);
 
-    var service = new WorkScheduleService(dbContext);
+        var schedule = await dbContext.WorkSchedules
+            .Include(s => s.ShiftAssignments)
+            .SingleAsync(s => s.Name == "PendingOnlyWeek");
 
-    var dto = new GenerateScheduleDto
+        Assert.Single(schedule.ShiftAssignments);
+
+        var assignment = schedule.ShiftAssignments.Single();
+        Assert.True(
+            assignment.UserId == pendingUser1.Id || assignment.UserId == pendingUser2.Id,
+            "Expected one of the pending-absence users to be assigned."
+        );
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_PrefersUserWithoutPendingAbsence_First()
     {
-        Name = "PendingOnlyWeek",
-        StartDate = new DateTime(2026, 1, 5), // Monday
-        EndDate = new DateTime(2026, 1, 11),  // Sunday
-        ShiftIds = new List<int> { shift.Id }
-    };
+        await using var dbContext = CreateDbContext();
 
-    await service.GenerateSchedule(dto);
+        var nurseRole = CreateJobRole(10, "Nurse");
+        dbContext.JobRoles.Add(nurseRole);
 
-    var schedule = await dbContext.WorkSchedules
-        .Include(s => s.ShiftAssignments)
-        .SingleAsync(s => s.Name == "PendingOnlyWeek");
-
-    Assert.Single(schedule.ShiftAssignments);
-
-    var assignment = schedule.ShiftAssignments.Single();
-    Assert.True(
-        assignment.UserId == pendingUser1.Id || assignment.UserId == pendingUser2.Id,
-        "Expected one of the pending-absence users to be assigned."
-    );
-}
-
-[Fact]
-public async Task GenerateSchedule_PrefersUserWithoutPendingAbsence_First()
-{
-    await using var dbContext = CreateDbContext();
-
-    var nurseRole = CreateJobRole(10, "Nurse");
-    dbContext.JobRoles.Add(nurseRole);
-
-    var shift = CreateShift(10, "MondayShift");
-    shift.Timeslots = new HashSet<Timeslot>
+        var shift = CreateShift(10, "MondayShift");
+        shift.Timeslots = new HashSet<Timeslot>
     {
         new()
         {
@@ -764,7 +766,7 @@ public async Task GenerateSchedule_PrefersUserWithoutPendingAbsence_First()
         }
     };
 
-    shift.JobRequirements = new HashSet<ShiftRequirement>
+        shift.JobRequirements = new HashSet<ShiftRequirement>
     {
         new()
         {
@@ -776,74 +778,639 @@ public async Task GenerateSchedule_PrefersUserWithoutPendingAbsence_First()
         }
     };
 
-    dbContext.Shifts.Add(shift);
+        dbContext.Shifts.Add(shift);
 
-    dbContext.WorkPolicies.Add(new WorkPolicy
-    {
-        MaximumConsecutiveWorkHours = 8,
-        RestPeriodInMinutes = 30,
-        RestPeriodThresholdInMinutes = 360
-    });
-
-    var userNoPending = CreateUser(100);
-    var userPending = CreateUser(101);
-
-    dbContext.Users.AddRange(userNoPending, userPending);
-
-    dbContext.UserJobRoles.AddRange(
-        new UserJobRoles
+        dbContext.WorkPolicies.Add(new WorkPolicy
         {
-            UserId = userNoPending.Id,
-            User = userNoPending,
-            JobRoleId = nurseRole.Id,
-            JobRole = nurseRole,
-            ShiftAssignments = new HashSet<ShiftAssignment>()
-        },
-        new UserJobRoles
+            MaximumConsecutiveWorkHours = 8,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360
+        });
+
+        var userNoPending = CreateUser(100);
+        var userPending = CreateUser(101);
+
+        dbContext.Users.AddRange(userNoPending, userPending);
+
+        dbContext.UserJobRoles.AddRange(
+            new UserJobRoles
+            {
+                UserId = userNoPending.Id,
+                User = userNoPending,
+                JobRoleId = nurseRole.Id,
+                JobRole = nurseRole,
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            },
+            new UserJobRoles
+            {
+                UserId = userPending.Id,
+                User = userPending,
+                JobRoleId = nurseRole.Id,
+                JobRole = nurseRole,
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            });
+
+        // pending overlap for userPending in same schedule week/time window
+        dbContext.Absences.Add(new Absence
         {
             UserId = userPending.Id,
             User = userPending,
-            JobRoleId = nurseRole.Id,
-            JobRole = nurseRole,
+            StartDate = new DateTime(2026, 1, 5, 0, 0, 0), // Monday
+            EndDate = new DateTime(2026, 1, 6, 0, 0, 0),
+            AbsenceType = "Vacation",
+            Status = AbsenceStatusEnum.Pending.ToString(),
+            Message = "",
+            ManagerMessage = ""
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = new GenerateScheduleDto
+        {
+            Name = "PendingPriorityWeek1",
+            StartDate = new DateTime(2026, 1, 5), // Monday
+            EndDate = new DateTime(2026, 1, 11),  // Sunday
+            ShiftIds = new List<int> { shift.Id }
+        };
+
+        await service.GenerateScheduleAsync(dto);
+
+        var schedule = await dbContext.WorkSchedules
+            .Include(s => s.ShiftAssignments)
+            .SingleAsync(s => s.Name == "PendingPriorityWeek1");
+
+        Assert.Single(schedule.ShiftAssignments);
+
+        var assignment = schedule.ShiftAssignments.Single();
+        Assert.Equal(userNoPending.Id, assignment.UserId); // non-pending must be picked first
+    }
+
+    [Fact]
+    public async Task ViewSchedulesAsync_WithFilter_ReturnsMappedAndFilteredSchedules()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule1 = new WorkSchedule
+        {
+            Id = 1,
+            Name = "Alpha",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts> { new() { ShiftId = 1 } },
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+        var schedule2 = new WorkSchedule
+        {
+            Id = 2,
+            Name = "Beta",
+            StartDate = new DateTime(2026, 1, 12),
+            EndDate = new DateTime(2026, 1, 18),
+            IsActive = false,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts> { new() { ShiftId = 2 } },
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+        var schedule3 = new WorkSchedule
+        {
+            Id = 3,
+            Name = "Gamma",
+            StartDate = new DateTime(2026, 1, 19),
+            EndDate = new DateTime(2026, 1, 25),
+            IsActive = true,
+            IsValid = false,
+            Shifts = new HashSet<WorkScheduleShifts> { new() { ShiftId = 3 } },
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.AddRange(schedule1, schedule2, schedule3);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var pagination = new PaginationDto { Page = 1, PageSize = 10 };
+        var filter = new ScheduleFilterDot
+        {
+            Searchstring = "alp",
+            Status = ScheduleStatusEnum.Active,
+            ShiftIds = new List<int> { 1 }
+        };
+
+        var result = await service.ViewSchedulesAsync(pagination, filter);
+
+        Assert.Equal(1, result.Count);
+        var list = result.WorkSchedules.ToList();
+        Assert.Single(list);
+        Assert.Equal("Alpha", list[0].Name);
+        Assert.Equal(1, list[0].ShiftCount);
+        Assert.True(list[0].IsActive);
+        Assert.True(list[0].IsValid);
+    }
+
+    [Fact]
+    public async Task ViewSchedulesAsync_Pagination_ReturnsSecondPage()
+    {
+        await using var dbContext = CreateDbContext();
+
+        dbContext.WorkSchedules.AddRange(
+            new WorkSchedule
+            {
+                Id = 1,
+                Name = "Page One",
+                StartDate = new DateTime(2026, 1, 5),
+                EndDate = new DateTime(2026, 1, 11),
+                IsActive = false,
+                IsValid = true,
+                Shifts = new HashSet<WorkScheduleShifts>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            },
+            new WorkSchedule
+            {
+                Id = 2,
+                Name = "Page Two",
+                StartDate = new DateTime(2026, 1, 12),
+                EndDate = new DateTime(2026, 1, 18),
+                IsActive = false,
+                IsValid = true,
+                Shifts = new HashSet<WorkScheduleShifts>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var pagination = new PaginationDto { Page = 2, PageSize = 1 };
+        var result = await service.ViewSchedulesAsync(pagination, null);
+
+        Assert.Equal(2, result.Count);
+        Assert.Single(result.WorkSchedules);
+        var returnedId = result.WorkSchedules.Single().Id;
+        Assert.Contains(returnedId, new[] { 1, 2 });
+    }
+
+    [Fact]
+    public async Task ViewScheduleAsync_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.ViewScheduleAsync(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task ViewScheduleAsync_ReturnsMappedDto()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 10,
+            Name = "Week 10",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = await service.ViewScheduleAsync(schedule.Id);
+
+        Assert.Equal(schedule.Id, dto.Id);
+        Assert.Equal(schedule.Name, dto.Name);
+        Assert.True(dto.IsValid);
+        Assert.False(dto.IsActive);
+    }
+
+    [Fact]
+    public async Task DeleteScheduleAsync_ActiveSchedule_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 20,
+            Name = "Active Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteScheduleAsync(schedule.Id));
+        Assert.Equal("Cannot delete active schedule", ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteScheduleAsync_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteScheduleAsync(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteScheduleAsync_InactiveSchedule_RemovesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 21,
+            Name = "Draft Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = false,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await service.DeleteScheduleAsync(schedule.Id);
+
+        Assert.Empty(dbContext.WorkSchedules);
+    }
+
+    [Fact]
+    public async Task SetScheduleActiveAsync_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleActiveAsync(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task SetScheduleActiveAsync_InvalidSchedule_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 30,
+            Name = "Invalid Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = false,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleActiveAsync(schedule.Id));
+        Assert.Equal("Schedule with id 30 is invalid.", ex.Message);
+    }
+
+    [Fact]
+    public async Task SetScheduleActiveAsync_OverlappingSchedule_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 31,
+            Name = "Target Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        var overlapping = new WorkSchedule
+        {
+            Id = 32,
+            Name = "Overlap Week",
+            StartDate = new DateTime(2026, 1, 8),
+            EndDate = new DateTime(2026, 1, 15),
+            IsActive = false,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.AddRange(schedule, overlapping);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleActiveAsync(schedule.Id));
+        Assert.Contains("overlapping", ex.Message);
+    }
+
+    [Fact]
+    public async Task SetScheduleActiveAsync_ValidSchedule_SetsActiveTrue()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 33,
+            Name = "Valid Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await service.SetScheduleActiveAsync(schedule.Id);
+
+        var updated = await dbContext.WorkSchedules.FirstAsync(x => x.Id == schedule.Id);
+        Assert.True(updated.IsActive);
+    }
+
+    [Fact]
+    public async Task SetScheduleOfflineAsync_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleOfflineAsync(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task SetScheduleOfflineAsync_SetsActiveFalse()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 40,
+            Name = "Online Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await service.SetScheduleOfflineAsync(schedule.Id);
+
+        var updated = await dbContext.WorkSchedules.FirstAsync(x => x.Id == schedule.Id);
+        Assert.False(updated.IsActive);
+    }
+
+    [Fact]
+    public async Task ChangeScheduleDateAsync_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.ChangeScheduleDateAsync(999, new DateTime(2026, 1, 5), new DateTime(2026, 1, 11)));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task ChangeScheduleDateAsync_UpdatesDatesAndRegeneratesAssignments()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "Morning");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new()
+            {
+                Id = 5001,
+                ShiftId = shift.Id,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(12, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            }
+        };
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new() { ShiftId = shift.Id, JobRoleId = role.Id, RequiredStaffCount = 1, JobRole = role, Shift = shift }
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(new WorkPolicy
+        {
+            MaximumConsecutiveWorkHours = 8,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360
+        });
+
+        var user = CreateUser(1);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(new UserJobRoles
+        {
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            User = user,
+            JobRole = role,
             ShiftAssignments = new HashSet<ShiftAssignment>()
         });
 
-    // pending overlap for userPending in same schedule week/time window
-    dbContext.Absences.Add(new Absence
+        var schedule = new WorkSchedule
+        {
+            Id = 50,
+            Name = "Change Dates",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = false,
+            Shifts = new HashSet<WorkScheduleShifts> { new() { ShiftId = shift.Id } },
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var newStart = new DateTime(2026, 1, 12);
+        var newEnd = new DateTime(2026, 1, 18);
+
+        await service.ChangeScheduleDateAsync(schedule.Id, newStart, newEnd);
+
+        var updated = await dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .FirstAsync(x => x.Id == schedule.Id);
+
+        Assert.Equal(newStart, updated.StartDate);
+        Assert.Equal(newEnd, updated.EndDate);
+        Assert.True(updated.IsValid);
+        Assert.NotEmpty(updated.ShiftAssignments);
+    }
+
+    [Fact]
+    public async Task ReGenerateScheduleAsync_NotFound_ThrowsException()
     {
-        UserId = userPending.Id,
-        User = userPending,
-        StartDate = new DateTime(2026, 1, 5, 0, 0, 0), // Monday
-        EndDate = new DateTime(2026, 1, 6, 0, 0, 0),
-        AbsenceType = "Vacation",
-        Status = AbsenceStatusEnum.Pending.ToString(),
-        Message = "",
-        ManagerMessage = ""
-    });
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
 
-    await dbContext.SaveChangesAsync();
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.ReGenerateScheduleAsync(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
 
-    var service = new WorkScheduleService(dbContext);
-
-    var dto = new GenerateScheduleDto
+    [Fact]
+    public async Task ReGenerateScheduleAsync_ValidSchedule_RecreatesAssignments()
     {
-        Name = "PendingPriorityWeek1",
-        StartDate = new DateTime(2026, 1, 5), // Monday
-        EndDate = new DateTime(2026, 1, 11),  // Sunday
-        ShiftIds = new List<int> { shift.Id }
-    };
+        await using var dbContext = CreateDbContext();
 
-    await service.GenerateSchedule(dto);
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "Morning");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new()
+            {
+                Id = 7001,
+                ShiftId = shift.Id,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(12, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            }
+        };
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new() { ShiftId = shift.Id, JobRoleId = role.Id, RequiredStaffCount = 1, JobRole = role, Shift = shift }
+        };
 
-    var schedule = await dbContext.WorkSchedules
-        .Include(s => s.ShiftAssignments)
-        .SingleAsync(s => s.Name == "PendingPriorityWeek1");
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(new WorkPolicy
+        {
+            MaximumConsecutiveWorkHours = 8,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360
+        });
 
-    Assert.Single(schedule.ShiftAssignments);
+        var user = CreateUser(1);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(new UserJobRoles
+        {
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            User = user,
+            JobRole = role,
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        });
 
-    var assignment = schedule.ShiftAssignments.Single();
-    Assert.Equal(userNoPending.Id, assignment.UserId); // non-pending must be picked first
-}
+        var schedule = new WorkSchedule
+        {
+            Id = 70,
+            Name = "Regen Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts> { new() { ShiftId = shift.Id, Shift = shift } },
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await service.ReGenerateScheduleAsync(schedule.Id);
+
+        var updated = await dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .FirstAsync(x => x.Id == schedule.Id);
+
+        Assert.True(updated.IsValid);
+        Assert.False(updated.IsActive);
+        Assert.NotEmpty(updated.ShiftAssignments);
+    }
+
+    [Fact]
+    public async Task PublishScheduleAsync_ThrowsNotImplementedException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        await Assert.ThrowsAsync<NotImplementedException>(() => service.PublishScheduleAsync(1));
+    }
+
+    private static WorkScheduleService CreateService(SchichtpilotDbContext dbContext, Mock<IMapper>? mapperMock = null)
+    {
+        var mock = mapperMock ?? CreateMapperMock();
+        return new WorkScheduleService(dbContext, mock.Object);
+    }
+
+    private static Mock<IMapper> CreateMapperMock()
+    {
+        var mock = new Mock<IMapper>();
+
+        mock.Setup(m => m.Map<WorkSchedule, WorkScheduleShortDto>(It.IsAny<WorkSchedule>()))
+            .Returns((WorkSchedule ws) => new WorkScheduleShortDto
+            {
+                Id = ws.Id,
+                Name = ws.Name,
+                StartDate = ws.StartDate,
+                EndDate = ws.EndDate,
+                IsActive = ws.IsActive,
+                IsValid = ws.IsValid,
+                ShiftCount = ws.Shifts?.Count ?? 0
+            });
+
+        mock.Setup(m => m.Map<WorkSchedule, WorkScheduleDto>(It.IsAny<WorkSchedule>()))
+            .Returns((WorkSchedule ws) => new WorkScheduleDto
+            {
+                Id = ws.Id,
+                Name = ws.Name,
+                StartDate = ws.StartDate,
+                EndDate = ws.EndDate,
+                IsActive = ws.IsActive,
+                IsValid = ws.IsValid,
+                AssignedUsers = new List<AssignedUserDto>(),
+                Shifts = new List<ShiftDto>()
+            });
+
+        return mock;
+    }
 
     private static SchichtpilotDbContext CreateDbContext()
     {
