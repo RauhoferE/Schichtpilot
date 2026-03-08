@@ -204,21 +204,82 @@ public class AbsenceServiceTest
         Assert.NotNull(absence);
         Assert.Equal(nameof(AbsenceStatusEnum.Pending), absence.Status);
         Assert.Equal(dto.StartDate, absence.StartDate);
+
+        _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(It.IsAny<int>()), Times.Never);
+        _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
-    public async Task CreateAbsenceRequestAsync_SickLeave_CreatesApprovedAbsence()
+    public async Task CreateAbsenceRequestAsync_SickLeave_CreatesApprovedAbsenceAndUpdatesSchedules()
     {
         await using var dbContext = CreateDbContext();
         var user = CreateCompleteUser(1);
+        user.JobRoles = new HashSet<UserJobRoles>();
+
+        var role = new JobRole
+        {
+            Id = 1,
+            Name = "Nurse",
+            Description = "Nurse role",
+            CreatedOn = DateTime.UtcNow,
+            UsersWithRole = new HashSet<UserJobRoles>(),
+            Dependencies = new HashSet<JobRoleDependency>(),
+            Prerequisites = new HashSet<JobRoleDependency>()
+        };
+
+        var userJobRole = new UserJobRoles
+        {
+            User = user,
+            UserId = user.Id,
+            JobRole = role,
+            JobRoleId = role.Id
+        };
+        user.JobRoles.Add(userJobRole);
+
+        var schedule = new WorkSchedule
+        {
+            Id = 10,
+            Name = "Schedule A",
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 7),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        var assignment = new ShiftAssignment
+        {
+            WorkSchedule = schedule,
+            WorkScheduleId = schedule.Id,
+            UserJobRole = userJobRole,
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            TimeslotId = 1,
+            StartTime = new DateTime(2026, 1, 2, 8, 0, 0),
+            EndTime = new DateTime(2026, 1, 3, 12, 0, 0)
+        };
+        schedule.ShiftAssignments.Add(assignment);
+
+        dbContext.JobRoles.Add(role);
         dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(userJobRole);
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.ShiftAssignments.Add(assignment);
         await dbContext.SaveChangesAsync();
+
+        _workScheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        _workScheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
 
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            StartDate = DateTime.UtcNow.AddDays(1).Date,
-            EndDate = DateTime.UtcNow.AddDays(2).Date,
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 4),
             AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
             Message = "Sick leave"
         };
@@ -228,7 +289,10 @@ public class AbsenceServiceTest
         var absence = await dbContext.Absences.FirstOrDefaultAsync();
         Assert.NotNull(absence);
         Assert.Equal(nameof(AbsenceStatusEnum.Approved), absence.Status);
-        Assert.Equal(dto.StartDate, absence.StartDate);
+        Assert.Equal(dto.StartDate.Date, absence.StartDate);
+
+        _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
     }
 
     [Fact]

@@ -55,9 +55,24 @@ public class AbsenceService : IAbsenceService
         // Save first (idempotent)
         //_dbContext.Absences.Add(absence);
         await _dbContext.SaveChangesAsync();
-        
-        // TODO: if sick Find shifts where this user is assigned to at this date and set as invalid
-        
+
+        if (absence.Status == nameof(AbsenceStatusEnum.Approved))
+        {
+            var schedulesWithUser = this._dbContext.ShiftAssignments
+                .Include(x => x.UserJobRole)
+                .ThenInclude(x => x.User)
+                .Include(x => x.WorkSchedule)
+                .Where(x => dto.StartDate.Date < x.EndTime.Date && x.StartTime.Date < dto.EndDate.Date &&
+                            x.UserJobRole.UserId == x.UserId)
+                .ToList()
+                .Select(x => x.WorkSchedule);
+
+            foreach (var schedule in schedulesWithUser)
+            {
+                await this._workScheduleService.SetScheduleOfflineAsync(schedule.Id);
+                await this._workScheduleService.SetScheduleAsInvalidAsync(schedule.Id);
+            }
+        }
 
 // Email fire-and-forget (no rollback - acceptable for notifications)
         _ = Task.Run(async () => 
