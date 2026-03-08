@@ -1467,6 +1467,106 @@ public class WorkScheduleServiceTest
     }
 
     [Fact]
+    public async Task SetScheduleAsInvalidAsync_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleAsInvalidAsync(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task SetScheduleAsInvalidAsync_SetsIsValidFalse()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 41,
+            Name = "Valid Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await service.SetScheduleAsInvalidAsync(schedule.Id);
+
+        var updated = await dbContext.WorkSchedules.FirstAsync(x => x.Id == schedule.Id);
+        Assert.False(updated.IsValid);
+    }
+
+    [Fact]
+    public async Task RemoveAllShiftAssignments_NotFound_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.RemoveAllShiftAssignments(999));
+        Assert.Equal("Schedule with id 999 not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task RemoveAllShiftAssignments_RemovesAssignments()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var schedule = new WorkSchedule
+        {
+            Id = 42,
+            Name = "Assignments Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        schedule.ShiftAssignments.Add(new ShiftAssignment
+        {
+            WorkSchedule = schedule,
+            TimeslotId = 1,
+            UserId = 1,
+            JobRoleId = 1,
+            StartTime = new DateTime(2026, 1, 5, 8, 0, 0),
+            EndTime = new DateTime(2026, 1, 5, 12, 0, 0)
+        });
+
+        schedule.ShiftAssignments.Add(new ShiftAssignment
+        {
+            WorkSchedule = schedule,
+            TimeslotId = 2,
+            UserId = 2,
+            JobRoleId = 1,
+            StartTime = new DateTime(2026, 1, 6, 8, 0, 0),
+            EndTime = new DateTime(2026, 1, 6, 12, 0, 0)
+        });
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await service.RemoveAllShiftAssignments(schedule.Id);
+
+        var updated = await dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .FirstAsync(x => x.Id == schedule.Id);
+
+        Assert.Empty(updated.ShiftAssignments);
+        Assert.Empty(dbContext.ShiftAssignments);
+    }
+
+    [Fact]
     public async Task ChangeScheduleDateAsync_NotFound_ThrowsException()
     {
         await using var dbContext = CreateDbContext();

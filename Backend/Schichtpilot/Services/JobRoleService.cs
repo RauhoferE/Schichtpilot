@@ -116,6 +116,7 @@ public class JobRoleService : IJobRoleService
         });
 
         await this._dbContext.SaveChangesAsync();
+        
     }
 
     public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
@@ -204,6 +205,9 @@ public class JobRoleService : IJobRoleService
         }
 
         await this._dbContext.SaveChangesAsync();
+        // this.RemoveShiftAssignmentsAsync();
+        // this.SetScheduleAsInActive();
+        // this.SetScheduleAsInvalid();
     }
 
     public async Task<JobRoleDto> GetJobRoleAsync(int id)

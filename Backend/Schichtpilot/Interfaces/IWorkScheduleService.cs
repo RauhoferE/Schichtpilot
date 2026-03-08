@@ -28,6 +28,10 @@ public interface IWorkScheduleService
     Task SetScheduleActiveAsync(int scheduleId);
     
     Task SetScheduleOfflineAsync(int scheduleId);
+    
+    Task SetScheduleAsInvalidAsync(int scheduleId);
+    
+    Task RemoveAllShiftAssignments(int scheduleId);
 
     Task ChangeScheduleDateAsync(int  scheduleId, DateTime startDate, DateTime endDate);
 }

@@ -296,13 +296,19 @@ public class WorkScheduleService : IWorkScheduleService
         schedule.IsValid = false;
         
         // Remove all previous assignments
+        await RemoveAllShiftAssignments(schedule);
+        
+        await CreateShiftAssignmentsAsync(schedule, shifts);
+    }
+
+    private async Task RemoveAllShiftAssignments(WorkSchedule schedule)
+    {
         foreach (var shiftAssignment in schedule.ShiftAssignments)
         {
             this._dbContext.ShiftAssignments.Remove(shiftAssignment);
         }
-        
+
         await this._dbContext.SaveChangesAsync();
-        await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
     public async Task PublishScheduleAsync(int scheduleId)
@@ -453,8 +459,6 @@ public class WorkScheduleService : IWorkScheduleService
     public async Task SetScheduleOfflineAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
-            .Include(x => x.Shifts)
-            .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
 
         if (schedule == null)
@@ -466,11 +470,38 @@ public class WorkScheduleService : IWorkScheduleService
         await this._dbContext.SaveChangesAsync();
     }
 
+    public async Task SetScheduleAsInvalidAsync(int scheduleId)
+    {
+        var schedule = this._dbContext.WorkSchedules
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+        
+        schedule.IsValid = false;
+        await this._dbContext.SaveChangesAsync();
+    }
+
+    public async Task RemoveAllShiftAssignments(int scheduleId)
+    {
+        var schedule = this._dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .FirstOrDefault(x => x.Id == scheduleId);
+        
+
+        if (schedule == null)
+        {
+            throw new Exception($"Schedule with id {scheduleId} not found.");
+        }
+
+        await this.RemoveAllShiftAssignments(schedule);
+    }
+
     public async Task ChangeScheduleDateAsync(int scheduleId, DateTime startDate, DateTime endDate)
     {
         var schedule = this._dbContext.WorkSchedules
-            .Include(x => x.Shifts)
-            .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
 
         if (schedule == null)

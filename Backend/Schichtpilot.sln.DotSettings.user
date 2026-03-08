@@ -15,7 +15,7 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestProjectMapping/=6CA18A65_002DA798_002D4B5F_002DA1A0_002D1A4A99C4E819/@EntryIndexedValue">01D0BABE-3E66-4F0C-A040-E2FE75CF827C</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestTemplateMapping/=xUnit/@EntryIndexedValue">33ff99d8-b1ad-4ed5-a4fd-376b97c2c841</s:String>
 	
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=613da480_002Da6e9_002D4f50_002D86c9_002D371cc9585b8a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="UserServiceTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=613da480_002Da6e9_002D4f50_002D86c9_002D371cc9585b8a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="UserServiceTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
     &lt;TestAncestor&gt;
       &lt;TestId&gt;xUnit::01D0BABE-3E66-4F0C-A040-E2FE75CF827C::net10.0::UnitTests.Services.UserServiceTest&lt;/TestId&gt;
