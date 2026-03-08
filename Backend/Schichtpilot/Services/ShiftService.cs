@@ -11,15 +11,18 @@ namespace Schichtpilot.Services;
 
 public class ShiftService : IShiftService
 {
-    public ShiftService(SchichtpilotDbContext dbContext, IMapper mapper)
+    public ShiftService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService  scheduleService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _scheduleService = scheduleService ?? throw new ArgumentNullException(nameof(scheduleService));
     }
 
     private readonly SchichtpilotDbContext _dbContext;
     
     private readonly IMapper _mapper;
+    
+    private readonly IWorkScheduleService  _scheduleService;
     
     public async Task CreateShiftAsync(CreateShiftDto shift)
     {
@@ -192,11 +195,28 @@ public class ShiftService : IShiftService
         
         shiftToDelete.Timeslots.Remove(timeSlot);
         await this._dbContext.SaveChangesAsync();
+        
+        await SetSchedulesWithShiftAsInactive(shiftId);
+    }
+
+    private async Task SetSchedulesWithShiftAsInactive(int shiftId)
+    {
+        var schedulesWithShift = this._dbContext.WorkScheduleShifts
+            .Include(x => x.WorkSchedule)
+            .Include(x => x.Shift)
+            .Where(x=> x.ShiftId ==  shiftId)
+            .ToList()
+            .Select(x => x.WorkSchedule);
+
+        foreach (var schedule in schedulesWithShift)
+        {
+            await this._scheduleService.SetScheduleOfflineAsync(schedule.Id);
+            await this._scheduleService.SetScheduleAsInvalidAsync(schedule.Id);
+        }
     }
 
     public async Task AddTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.Timeslots)
             .FirstOrDefault(x => x.Id == shiftId);
@@ -216,8 +236,6 @@ public class ShiftService : IShiftService
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
         }
         
-
-
         shiftToModiy.Timeslots.Add(new Timeslot()
         {
             DayOfWeek = timeSlot.DayOfWeek,
@@ -237,11 +255,12 @@ public class ShiftService : IShiftService
         }
 
         await this._dbContext.SaveChangesAsync();
+        
+        await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
     public async Task EditTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.Timeslots)
             .ThenInclude(x => x.Breaks)
@@ -294,11 +313,12 @@ public class ShiftService : IShiftService
         }).ToHashSet();
 
         await this._dbContext.SaveChangesAsync();
+        
+        await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
     public async Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.JobRequirements)
             .ThenInclude(x => x.JobRole)
@@ -331,11 +351,12 @@ public class ShiftService : IShiftService
         });
         
         await this._dbContext.SaveChangesAsync();
+        
+        await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
     public async Task ChangeRequiredStaffAsync(int shiftId, int jobRequirementId, int requiredStaffCount)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.JobRequirements)
             .ThenInclude(x => x.JobRole)
@@ -355,11 +376,12 @@ public class ShiftService : IShiftService
         
         jobRequirement.RequiredStaffCount = requiredStaffCount;
         await this._dbContext.SaveChangesAsync();
+        
+        await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
     public async Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.JobRequirements)
             .ThenInclude(x => x.JobRole)
@@ -376,6 +398,8 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
         }
+        
+        await SetSchedulesWithShiftAsInactive(shiftId);
         
         shiftToModiy.JobRequirements.Remove(jobRequirement);
         await this._dbContext.SaveChangesAsync();
@@ -425,12 +449,10 @@ public class ShiftService : IShiftService
             .Where(r => missingIds.Contains(r.Id))
             .Select(r => r.Name)
             .ToListAsync();
-    
     }
 
     public async Task DeleteShiftAsync(int shiftId)
     {
-        //TODO: Check if shift is used in a schedule
         var shiftToDelete = this._dbContext.Shifts
             .Include(x => x.Timeslots)
             .ThenInclude(x=> x.Breaks)
@@ -443,6 +465,7 @@ public class ShiftService : IShiftService
         }
         
         this._dbContext.Shifts.Remove(shiftToDelete);
+        await SetSchedulesWithShiftAsInactive(shiftId);
         await this._dbContext.SaveChangesAsync();
     }
 
