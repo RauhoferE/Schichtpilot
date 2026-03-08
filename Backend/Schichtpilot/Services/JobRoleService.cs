@@ -10,16 +10,18 @@ namespace Schichtpilot.Services;
 
 public class JobRoleService : IJobRoleService
 {
-    public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService  workScheduleService)
+    public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService  workScheduleService, IShiftService shiftService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
+        _shiftService = shiftService ?? throw new ArgumentNullException(nameof(shiftService));
     }
 
     private readonly SchichtpilotDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IWorkScheduleService  _workScheduleService;
+    private readonly IShiftService _shiftService;
 
 
     public async Task CreateJobRoleAsync(CreateJobRoleDto jobRole)
@@ -118,7 +120,20 @@ public class JobRoleService : IJobRoleService
         });
 
         await this._dbContext.SaveChangesAsync();
-        
+        //
+        // var schedulesWithRole = this._dbContext.ShiftAssignments
+        //     .Include(x => x.WorkSchedule)
+        //     .Include(x => x.UserJobRole)
+        //     .ThenInclude(x => x.JobRole)
+        //     .Where(x => x.UserJobRole.JobRoleId == jobRoleId)
+        //     .ToList()
+        //     .Select(x => x.WorkSchedule);
+        //
+        // foreach (var workSchedule in schedulesWithRole)
+        // {
+        //     await this._workScheduleService.SetScheduleOfflineAsync(workSchedule.Id);
+        //     await this._workScheduleService.SetScheduleAsInvalidAsync(workSchedule.Id);
+        // }
     }
 
     public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)

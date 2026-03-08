@@ -489,10 +489,12 @@ public class JobRoleServiceTest
     private static JobRoleService CreateService(
         SchichtpilotDbContext dbContext,
         Mock<IMapper> mapperMock,
-        Mock<IWorkScheduleService>? workScheduleServiceMock = null)
+        Mock<IWorkScheduleService>? workScheduleServiceMock = null,
+        Mock<IShiftService>? shiftServiceMock = null)
     {
         var workScheduleService = workScheduleServiceMock ?? new Mock<IWorkScheduleService>();
-        return new JobRoleService(dbContext, mapperMock.Object, workScheduleService.Object);
+        var shiftService = shiftServiceMock ?? new Mock<IShiftService>();
+        return new JobRoleService(dbContext, mapperMock.Object, workScheduleService.Object, shiftService.Object);
     }
 
     private static SchichtpilotDbContext CreateDbContext()
