@@ -33,6 +33,7 @@
     &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Services/f:WorkScheduleServiceTest.cs&lt;/ProjectFile&gt;
     &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Services/f:ShiftServiceTest.cs&lt;/ProjectFile&gt;
     &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Services/f:JobRoleServiceTest.cs&lt;/ProjectFile&gt;
+    &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Services/f:AbsenceServiceTest.cs&lt;/ProjectFile&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:Boolean x:Key="/Default/ResxEditorPersonal/Initialized/@EntryValue">True</s:Boolean>

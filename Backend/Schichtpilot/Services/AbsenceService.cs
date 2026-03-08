@@ -44,7 +44,8 @@ public class AbsenceService : IAbsenceService
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
             Message = dto.Message,
-            Status = "Pending", //TODO: Change this to the enum
+            // If the person is sick this has to be approved
+            Status = dto.AbsenceType == AbsenceTypeEnum.SickLeave.ToString() ? AbsenceStatusEnum.Approved.ToString() : AbsenceStatusEnum.Pending.ToString(),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -53,6 +54,9 @@ public class AbsenceService : IAbsenceService
         // Save first (idempotent)
         //_dbContext.Absences.Add(absence);
         await _dbContext.SaveChangesAsync();
+        
+        // TODO: if sick Find shifts where this user is assigned to at this date and set as invalid
+        
 
 // Email fire-and-forget (no rollback - acceptable for notifications)
         _ = Task.Run(async () => 

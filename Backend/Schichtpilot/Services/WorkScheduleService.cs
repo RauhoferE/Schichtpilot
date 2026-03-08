@@ -465,7 +465,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new Exception($"Schedule with id {scheduleId} not found.");
         }
-        
+        // TODO: Send an email to managers that schedule has been set as offline
         schedule.IsActive = false;
         await this._dbContext.SaveChangesAsync();
     }
