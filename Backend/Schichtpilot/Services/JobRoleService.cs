@@ -10,14 +10,16 @@ namespace Schichtpilot.Services;
 
 public class JobRoleService : IJobRoleService
 {
-    public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper)
+    public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService  workScheduleService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
     private readonly SchichtpilotDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly IWorkScheduleService  _workScheduleService;
 
 
     public async Task CreateJobRoleAsync(CreateJobRoleDto jobRole)
@@ -145,7 +147,7 @@ public class JobRoleService : IJobRoleService
         }
     }
 
-    public async Task AddUsersToJobRoleAsync(int id, List<int> userIds)
+    public async Task AddUsersToJobRoleAsync(int id, List<long> userIds)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
@@ -178,9 +180,8 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveUsersFromJobRoleAsync(int id, List<int> userIds)
+    public async Task RemoveUsersFromJobRoleAsync(int id, List<long> userIds)
     {
-        //TODO: Check if user is used in a schedule
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
         if (jobRoleToModify == null)
@@ -205,9 +206,23 @@ public class JobRoleService : IJobRoleService
         }
 
         await this._dbContext.SaveChangesAsync();
-        // this.RemoveShiftAssignmentsAsync();
-        // this.SetScheduleAsInActive();
-        // this.SetScheduleAsInvalid();
+        var schedulesWithUsers = this._dbContext.ShiftAssignments
+            .Include(x => x.WorkSchedule)
+            .Include(x => x.UserJobRole)
+            .ThenInclude(x => x.User)
+            .Where(x => userIds.Contains(x.UserJobRole.UserId))
+            .ToList()
+            .Select(x => x.WorkSchedule);
+            
+        // I dont think removing the shifts here makes sense
+        // If its invalid he has to regenerate it anyway
+        //this._workScheduleService.RemoveAllShiftAssignments()
+
+        foreach (var workSchedule in schedulesWithUsers)
+        {
+            await this._workScheduleService.SetScheduleOfflineAsync(workSchedule.Id);
+            await this._workScheduleService.SetScheduleAsInvalidAsync(workSchedule.Id);
+        }
     }
 
     public async Task<JobRoleDto> GetJobRoleAsync(int id)
