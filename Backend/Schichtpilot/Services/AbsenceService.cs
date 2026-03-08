@@ -16,13 +16,14 @@ public class AbsenceService : IAbsenceService
     private readonly SchichtpilotDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IEmailService _emailService;
+    private readonly IWorkScheduleService  _workScheduleService;
 
-    public AbsenceService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService)
+    public AbsenceService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService, IWorkScheduleService  workScheduleService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
-
+        _workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
     public async Task CreateAbsenceRequestAsync(CreateAbsenceDto dto, long userId)

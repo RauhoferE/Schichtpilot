@@ -20,6 +20,7 @@ public class AbsenceServiceTest
 {
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IEmailService> _emailServiceMock;
+    private readonly Mock<IWorkScheduleService> _workScheduleServiceMock;
 
     public AbsenceServiceTest()
     {
@@ -45,6 +46,7 @@ public class AbsenceServiceTest
             );
 
         _emailServiceMock = new Mock<IEmailService>();
+        _workScheduleServiceMock = new Mock<IWorkScheduleService>();
     }
     private static SchichtpilotDbContext CreateDbContext()
     {
@@ -58,7 +60,7 @@ public class AbsenceServiceTest
 
     private AbsenceService CreateService(SchichtpilotDbContext dbContext)
     {
-        return new AbsenceService(dbContext, _mapperMock.Object, _emailServiceMock.Object);
+        return new AbsenceService(dbContext, _mapperMock.Object, _emailServiceMock.Object, _workScheduleServiceMock.Object);
     }
 
     [Fact]
