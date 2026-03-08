@@ -14,7 +14,7 @@ public class JobRoleService : IJobRoleService
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-        workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
+        _workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
     private readonly SchichtpilotDbContext _dbContext;
@@ -188,6 +188,14 @@ public class JobRoleService : IJobRoleService
         {
             throw new NotFoundException("Jobrole not found!");
         }
+        
+        var schedulesWithUsers = this._dbContext.ShiftAssignments
+            .Include(x => x.WorkSchedule)
+            .Include(x => x.UserJobRole)
+            .ThenInclude(x => x.User)
+            .Where(x => userIds.Contains(x.UserJobRole.UserId))
+            .ToList()
+            .Select(x => x.WorkSchedule);
 
         foreach (var userId in userIds)
         {
@@ -206,13 +214,7 @@ public class JobRoleService : IJobRoleService
         }
 
         await this._dbContext.SaveChangesAsync();
-        var schedulesWithUsers = this._dbContext.ShiftAssignments
-            .Include(x => x.WorkSchedule)
-            .Include(x => x.UserJobRole)
-            .ThenInclude(x => x.User)
-            .Where(x => userIds.Contains(x.UserJobRole.UserId))
-            .ToList()
-            .Select(x => x.WorkSchedule);
+
             
         // I dont think removing the shifts here makes sense
         // If its invalid he has to regenerate it anyway
