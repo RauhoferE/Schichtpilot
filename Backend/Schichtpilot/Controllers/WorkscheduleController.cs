@@ -62,13 +62,21 @@ public class WorkscheduleController : Controller
         return NoContent();
     }
     
-    // [HttpPatch("{scheduleId}")]
-    // [ProducesResponseType(typeof() StatusCodes.Status200OK)]
-    // public async Task<IActionResult> GetScheduleAsync([FromRoute, Required] int scheduleId)
-    // {
-    //     await this._workScheduleService.get(scheduleId);
-    //     return NoContent();
-    // }
+    [HttpGet("{scheduleId}")]
+    [ProducesResponseType(typeof(WorkScheduleDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetScheduleAsync([FromRoute, Required] int scheduleId)
+    {
+        return Ok(await this._workScheduleService.GetScheduleAsync(scheduleId));
+    }
+    
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(QueryableSchedules), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSchedulesAsync([FromBody, Required] GetSchedulesRequest request)
+    {
+        var paginationDto = this._mapper.Map<GetSchedulesRequest, PaginationDto>(request);
+        var filterDto = this._mapper.Map<GetSchedulesRequest, ScheduleFilterDot>(request);
+        return Ok(await this._workScheduleService.GetSchedulesAsync(paginationDto, filterDto));
+    }
     
     [HttpPatch("{scheduleId}/inactive")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
