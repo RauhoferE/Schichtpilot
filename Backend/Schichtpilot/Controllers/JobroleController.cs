@@ -3,6 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
+using Schichtpilot.Models.Requests;
 using Schichtpilot.Models.Responses;
 
 namespace Schichtpilot.Controllers;
@@ -64,7 +65,30 @@ public class JobroleController : Controller
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
     {
-        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userId);
+        await this._jobRoleService.RemoveUserFromJobRoleAsync(jobRoleId, userId);
         return NoContent();
+    }
+    
+    [HttpDelete("{jobRoleId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteJobRoleAsync([FromRoute, Required] int jobRoleId)
+    {
+        await this._jobRoleService.DeleteRoleAsync(jobRoleId);
+        return NoContent();
+    }
+    
+    [HttpGet("{jobRoleId}")]
+    [ProducesResponseType( typeof(JobRoleDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetJobRoleAsync([FromRoute, Required] int jobRoleId)
+    {
+        return Ok(await this._jobRoleService.GetJobRoleAsync(jobRoleId));
+    }
+    
+    [HttpGet("all")]
+    [ProducesResponseType( typeof(QueryableJobRoleResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetJobRolesAsync([FromQuery] GetJobRolesRequest request)
+    {
+        var paginationDto = this._mapper.Map<PaginationDto>(request);
+        return Ok(await this._jobRoleService.GetJobRolesAsync(paginationDto, request.Searchstring));
     }
 }
