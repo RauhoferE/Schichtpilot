@@ -188,9 +188,7 @@ public class WorkScheduleService : IWorkScheduleService
                             userAssignments,
                             slotStart,
                             slotEnd,
-                            workPolicy.MaximumConsecutiveWorkHoursPerWeek,
-                            startDateOfSchedule.Date,
-                            endDateOfSchedule.Date.AddDays(1)))
+                            workPolicy.MaximumConsecutiveWorkHoursPerWeek))
                     {
                         continue;
                     }
@@ -274,30 +272,16 @@ public class WorkScheduleService : IWorkScheduleService
         List<(DateTime Start, DateTime End)> userAssignments,
         DateTime newTimeslotStart,
         DateTime newTimeslotEnd,
-        int maximumWeeklyHours,
-        DateTime startDateOfSchedule,
-        DateTime endDateOfSchedule)
+        int maximumWeeklyHours)
     {
         TimeSpan total = TimeSpan.Zero;
 
         foreach (var assignment in userAssignments)
         {
-            var overlapStart = assignment.Start < startDateOfSchedule ? startDateOfSchedule : assignment.Start;
-            var overlapEnd = assignment.End > endDateOfSchedule ? endDateOfSchedule : assignment.End;
-
-            if (overlapStart < overlapEnd)
-            {
-                total += overlapEnd - overlapStart;
-            }
+            total += assignment.End - assignment.Start;
         }
-
-        var newOverlapStart = newTimeslotStart < startDateOfSchedule ? startDateOfSchedule : newTimeslotStart;
-        var newOverlapEnd = newTimeslotEnd > endDateOfSchedule ? endDateOfSchedule : newTimeslotEnd;
-
-        if (newOverlapStart < newOverlapEnd)
-        {
-            total += newOverlapEnd - newOverlapStart;
-        }
+        
+        total += newTimeslotEnd - newTimeslotStart;
 
         return total <= TimeSpan.FromHours(maximumWeeklyHours);
     }
