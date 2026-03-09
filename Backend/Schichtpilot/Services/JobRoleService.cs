@@ -176,7 +176,7 @@ public class JobRoleService : IJobRoleService
         }
     }
 
-    public async Task AddUsersToJobRoleAsync(int id, List<long> userIds)
+    public async Task AddUserToJobRoleAsync(int id, long userId)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
@@ -184,32 +184,28 @@ public class JobRoleService : IJobRoleService
         {
             throw new NotFoundException("Jobrole not found!");
         }
-
-        foreach (var userId in userIds)
+        var user = await this._dbContext.Users.Include(x => x.JobRoles).FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
         {
-            var user = await this._dbContext.Users.Include(x => x.JobRoles).FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
-            {
-                throw new NotFoundException("User not found!");
-            }
+            throw new NotFoundException("User not found!");
+        }
 
-            // Check if user doesnt already have the role
-            if (user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id) == null)
+        // Check if user doesnt already have the role
+        if (user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id) == null)
+        {
+            user.JobRoles.Add(new UserJobRoles()
             {
-                user.JobRoles.Add(new UserJobRoles()
-                {
-                    JobRole = jobRoleToModify,
-                    JobRoleId = jobRoleToModify.Id,
-                    User = user,
-                    UserId = (int)user.Id
-                });
-            }
+                JobRole = jobRoleToModify,
+                JobRoleId = jobRoleToModify.Id,
+                User = user,
+                UserId = (int)user.Id
+            });
         }
 
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveUsersFromJobRoleAsync(int id, List<long> userIds)
+    public async Task RemoveUserFromJobRoleAsync(int id, long userId)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
@@ -222,24 +218,21 @@ public class JobRoleService : IJobRoleService
             .Include(x => x.WorkSchedule)
             .Include(x => x.UserJobRole)
             .ThenInclude(x => x.User)
-            .Where(x => userIds.Contains(x.UserJobRole.UserId))
+            .Where(x => x.UserJobRole.UserId == userId)
             .ToList()
             .Select(x => x.WorkSchedule);
-
-        foreach (var userId in userIds)
+        
+        var user = await this._dbContext.Users.Include(x => x.JobRoles).FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
         {
-            var user = await this._dbContext.Users.Include(x => x.JobRoles).FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
-            {
-                throw new NotFoundException("User not found!");
-            }
+            throw new NotFoundException("User not found!");
+        }
 
-            var jobRoleToRemove = user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id);
-            // Check if user has the role
-            if (jobRoleToRemove != null)
-            {
-                user.JobRoles.Remove(jobRoleToRemove);
-            }
+        var jobRoleToRemove = user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id);
+        // Check if user has the role
+        if (jobRoleToRemove != null)
+        {
+            user.JobRoles.Remove(jobRoleToRemove);
         }
 
         await this._dbContext.SaveChangesAsync();

@@ -1078,7 +1078,7 @@ public class ShiftServiceTest
             Status = ShiftStatusEnum.All
         };
 
-        var result = await service.ViewShiftsAsync(new PaginationDto { Page = 1, PageSize = 10 }, filter);
+        var result = await service.GetShiftsAsync(new PaginationDto { Page = 1, PageSize = 10 }, filter);
 
         var shifts = result.Shift.ToList();
         Assert.Equal(1, result.Count);

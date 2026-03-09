@@ -1,0 +1,60 @@
+using System.ComponentModel.DataAnnotations;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Schichtpilot.Interfaces;
+using Schichtpilot.Models.DTOs;
+
+namespace Schichtpilot.Controllers;
+
+[Controller]
+[Route("api/[controller]")]
+public class CompanyPolicyController : Controller
+{
+    public CompanyPolicyController(ICompanyPolicyService companyService, IMapper mapper)
+    {
+        _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+    }
+
+    private readonly ICompanyPolicyService _companyService;
+    
+    private readonly IMapper _mapper;
+    
+    [HttpGet("holidays")]
+    [ProducesResponseType( typeof(HolidaysDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHolidayAsync()
+    {
+        return Ok(await _companyService.GetHolidaysAsync());
+    }
+
+    [HttpPost("holidays")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AddHolidayAsync([FromBody, Required] HolidaysDto holidays)
+    {
+        await this._companyService.AddHolidaysAsync(holidays);
+        return NoContent();
+    }
+    
+    [HttpDelete("holidays")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveHolidayAsync([FromBody, Required] HolidaysDto holidays)
+    {
+        await this._companyService.RemoveHolidaysAsync(holidays);
+        return NoContent();
+    }
+    
+    [HttpPut("")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> SetPolicyAsync([FromBody, Required] CompanyPolicyDto policy)
+    {
+        await this._companyService.SetPolicyAsync(policy);
+        return NoContent();
+    }
+    
+    [HttpGet("")]
+    [ProducesResponseType( typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPolicyAsync([FromBody, Required] CompanyPolicyDto policy)
+    {
+        return Ok(await this._companyService.GetPolicyAsync());
+    }
+}

@@ -22,6 +22,6 @@ public interface IShiftService
     Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId);
     
     Task DeleteShiftAsync(int shiftId);
-    Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter);
+    Task<QueryableShiftResponse> GetShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter);
     Task<ShiftDto> GetShiftAsync(int shiftId);
 }

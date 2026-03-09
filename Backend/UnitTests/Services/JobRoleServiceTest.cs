@@ -326,7 +326,7 @@ public class JobRoleServiceTest
         var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            service.AddUsersToJobRoleAsync(999, new List<long> { 1 }));
+            service.AddUserToJobRoleAsync(999, 1));
     }
 
     [Fact]
@@ -340,7 +340,7 @@ public class JobRoleServiceTest
         var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            service.AddUsersToJobRoleAsync(1, new List<long> { 999 }));
+            service.AddUserToJobRoleAsync(1, 999));
     }
 
     [Fact]
@@ -358,7 +358,8 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = CreateService(dbContext, mapperMock);
 
-        await service.AddUsersToJobRoleAsync(role.Id, new List<long> { user1.Id, user2.Id });
+        await service.AddUserToJobRoleAsync(role.Id, user1.Id);
+        await service.AddUserToJobRoleAsync(role.Id, user2.Id);
 
         var updatedUser1 = await dbContext.Users.Include(x => x.JobRoles).FirstAsync(x => x.Id == user1.Id);
         var updatedUser2 = await dbContext.Users.Include(x => x.JobRoles).FirstAsync(x => x.Id == user2.Id);
@@ -388,7 +389,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = CreateService(dbContext, mapperMock);
 
-        await service.RemoveUsersFromJobRoleAsync(role.Id, new List<long> { user.Id });
+        await service.RemoveUserFromJobRoleAsync(role.Id, user.Id);
 
         var updated = await dbContext.Users.Include(x => x.JobRoles).FirstAsync(x => x.Id == user.Id);
         Assert.Empty(updated.JobRoles);
@@ -451,7 +452,7 @@ public class JobRoleServiceTest
 
         var service = CreateService(dbContext, mapperMock, workScheduleServiceMock);
 
-        await service.RemoveUsersFromJobRoleAsync(role.Id, new List<long> { user.Id });
+        await service.RemoveUserFromJobRoleAsync(role.Id,  user.Id);
 
         workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
         workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);

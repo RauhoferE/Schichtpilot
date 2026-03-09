@@ -18,10 +18,10 @@ public interface IWorkScheduleService
     Task PublishScheduleAsync(int scheduleId);
     
     // Dont show deleted schedule
-    Task<QueryableSchedules> ViewSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter);
+    Task<QueryableSchedules> GetSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter);
     
     // Cannot be done on active schedule or deleted schedule
-    Task<WorkScheduleDto> ViewScheduleAsync(int  scheduleId);
+    Task<WorkScheduleDto> GetScheduleAsync(int  scheduleId);
 
     Task DeleteScheduleAsync(int scheduleId);
     
