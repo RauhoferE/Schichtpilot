@@ -120,17 +120,17 @@ public class WorkScheduleService : IWorkScheduleService
             var timeslot = item.Timeslot;
             var shift = item.Shift;
 
-            var currentDate = startDateOfSchedule.Date
+            var timeSlotBaseDate = startDateOfSchedule.Date
                 .AddDays(((int)timeslot.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7);
 
-            var slotStart = currentDate.Add(timeslot.StartTime.ToTimeSpan());
-            var slotEnd = currentDate.Add(timeslot.EndTime.ToTimeSpan());
+            var slotStart = timeSlotBaseDate.Add(timeslot.StartTime.ToTimeSpan());
+            var slotEnd = timeSlotBaseDate.Add(timeslot.EndTime.ToTimeSpan());
 
-            foreach (var req in shift.JobRequirements)
+            foreach (var shiftRequirement in shift.JobRequirements)
             {
-
+                // Canditates with pending absence will be picked last
                 var candidates = usersByRole
-                    .Where(u => u.JobRoleId == req.JobRoleId)
+                    .Where(u => u.JobRoleId == shiftRequirement.JobRoleId)
                     .Select(u => new
                     {
                         UserJobRole = u,
@@ -148,9 +148,11 @@ public class WorkScheduleService : IWorkScheduleService
 
                 foreach (var candidate in candidates)
                 {
-                    if (assignedCount >= req.RequiredStaffCount)
+                    if (assignedCount >= shiftRequirement.RequiredStaffCount)
+                    {
                         break;
-
+                    }
+                    
                     // Approved absences still block assignment
                     var candidateApprovedAbsenceOverlap = approvedAbsences.Any(a =>
                         a.UserId == candidate.UserId &&
@@ -158,7 +160,9 @@ public class WorkScheduleService : IWorkScheduleService
                         slotStart < a.EndDate);
 
                     if (candidateApprovedAbsenceOverlap)
+                    {
                         continue;
+                    }
 
                     if (!assignmentsByUser.TryGetValue(candidate.UserId, out var userAssignments))
                     {
@@ -170,8 +174,10 @@ public class WorkScheduleService : IWorkScheduleService
                         x.Start < slotEnd && slotStart < x.End);
 
                     if (overlapsExisting)
+                    {
                         continue;
-
+                    }
+                    
                     if (!RespectsMaximumConsecutiveHours(userAssignments, slotStart, slotEnd,
                             workPolicy.MaximumConsecutiveWorkHoursPerDay))
                     {
@@ -203,10 +209,10 @@ public class WorkScheduleService : IWorkScheduleService
                     assignedCount++;
                 }
 
-                if (assignedCount < req.RequiredStaffCount)
+                if (assignedCount < shiftRequirement.RequiredStaffCount)
                 {
                     throw new Exception(
-                        $"Not enough staff for ShiftId={shift.Id}, TimeslotId={timeslot.Id}, JobRoleId={req.JobRoleId}.");
+                        $"Not enough staff for ShiftId={shift.Id}, TimeslotId={timeslot.Id}, JobRoleId={shiftRequirement.JobRoleId}.");
                 }
             }
         }
@@ -218,24 +224,24 @@ public class WorkScheduleService : IWorkScheduleService
 
     private bool RespectsMaximumConsecutiveHours(
         List<(DateTime Start, DateTime End)> userAssignments,
-        DateTime newStart,
-        DateTime newEnd,
+        DateTime newTimeslotStart,
+        DateTime newTimeslotEnd,
         int maximumConsecutiveWorkHours)
     {
-        var chain = new List<(DateTime Start, DateTime End)>(userAssignments)
+        var assignments = new List<(DateTime Start, DateTime End)>(userAssignments)
         {
-            (newStart, newEnd)
+            (newTimeslotStart, newTimeslotEnd)
         };
 
-        chain = chain.OrderBy(x => x.Start).ToList();
+        assignments = assignments.OrderBy(x => x.Start).ToList();
 
-        var maxConsecutive = TimeSpan.Zero;
-        var currentChainStart = chain[0].Start;
-        var currentChainEnd = chain[0].End;
+        var currentConsecutiveHoursOfUser = TimeSpan.Zero;
+        var currentChainStart = assignments[0].Start;
+        var currentChainEnd = assignments[0].End;
 
-        for (var i = 1; i < chain.Count; i++)
+        for (var i = 1; i < assignments.Count; i++)
         {
-            var next = chain[i];
+            var next = assignments[i];
 
             if (next.Start <= currentChainEnd)
             {
@@ -245,7 +251,10 @@ public class WorkScheduleService : IWorkScheduleService
             else
             {
                 var segment = currentChainEnd - currentChainStart;
-                if (segment > maxConsecutive) maxConsecutive = segment;
+                if (segment > currentConsecutiveHoursOfUser)
+                {
+                    currentConsecutiveHoursOfUser = segment;
+                }
 
                 currentChainStart = next.Start;
                 currentChainEnd = next.End;
@@ -253,25 +262,28 @@ public class WorkScheduleService : IWorkScheduleService
         }
 
         var finalSegment = currentChainEnd - currentChainStart;
-        if (finalSegment > maxConsecutive) maxConsecutive = finalSegment;
+        if (finalSegment > currentConsecutiveHoursOfUser)
+        {
+            currentConsecutiveHoursOfUser = finalSegment;
+        }
 
-        return maxConsecutive <= TimeSpan.FromHours(maximumConsecutiveWorkHours);
+        return currentConsecutiveHoursOfUser <= TimeSpan.FromHours(maximumConsecutiveWorkHours);
     }
     
     private bool RespectsMaximumWeeklyHours(
         List<(DateTime Start, DateTime End)> userAssignments,
-        DateTime newStart,
-        DateTime newEnd,
+        DateTime newTimeslotStart,
+        DateTime newTimeslotEnd,
         int maximumWeeklyHours,
-        DateTime windowStart,
-        DateTime windowEndExclusive)
+        DateTime startDateOfSchedule,
+        DateTime endDateOfSchedule)
     {
         TimeSpan total = TimeSpan.Zero;
 
         foreach (var assignment in userAssignments)
         {
-            var overlapStart = assignment.Start < windowStart ? windowStart : assignment.Start;
-            var overlapEnd = assignment.End > windowEndExclusive ? windowEndExclusive : assignment.End;
+            var overlapStart = assignment.Start < startDateOfSchedule ? startDateOfSchedule : assignment.Start;
+            var overlapEnd = assignment.End > endDateOfSchedule ? endDateOfSchedule : assignment.End;
 
             if (overlapStart < overlapEnd)
             {
@@ -279,8 +291,8 @@ public class WorkScheduleService : IWorkScheduleService
             }
         }
 
-        var newOverlapStart = newStart < windowStart ? windowStart : newStart;
-        var newOverlapEnd = newEnd > windowEndExclusive ? windowEndExclusive : newEnd;
+        var newOverlapStart = newTimeslotStart < startDateOfSchedule ? startDateOfSchedule : newTimeslotStart;
+        var newOverlapEnd = newTimeslotEnd > endDateOfSchedule ? endDateOfSchedule : newTimeslotEnd;
 
         if (newOverlapStart < newOverlapEnd)
         {
