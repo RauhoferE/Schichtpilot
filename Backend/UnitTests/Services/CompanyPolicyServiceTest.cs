@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Services;
+using Schichtpilot.Exceptions;
 
 namespace UnitTests.Services;
 
@@ -125,18 +126,20 @@ public class CompanyPolicyServiceTest
 
         var dto = new CompanyPolicyDto
         {
-            MaximumConsecutiveWorkHours = 10,
+            MaximumConsecutiveWorkHoursPerDay = 10,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 48
         };
 
         await service.SetPolicyAsync(dto);
 
         var saved = await dbContext.WorkPolicies.SingleOrDefaultAsync();
         Assert.NotNull(saved);
-        Assert.Equal(dto.MaximumConsecutiveWorkHours, saved.MaximumConsecutiveWorkHours);
+        Assert.Equal(dto.MaximumConsecutiveWorkHoursPerDay, saved.MaximumConsecutiveWorkHoursPerDay);
         Assert.Equal(dto.RestPeriodInMinutes, saved.RestPeriodInMinutes);
         Assert.Equal(dto.RestPeriodThresholdInMinutes, saved.RestPeriodThresholdInMinutes);
+        Assert.Equal(dto.MaximumConsecutiveWorkHoursPerWeek, saved.MaximumConsecutiveWorkHoursPerWeek);
     }
 
     [Fact]
@@ -145,9 +148,10 @@ public class CompanyPolicyServiceTest
         await using var dbContext = CreateDbContext();
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
-            MaximumConsecutiveWorkHours = 8,
+            MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 15,
-            RestPeriodThresholdInMinutes = 300
+            RestPeriodThresholdInMinutes = 300,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
         await dbContext.SaveChangesAsync();
 
@@ -156,9 +160,10 @@ public class CompanyPolicyServiceTest
 
         var dto = new CompanyPolicyDto
         {
-            MaximumConsecutiveWorkHours = 12,
+            MaximumConsecutiveWorkHoursPerDay = 12,
             RestPeriodInMinutes = 45,
-            RestPeriodThresholdInMinutes = 420
+            RestPeriodThresholdInMinutes = 420,
+            MaximumConsecutiveWorkHoursPerWeek = 50
         };
 
         await service.SetPolicyAsync(dto);
@@ -167,9 +172,10 @@ public class CompanyPolicyServiceTest
         Assert.Single(policies);
 
         var updated = policies[0];
-        Assert.Equal(dto.MaximumConsecutiveWorkHours, updated.MaximumConsecutiveWorkHours);
+        Assert.Equal(dto.MaximumConsecutiveWorkHoursPerDay, updated.MaximumConsecutiveWorkHoursPerDay);
         Assert.Equal(dto.RestPeriodInMinutes, updated.RestPeriodInMinutes);
         Assert.Equal(dto.RestPeriodThresholdInMinutes, updated.RestPeriodThresholdInMinutes);
+        Assert.Equal(dto.MaximumConsecutiveWorkHoursPerWeek, updated.MaximumConsecutiveWorkHoursPerWeek);
     }
 
     [Fact]
@@ -178,18 +184,20 @@ public class CompanyPolicyServiceTest
         await using var dbContext = CreateDbContext();
         var entity = new WorkPolicy
         {
-            MaximumConsecutiveWorkHours = 9,
+            MaximumConsecutiveWorkHoursPerDay = 9,
             RestPeriodInMinutes = 20,
-            RestPeriodThresholdInMinutes = 330
+            RestPeriodThresholdInMinutes = 330,
+            MaximumConsecutiveWorkHoursPerWeek = 45
         };
         dbContext.WorkPolicies.Add(entity);
         await dbContext.SaveChangesAsync();
 
         var expected = new CompanyPolicyDto
         {
-            MaximumConsecutiveWorkHours = 9,
+            MaximumConsecutiveWorkHoursPerDay = 9,
             RestPeriodInMinutes = 20,
-            RestPeriodThresholdInMinutes = 330
+            RestPeriodThresholdInMinutes = 330,
+            MaximumConsecutiveWorkHoursPerWeek = 45
         };
 
         var mapperMock = new Mock<IMapper>();
@@ -202,26 +210,20 @@ public class CompanyPolicyServiceTest
         var result = await service.GetPolicyAsync();
 
         Assert.NotNull(result);
-        Assert.Equal(expected.MaximumConsecutiveWorkHours, result.MaximumConsecutiveWorkHours);
+        Assert.Equal(expected.MaximumConsecutiveWorkHoursPerDay, result.MaximumConsecutiveWorkHoursPerDay);
         Assert.Equal(expected.RestPeriodInMinutes, result.RestPeriodInMinutes);
         Assert.Equal(expected.RestPeriodThresholdInMinutes, result.RestPeriodThresholdInMinutes);
+        Assert.Equal(expected.MaximumConsecutiveWorkHoursPerWeek, result.MaximumConsecutiveWorkHoursPerWeek);
     }
 
     [Fact]
-    public async Task GetPolicyAsync_WhenNoPolicyExists_MapsNull()
+    public async Task GetPolicyAsync_WhenNoPolicyExists_ThrowsNotSetException()
     {
         await using var dbContext = CreateDbContext();
-
         var mapperMock = new Mock<IMapper>();
-        mapperMock
-            .Setup(m => m.Map<CompanyPolicyDto>(It.Is<WorkPolicy?>(x => x == null)))
-            .Returns((CompanyPolicyDto)null!);
-
         var service = new CompanyPolicyService(dbContext, mapperMock.Object);
 
-        var result = await service.GetPolicyAsync();
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotSetException>(() => service.GetPolicyAsync());
     }
 
     private static SchichtpilotDbContext CreateDbContext()

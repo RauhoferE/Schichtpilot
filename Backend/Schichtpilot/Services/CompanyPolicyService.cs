@@ -1,6 +1,7 @@
 using AutoMapper;
 using Data;
 using Data.Entities;
+using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 
@@ -69,23 +70,31 @@ public class CompanyPolicyService : ICompanyPolicyService
         {
             this._dbContext.WorkPolicies.Add(new WorkPolicy()
             {
-                MaximumConsecutiveWorkHours = policyDto.MaximumConsecutiveWorkHours,
+                MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay,
                 RestPeriodInMinutes = policyDto.RestPeriodInMinutes,
-                RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes
+                RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes,
+                MaximumConsecutiveWorkHoursPerWeek =  policyDto.MaximumConsecutiveWorkHoursPerWeek
             });
             await this._dbContext.SaveChangesAsync();
             return;
         }
         
-        policy.MaximumConsecutiveWorkHours = policyDto.MaximumConsecutiveWorkHours;
+        policy.MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay;
         policy.RestPeriodInMinutes = policyDto.RestPeriodInMinutes;
         policy.RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes;
+        policy.MaximumConsecutiveWorkHoursPerWeek = policyDto.MaximumConsecutiveWorkHoursPerWeek;
         await this._dbContext.SaveChangesAsync();
     }
 
     public Task<CompanyPolicyDto> GetPolicyAsync()
     {
         var policy = this._dbContext.WorkPolicies.FirstOrDefault();
+
+        if (policy == null)
+        {
+            throw new NotSetException("Policy is not set");
+        }
+        
         return Task.FromResult(this._mapper.Map<CompanyPolicyDto>(policy));
     }
 }

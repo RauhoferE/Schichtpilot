@@ -173,7 +173,7 @@ public class WorkScheduleService : IWorkScheduleService
                         continue;
 
                     if (!RespectsMaximumConsecutiveHours(userAssignments, slotStart, slotEnd,
-                            workPolicy.MaximumConsecutiveWorkHours))
+                            workPolicy.MaximumConsecutiveWorkHoursPerDay))
                     {
                         continue;
                     }

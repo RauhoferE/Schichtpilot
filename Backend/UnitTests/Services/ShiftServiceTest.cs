@@ -1216,7 +1216,7 @@ public class ShiftServiceTest
     {
         return new WorkPolicy
         {
-            MaximumConsecutiveWorkHours = 8,
+            MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = restPeriodMinutes,
             RestPeriodThresholdInMinutes = restPeriodThresholdMinutes
         };
