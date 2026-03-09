@@ -13,9 +13,11 @@ public interface IJobRoleService
     
     Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId);
     
-    Task AddUsersToJobRoleAsync(int id, List<int> userIds);
+    Task AddUsersToJobRoleAsync(int id, List<long> userIds);
     
-    Task RemoveUsersFromJobRoleAsync(int id, List<int> userIds);
+    Task RemoveUsersFromJobRoleAsync(int id, List<long> userIds);
+    
+    Task DeleteRoleAsync(int id);
     
     Task<JobRoleDto> GetJobRoleAsync(int id);
     

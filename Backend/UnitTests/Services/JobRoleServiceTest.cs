@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Schichtpilot.Exceptions;
+using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Services;
 
@@ -21,7 +22,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CreateJobRoleDto
         {
@@ -43,7 +44,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CreateJobRoleDto
         {
@@ -78,7 +79,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new EditJobRoleDto
         {
@@ -98,7 +99,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new EditJobRoleDto
         {
@@ -119,7 +120,7 @@ public class JobRoleServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new EditJobRoleDto
         {
@@ -139,7 +140,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new EditJobRoleDto
         {
@@ -163,7 +164,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.AddDependenciesToJobRoleAsync(999, 1));
     }
@@ -176,7 +177,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.AddDependenciesToJobRoleAsync(1, 999));
     }
@@ -196,7 +197,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<AlreadyExistsException>(() => service.AddDependenciesToJobRoleAsync(jobRole.Id, dependency.Id));
     }
@@ -210,7 +211,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddDependenciesToJobRoleAsync(role.Id, role.Id));
     }
@@ -225,7 +226,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await service.AddDependenciesToJobRoleAsync(jobRole.Id, dependency.Id);
 
@@ -236,6 +237,52 @@ public class JobRoleServiceTest
 
         Assert.Equal(jobRole.Id, saved.JobRole.Id);
         Assert.Equal(dependency.Id, saved.Dependency.Id);
+    }
+
+    [Fact]
+    public async Task AddDependenciesToJobRole_WhenRoleUsedInShift_CallsShiftService()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        var dependency = CreateJobRole(2, "Doctor");
+        var shift = new Shift
+        {
+            Id = 1,
+            Name = "Shift A",
+            ColorAsHex = "FFFFFF",
+            Timeslots = new HashSet<Timeslot>(),
+            JobRequirements = new HashSet<ShiftRequirement>()
+        };
+        var requirement = new ShiftRequirement
+        {
+            Id = 1,
+            ShiftId = shift.Id,
+            Shift = shift,
+            JobRoleId = role.Id,
+            JobRole = role,
+            RequiredStaffCount = 1
+        };
+        shift.JobRequirements.Add(requirement);
+
+        dbContext.JobRoles.AddRange(role, dependency);
+        dbContext.Shifts.Add(shift);
+        dbContext.ShiftRequirements.Add(requirement);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var shiftServiceMock = new Mock<IShiftService>();
+        shiftServiceMock
+            .Setup(x => x.AddJobRequirementAsync(shift.Id, It.IsAny<ShiftRequirementDto>()))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, shiftServiceMock: shiftServiceMock);
+
+        await service.AddDependenciesToJobRoleAsync(role.Id, dependency.Id);
+
+        shiftServiceMock.Verify(x => x.AddJobRequirementAsync(
+            shift.Id,
+            It.Is<ShiftRequirementDto>(dto => dto.JobId == role.Id && dto.RequiredStaffCount == 1)
+        ), Times.Once);
     }
 
     [Fact]
@@ -253,7 +300,7 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await service.RemoveDependenciesToJobRoleAsync(jobRole.Id, dependency.Id);
 
@@ -266,7 +313,7 @@ public class JobRoleServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.RemoveDependenciesToJobRoleAsync(999, 1));
     }
@@ -276,9 +323,10 @@ public class JobRoleServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.AddUsersToJobRoleAsync(999, new List<int> { 1 }));
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.AddUsersToJobRoleAsync(999, new List<long> { 1 }));
     }
 
     [Fact]
@@ -289,9 +337,10 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.AddUsersToJobRoleAsync(1, new List<int> { 999 }));
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.AddUsersToJobRoleAsync(1, new List<long> { 999 }));
     }
 
     [Fact]
@@ -307,9 +356,9 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
-        await service.AddUsersToJobRoleAsync(role.Id, new List<int> { (int)user1.Id, (int)user2.Id });
+        await service.AddUsersToJobRoleAsync(role.Id, new List<long> { user1.Id, user2.Id });
 
         var updatedUser1 = await dbContext.Users.Include(x => x.JobRoles).FirstAsync(x => x.Id == user1.Id);
         var updatedUser2 = await dbContext.Users.Include(x => x.JobRoles).FirstAsync(x => x.Id == user2.Id);
@@ -327,7 +376,7 @@ public class JobRoleServiceTest
         user.JobRoles.Add(new UserJobRoles
         {
             User = user,
-            UserId = (int)user.Id,
+            UserId = user.Id,
             JobRole = role,
             JobRoleId = role.Id
         });
@@ -337,12 +386,137 @@ public class JobRoleServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
-        await service.RemoveUsersFromJobRoleAsync(role.Id, new List<int> { (int)user.Id });
+        await service.RemoveUsersFromJobRoleAsync(role.Id, new List<long> { user.Id });
 
         var updated = await dbContext.Users.Include(x => x.JobRoles).FirstAsync(x => x.Id == user.Id);
         Assert.Empty(updated.JobRoles);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromJobRoleAsync_WhenRoleUsedInSchedule_UpdatesSchedules()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        var user = CreateUserWithId(1);
+
+        var userJobRole = new UserJobRoles
+        {
+            User = user,
+            UserId = user.Id,
+            JobRole = role,
+            JobRoleId = role.Id
+        };
+        user.JobRoles.Add(userJobRole);
+
+        var schedule = new WorkSchedule
+        {
+            Id = 10,
+            Name = "Schedule A",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        schedule.ShiftAssignments.Add(new ShiftAssignment
+        {
+            WorkSchedule = schedule,
+            WorkScheduleId = schedule.Id,
+            UserJobRole = userJobRole,
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            TimeslotId = 1,
+            StartTime = new DateTime(2026, 1, 5, 8, 0, 0),
+            EndTime = new DateTime(2026, 1, 5, 12, 0, 0)
+        });
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(userJobRole);
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var workScheduleServiceMock = new Mock<IWorkScheduleService>();
+        workScheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        workScheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, workScheduleServiceMock);
+
+        await service.RemoveUsersFromJobRoleAsync(role.Id, new List<long> { user.Id });
+
+        workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_NotFound_ThrowsNotFoundException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = new Mock<IMapper>();
+        var service = CreateService(dbContext, mapperMock);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteRoleAsync(999));
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_WhenUsedInShifts_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        var shift = new Shift
+        {
+            Id = 1,
+            Name = "Shift A",
+            ColorAsHex = "FFFFFF",
+            Timeslots = new HashSet<Timeslot>(),
+            JobRequirements = new HashSet<ShiftRequirement>()
+        };
+        var requirement = new ShiftRequirement
+        {
+            Id = 1,
+            ShiftId = shift.Id,
+            Shift = shift,
+            JobRoleId = role.Id,
+            JobRole = role,
+            RequiredStaffCount = 1
+        };
+        shift.JobRequirements.Add(requirement);
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.ShiftRequirements.Add(requirement);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var service = CreateService(dbContext, mapperMock);
+
+        await Assert.ThrowsAsync<Exception>(() => service.DeleteRoleAsync(role.Id));
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_Success_RemovesRole()
+    {
+        await using var dbContext = CreateDbContext();
+        var role = CreateJobRole(1, "Nurse");
+        dbContext.JobRoles.Add(role);
+        await dbContext.SaveChangesAsync();
+
+        var mapperMock = new Mock<IMapper>();
+        var service = CreateService(dbContext, mapperMock);
+
+        await service.DeleteRoleAsync(role.Id);
+
+        var deleted = await dbContext.JobRoles.FirstOrDefaultAsync(x => x.Id == role.Id);
+        Assert.Null(deleted);
     }
 
     [Fact]
@@ -350,7 +524,7 @@ public class JobRoleServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetJobRoleAsync(999));
     }
@@ -378,7 +552,7 @@ public class JobRoleServiceTest
             .Setup(m => m.Map<JobRole, JobRoleDto>(It.IsAny<JobRole>()))
             .Returns(expectedDto);
 
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var result = await service.GetJobRoleAsync(role.Id);
 
@@ -407,7 +581,7 @@ public class JobRoleServiceTest
                 Description = role.Description
             });
 
-        var service = new JobRoleService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var result = await service.GetJobRolesAsync(
             new PaginationDto { Page = 1, PageSize = 2 },
@@ -418,6 +592,17 @@ public class JobRoleServiceTest
         Assert.Equal(2, result.Count);
         Assert.Equal(2, roles.Count);
         Assert.All(roles, r => Assert.Contains("n", r.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static JobRoleService CreateService(
+        SchichtpilotDbContext dbContext,
+        Mock<IMapper> mapperMock,
+        Mock<IWorkScheduleService>? workScheduleServiceMock = null,
+        Mock<IShiftService>? shiftServiceMock = null)
+    {
+        var workScheduleService = workScheduleServiceMock ?? new Mock<IWorkScheduleService>();
+        var shiftService = shiftServiceMock ?? new Mock<IShiftService>();
+        return new JobRoleService(dbContext, mapperMock.Object, workScheduleService.Object, shiftService.Object);
     }
 
     private static SchichtpilotDbContext CreateDbContext()

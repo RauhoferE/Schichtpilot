@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Data.Entities;
 
 public class ShiftRequirement
@@ -10,5 +12,6 @@ public class ShiftRequirement
     public int JobRoleId { get; set; }
     public JobRole JobRole { get; set; }
     
+    [Required]
     public int RequiredStaffCount { get; set; }
 }

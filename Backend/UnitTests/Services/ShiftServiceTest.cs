@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Schichtpilot.Exceptions;
+using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Enums;
 using Schichtpilot.Services;
@@ -23,7 +24,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "Morning"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CreateShiftDto
         {
@@ -45,7 +46,7 @@ public class ShiftServiceTest
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CreateShiftDto
         {
@@ -84,7 +85,7 @@ public class ShiftServiceTest
 
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CreateShiftDto
         {
@@ -111,9 +112,10 @@ public class ShiftServiceTest
 
         var role = CreateJobRole(1, "Nurse");
         dbContext.JobRoles.Add(role);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CreateShiftDto
         {
@@ -143,6 +145,50 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task CreateShiftAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var role = CreateJobRole(1, "Nurse");
+        dbContext.JobRoles.Add(role);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, mapperMock);
+
+        var dto = new CreateShiftDto
+        {
+            Name = "LongShift",
+            ColorAsHex = "999999",
+            TimeSlots = new List<TimeSlotDto>
+            {
+                new TimeSlotDto
+                {
+                    DayOfWeek = DayOfWeek.Monday,
+                    StartTime = new TimeOnly(8, 0),
+                    EndTime = new TimeOnly(14, 0),
+                    Breaks = new List<BreakDto>
+                    {
+                        new BreakDto
+                        {
+                            StartTime = new TimeOnly(10, 0),
+                            EndTime = new TimeOnly(10, 15)
+                        }
+                    }
+                }
+            },
+            JobRequirements = new List<ShiftRequirementDto>
+            {
+                new ShiftRequirementDto { JobId = role.Id, Name = role.Name, RequiredStaffCount = 1 }
+            }
+        };
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateShiftAsync(dto));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
+    }
+
+    [Fact]
     public async Task ManageShiftAsync_NameConflict_ThrowsAlreadyExistsException()
     {
         await using var dbContext = CreateDbContext();
@@ -152,7 +198,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(2, "ShiftB"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new EditShiftDto { Name = "ShiftB", ColorAsHex = "FFFFFF" };
 
@@ -164,7 +210,7 @@ public class ShiftServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new EditShiftDto { Name = "Missing", ColorAsHex = "FFFFFF" };
 
@@ -180,7 +226,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "Old"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
         var dto = new EditShiftDto { Name = "New", ColorAsHex = "ABCDEF" };
 
         await service.ManageShiftAsync(1, dto);
@@ -195,7 +241,7 @@ public class ShiftServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0));
 
@@ -216,7 +262,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Monday, new TimeOnly(10, 0), new TimeOnly(14, 0));
 
@@ -232,9 +278,10 @@ public class ShiftServiceTest
         var shift = CreateShift(1, "AddTime");
         shift.Timeslots = new HashSet<Timeslot>();
         dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(11, 0));
 
@@ -245,11 +292,80 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task AddTimeSlotAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var shift = CreateShift(1, "AddTimeSchedule");
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        var timeSlot = CreateTimeSlotDto(DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(11, 0));
+
+        await service.AddTimeSlotAsync(shift.Id, timeSlot);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddTimeSlotAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var shift = CreateShift(1, "AddTimeBreakFail");
+        shift.Timeslots = new HashSet<Timeslot>();
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, mapperMock);
+
+        var timeSlot = new TimeSlotDto
+        {
+            DayOfWeek = DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(14, 0),
+            Breaks = new List<BreakDto>
+            {
+                new BreakDto
+                {
+                    StartTime = new TimeOnly(10, 0),
+                    EndTime = new TimeOnly(10, 15)
+                }
+            }
+        };
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddTimeSlotAsync(1, timeSlot));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
+    }
+
+    [Fact]
     public async Task EditTimeSlotAsync_ShiftNotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0));
         timeSlot.Id = 1;
@@ -268,7 +384,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0));
         timeSlot.Id = 999;
@@ -291,7 +407,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Monday, new TimeOnly(9, 0), new TimeOnly(13, 0));
         timeSlot.Id = 2;
@@ -311,9 +427,10 @@ public class ShiftServiceTest
             CreateTimeSlotEntity(1, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0))
         };
         dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var timeSlot = CreateTimeSlotDto(DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(11, 0));
         timeSlot.Id = 1;
@@ -329,11 +446,103 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task EditTimeSlotAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var shift = CreateShift(1, "EditSchedule");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            CreateTimeSlotEntity(1, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0))
+        };
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        var timeSlot = CreateTimeSlotDto(DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(11, 0));
+        timeSlot.Id = 1;
+
+        await service.EditTimeSlotAsync(shift.Id, timeSlot);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task EditTimeSlotAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var shift = CreateShift(1, "EditBreakFail");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new Timeslot
+            {
+                Id = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(12, 0),
+                Breaks = new HashSet<Break>
+                {
+                    new Break
+                    {
+                        StartTime = new TimeOnly(10, 0),
+                        EndTime = new TimeOnly(10, 30)
+                    }
+                }
+            }
+        };
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, mapperMock);
+
+        var timeSlot = new TimeSlotDto
+        {
+            Id = 1,
+            DayOfWeek = DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(14, 0),
+            Breaks = new List<BreakDto>
+            {
+                new BreakDto
+                {
+                    StartTime = new TimeOnly(10, 0),
+                    EndTime = new TimeOnly(10, 15)
+                }
+            }
+        };
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.EditTimeSlotAsync(1, timeSlot));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
+    }
+
+    [Fact]
     public async Task DeleteTimeSlotAsync_ShiftNotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteTimeSlotAsync(1, 1));
     }
@@ -347,7 +556,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "DeleteTime"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteTimeSlotAsync(1, 999));
     }
@@ -364,9 +573,10 @@ public class ShiftServiceTest
             CreateTimeSlotEntity(1, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0))
         };
         dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await service.DeleteTimeSlotAsync(1, 1);
 
@@ -375,11 +585,93 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task DeleteTimeSlotAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var shift = CreateShift(1, "DeleteTimeSchedule");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            CreateTimeSlotEntity(1, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(10, 0)),
+            CreateTimeSlotEntity(2, DayOfWeek.Tuesday, new TimeOnly(8, 0), new TimeOnly(10, 0))
+        };
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy());
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        await service.DeleteTimeSlotAsync(shift.Id, 1);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteTimeSlotAsync_NotEnoughBreaks_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+
+        var shift = CreateShift(1, "DeleteBreakFail");
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new Timeslot
+            {
+                Id = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(10, 0),
+                Breaks = new HashSet<Break>()
+            },
+            new Timeslot
+            {
+                Id = 2,
+                DayOfWeek = DayOfWeek.Tuesday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(14, 0),
+                Breaks = new HashSet<Break>
+                {
+                    new Break
+                    {
+                        StartTime = new TimeOnly(10, 0),
+                        EndTime = new TimeOnly(10, 15)
+                    }
+                }
+            }
+        };
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(CreateWorkPolicy(restPeriodMinutes: 30, restPeriodThresholdMinutes: 240));
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, mapperMock);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteTimeSlotAsync(1, 1));
+        Assert.Equal("Not enough breaks added in the shifts", ex.Message);
+    }
+
+    [Fact]
     public async Task AddJobRequirementAsync_ShiftNotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var requirement = new ShiftRequirementDto { JobId = 1, Name = "Nurse", RequiredStaffCount = 2 };
 
@@ -408,7 +700,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var requirement = new ShiftRequirementDto { JobId = role.Id, Name = role.Name, RequiredStaffCount = 2 };
 
@@ -424,7 +716,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "ReqMissingRole"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var requirement = new ShiftRequirementDto { JobId = 1, Name = "Missing", RequiredStaffCount = 2 };
 
@@ -445,7 +737,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var requirement = new ShiftRequirementDto { JobId = role.Id, Name = role.Name, RequiredStaffCount = 2 };
 
@@ -457,11 +749,50 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task AddJobRequirementAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var role = CreateJobRole(1, "Nurse");
+        dbContext.JobRoles.Add(role);
+
+        var shift = CreateShift(1, "ReqAddSchedule");
+        shift.JobRequirements = new HashSet<ShiftRequirement>();
+        dbContext.Shifts.Add(shift);
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        var requirement = new ShiftRequirementDto { JobId = role.Id, Name = role.Name, RequiredStaffCount = 2 };
+
+        await service.AddJobRequirementAsync(shift.Id, requirement);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
     public async Task ChangeRequiredStaffAsync_ShiftNotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.ChangeRequiredStaffAsync(1, 1, 5));
     }
@@ -475,7 +806,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "ReqChange"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.ChangeRequiredStaffAsync(1, 99, 5));
     }
@@ -503,7 +834,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await service.ChangeRequiredStaffAsync(1, 1, 5);
 
@@ -512,11 +843,57 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task ChangeRequiredStaffAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "ReqChangeSchedule");
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new ShiftRequirement
+            {
+                Id = 1,
+                JobRoleId = role.Id,
+                JobRole = role,
+                RequiredStaffCount = 2
+            }
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        await service.ChangeRequiredStaffAsync(shift.Id, 1, 5);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
     public async Task DeleteJobRequirementAsync_ShiftNotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteJobRequirementAsync(1, 1));
     }
@@ -530,7 +907,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "ReqDelete"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteJobRequirementAsync(1, 999));
     }
@@ -558,7 +935,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await service.DeleteJobRequirementAsync(1, 1);
 
@@ -567,11 +944,57 @@ public class ShiftServiceTest
     }
 
     [Fact]
+    public async Task DeleteJobRequirementAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "ReqDeleteSchedule");
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new ShiftRequirement
+            {
+                Id = 1,
+                JobRoleId = role.Id,
+                JobRole = role,
+                RequiredStaffCount = 1
+            }
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        await service.DeleteJobRequirementAsync(shift.Id, 1);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
+    }
+
+    [Fact]
     public async Task DeleteShiftAsync_ShiftNotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteShiftAsync(1));
     }
@@ -585,11 +1008,44 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(CreateShift(1, "DeleteShift"));
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await service.DeleteShiftAsync(1);
 
         Assert.False(dbContext.Shifts.Any(x => x.Id == 1));
+    }
+
+    [Fact]
+    public async Task DeleteShiftAsync_WhenShiftUsedInSchedule_UpdatesSchedule()
+    {
+        await using var dbContext = CreateDbContext();
+        var mapperMock = CreateMapperMock();
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var shift = CreateShift(1, "DeleteShiftSchedule");
+        dbContext.Shifts.Add(shift);
+
+        var schedule = CreateWorkSchedule(10);
+        var scheduleShift = CreateWorkScheduleShift(schedule, shift);
+        schedule.Shifts.Add(scheduleShift);
+
+        dbContext.WorkSchedules.Add(schedule);
+        dbContext.WorkScheduleShifts.Add(scheduleShift);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
+
+        await service.DeleteShiftAsync(shift.Id);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
     }
 
     [Fact]
@@ -613,7 +1069,7 @@ public class ShiftServiceTest
         dbContext.Shifts.AddRange(shiftA, shiftB);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var filter = new ShiftFilterDto
         {
@@ -636,7 +1092,7 @@ public class ShiftServiceTest
         await using var dbContext = CreateDbContext();
         var mapperMock = CreateMapperMock();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetShiftAsync(999));
     }
@@ -668,7 +1124,7 @@ public class ShiftServiceTest
         dbContext.Shifts.Add(shift);
         await dbContext.SaveChangesAsync();
 
-        var service = new ShiftService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var result = await service.GetShiftAsync(1);
 
@@ -676,6 +1132,15 @@ public class ShiftServiceTest
         Assert.Equal("Mapped", result.Name);
         Assert.Single(result.TimeSlots);
         Assert.Single(result.JobRequirements);
+    }
+
+    private static ShiftService CreateService(
+        SchichtpilotDbContext dbContext,
+        Mock<IMapper> mapperMock,
+        Mock<IWorkScheduleService>? scheduleServiceMock = null)
+    {
+        var scheduleService = scheduleServiceMock ?? new Mock<IWorkScheduleService>();
+        return new ShiftService(dbContext, mapperMock.Object, scheduleService.Object);
     }
 
     private static Mock<IMapper> CreateMapperMock()
@@ -703,7 +1168,13 @@ public class ShiftServiceTest
                     Id = x.Id,
                     DayOfWeek = x.DayOfWeek,
                     StartTime = x.StartTime,
-                    EndTime = x.EndTime
+                    EndTime = x.EndTime,
+                    Breaks = x.Breaks?.Select(b => new BreakDto
+                    {
+                        Id = b.Id,
+                        StartTime = b.StartTime,
+                        EndTime = b.EndTime
+                    }).ToList() ?? new List<BreakDto>()
                 }).ToList() ?? new List<TimeSlotDto>(),
                 JobRequirements = shift.JobRequirements?.Select(x => new ShiftRequirementDto
                 {
@@ -711,6 +1182,22 @@ public class ShiftServiceTest
                     Name = x.JobRole?.Name ?? string.Empty,
                     RequiredStaffCount = x.RequiredStaffCount
                 }).ToList() ?? new List<ShiftRequirementDto>()
+            });
+
+        mapperMock
+            .Setup(mapper => mapper.Map<Timeslot, TimeSlotDto>(It.IsAny<Timeslot>()))
+            .Returns((Timeslot timeslot) => new TimeSlotDto
+            {
+                Id = timeslot.Id,
+                DayOfWeek = timeslot.DayOfWeek,
+                StartTime = timeslot.StartTime,
+                EndTime = timeslot.EndTime,
+                Breaks = timeslot.Breaks?.Select(b => new BreakDto
+                {
+                    Id = b.Id,
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime
+                }).ToList() ?? new List<BreakDto>()
             });
 
         return mapperMock;
@@ -725,6 +1212,16 @@ public class ShiftServiceTest
         return new SchichtpilotDbContext(options);
     }
 
+    private static WorkPolicy CreateWorkPolicy(int restPeriodMinutes = 30, int restPeriodThresholdMinutes = 240)
+    {
+        return new WorkPolicy
+        {
+            MaximumConsecutiveWorkHoursPerDay = 8,
+            RestPeriodInMinutes = restPeriodMinutes,
+            RestPeriodThresholdInMinutes = restPeriodThresholdMinutes
+        };
+    }
+
     private static Shift CreateShift(int id, string name)
     {
         return new Shift
@@ -737,13 +1234,40 @@ public class ShiftServiceTest
         };
     }
 
+    private static WorkSchedule CreateWorkSchedule(int id)
+    {
+        return new WorkSchedule
+        {
+            Id = id,
+            Name = $"Schedule {id}",
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 7),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+    }
+
+    private static WorkScheduleShifts CreateWorkScheduleShift(WorkSchedule schedule, Shift shift)
+    {
+        return new WorkScheduleShifts
+        {
+            WorkScheduleId = schedule.Id,
+            WorkSchedule = schedule,
+            ShiftId = shift.Id,
+            Shift = shift
+        };
+    }
+
     private static TimeSlotDto CreateTimeSlotDto(DayOfWeek day, TimeOnly start, TimeOnly end)
     {
         return new TimeSlotDto
         {
             DayOfWeek = day,
             StartTime = start,
-            EndTime = end
+            EndTime = end,
+            Breaks = new List<BreakDto>()
         };
     }
 
@@ -754,7 +1278,8 @@ public class ShiftServiceTest
             Id = id,
             DayOfWeek = day,
             StartTime = start,
-            EndTime = end
+            EndTime = end,
+            Breaks = new HashSet<Break>()
         };
     }
 

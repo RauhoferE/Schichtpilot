@@ -10,14 +10,18 @@ namespace Schichtpilot.Services;
 
 public class JobRoleService : IJobRoleService
 {
-    public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper)
+    public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService  workScheduleService, IShiftService shiftService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
+        _shiftService = shiftService ?? throw new ArgumentNullException(nameof(shiftService));
     }
 
     private readonly SchichtpilotDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly IWorkScheduleService  _workScheduleService;
+    private readonly IShiftService _shiftService;
 
 
     public async Task CreateJobRoleAsync(CreateJobRoleDto jobRole)
@@ -79,7 +83,6 @@ public class JobRoleService : IJobRoleService
 
     public async Task AddDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
-        //TODO: Check if jobrole is used in a schedule
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
         var dependencyJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == dependencyId);
 
@@ -116,6 +119,35 @@ public class JobRoleService : IJobRoleService
         });
 
         await this._dbContext.SaveChangesAsync();
+
+        var shiftsToModify = this._dbContext.ShiftRequirements
+            .Include(x => x.JobRole)
+            .Include(x => x.JobRole)
+            .Where(x => x.JobRoleId == jobRole.Id)
+            .Select(x => x.Shift);
+
+        foreach (var shift in shiftsToModify)
+        {
+            await this._shiftService.AddJobRequirementAsync(shift.Id, new ShiftRequirementDto()
+            {
+                JobId = jobRole.Id,
+                RequiredStaffCount = 1
+            });
+        }
+        
+        var schedulesWithRole = this._dbContext.ShiftAssignments
+            .Include(x => x.WorkSchedule)
+            .Include(x => x.UserJobRole)
+            .ThenInclude(x => x.JobRole)
+            .Where(x => x.UserJobRole.JobRoleId == jobRoleId)
+            .ToList()
+            .Select(x => x.WorkSchedule);
+        
+        foreach (var workSchedule in schedulesWithRole)
+        {
+            await this._workScheduleService.SetScheduleOfflineAsync(workSchedule.Id);
+            await this._workScheduleService.SetScheduleAsInvalidAsync(workSchedule.Id);
+        }
     }
 
     public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
@@ -144,7 +176,7 @@ public class JobRoleService : IJobRoleService
         }
     }
 
-    public async Task AddUsersToJobRoleAsync(int id, List<int> userIds)
+    public async Task AddUsersToJobRoleAsync(int id, List<long> userIds)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
@@ -177,15 +209,22 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveUsersFromJobRoleAsync(int id, List<int> userIds)
+    public async Task RemoveUsersFromJobRoleAsync(int id, List<long> userIds)
     {
-        //TODO: Check if user is used in a schedule
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
         if (jobRoleToModify == null)
         {
             throw new NotFoundException("Jobrole not found!");
         }
+        
+        var schedulesWithUsers = this._dbContext.ShiftAssignments
+            .Include(x => x.WorkSchedule)
+            .Include(x => x.UserJobRole)
+            .ThenInclude(x => x.User)
+            .Where(x => userIds.Contains(x.UserJobRole.UserId))
+            .ToList()
+            .Select(x => x.WorkSchedule);
 
         foreach (var userId in userIds)
         {
@@ -203,6 +242,45 @@ public class JobRoleService : IJobRoleService
             }
         }
 
+        await this._dbContext.SaveChangesAsync();
+
+            
+        // I dont think removing the shifts here makes sense
+        // If its invalid he has to regenerate it anyway
+        //this._workScheduleService.RemoveAllShiftAssignments()
+
+        foreach (var workSchedule in schedulesWithUsers)
+        {
+            await this._workScheduleService.SetScheduleOfflineAsync(workSchedule.Id);
+            await this._workScheduleService.SetScheduleAsInvalidAsync(workSchedule.Id);
+        }
+    }
+
+    public async Task DeleteRoleAsync(int id)
+    {
+        var jobRoleToModify = await this._dbContext.JobRoles
+            .Include(x => x.UsersWithRole)
+            .Include(x=> x.Dependencies)
+            .Include(x=> x.Dependencies)
+            .FirstOrDefaultAsync(jr => jr.Id == id);
+
+        if (jobRoleToModify == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+        
+        var usedInShifts = this._dbContext.ShiftRequirements
+            .Include(x => x.JobRole)
+            .Include(x => x.JobRole)
+            .Any(x => x.JobRoleId == jobRoleToModify.Id) ;
+
+        if (usedInShifts)
+        {
+            //TODO: Exception
+            throw new Exception("Jobrole still active in shift!");
+        }
+        
+        this._dbContext.JobRoles.Remove(jobRoleToModify);
         await this._dbContext.SaveChangesAsync();
     }
 

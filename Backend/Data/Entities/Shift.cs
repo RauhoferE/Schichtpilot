@@ -14,5 +14,9 @@ public class Shift
     
     public HashSet<Timeslot> Timeslots { get; set; }
     
+    // Here are all the jobs required for this shift
+    // This also inlcudes the dependencies
     public HashSet<ShiftRequirement> JobRequirements { get; set; }
+    
+    public HashSet<WorkScheduleShifts>  ShiftAssignments { get; set; }
 }
