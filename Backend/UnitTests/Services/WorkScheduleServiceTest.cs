@@ -1216,7 +1216,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        var result = await service.ViewSchedulesAsync(pagination, filter);
+        var result = await service.GetSchedulesAsync(pagination, filter);
 
         Assert.Equal(1, result.Count);
         var list = result.WorkSchedules.ToList();
@@ -1280,7 +1280,7 @@ public class WorkScheduleServiceTest
         };
 
         var pagination = new PaginationDto { Page = 1, PageSize = 10 };
-        var result = await service.ViewSchedulesAsync(pagination, filter);
+        var result = await service.GetSchedulesAsync(pagination, filter);
 
         Assert.Equal(1, result.Count);
         var list = result.WorkSchedules.ToList();
@@ -1353,7 +1353,7 @@ public class WorkScheduleServiceTest
         };
 
         var pagination = new PaginationDto { Page = 1, PageSize = 10 };
-        var result = await service.ViewSchedulesAsync(pagination, filter);
+        var result = await service.GetSchedulesAsync(pagination, filter);
 
         Assert.Equal(expectedCount, result.Count);
     }
@@ -1420,7 +1420,7 @@ public class WorkScheduleServiceTest
         };
 
         var pagination = new PaginationDto { Page = 1, PageSize = 10 };
-        var result = await service.ViewSchedulesAsync(pagination, filter);
+        var result = await service.GetSchedulesAsync(pagination, filter);
 
         Assert.Equal(4, result.Count);
     }
@@ -1459,7 +1459,7 @@ public class WorkScheduleServiceTest
         var service = CreateService(dbContext);
 
         var pagination = new PaginationDto { Page = 2, PageSize = 1 };
-        var result = await service.ViewSchedulesAsync(pagination, null);
+        var result = await service.GetSchedulesAsync(pagination, null);
 
         Assert.Equal(2, result.Count);
         Assert.Single(result.WorkSchedules);
@@ -1473,7 +1473,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.ViewScheduleAsync(999));
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.GetScheduleAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1498,7 +1498,7 @@ public class WorkScheduleServiceTest
 
         var service = CreateService(dbContext);
 
-        var dto = await service.ViewScheduleAsync(schedule.Id);
+        var dto = await service.GetScheduleAsync(schedule.Id);
 
         Assert.Equal(schedule.Id, dto.Id);
         Assert.Equal(schedule.Name, dto.Name);

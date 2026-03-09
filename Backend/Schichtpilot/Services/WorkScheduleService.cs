@@ -362,7 +362,7 @@ public class WorkScheduleService : IWorkScheduleService
         throw new NotImplementedException();
     }
 
-    public async Task<QueryableSchedules> ViewSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter)
+    public async Task<QueryableSchedules> GetSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter)
     {
         IQueryable<WorkSchedule> query = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -429,7 +429,7 @@ public class WorkScheduleService : IWorkScheduleService
         return query;
     }
 
-    public async Task<WorkScheduleDto> ViewScheduleAsync(int scheduleId)
+    public async Task<WorkScheduleDto> GetScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
