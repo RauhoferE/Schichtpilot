@@ -12,11 +12,14 @@ public class CompanyPolicyService : ICompanyPolicyService
     private readonly SchichtpilotDbContext _dbContext;
     
     private readonly IMapper _mapper;
+    
+    private readonly IWorkScheduleService _workScheduleService;
 
-    public CompanyPolicyService(SchichtpilotDbContext dbContext, IMapper mapper)
+    public CompanyPolicyService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService workScheduleService)
     {
         this._dbContext = dbContext ??  throw new ArgumentNullException(nameof(dbContext));
         this._mapper = mapper ??  throw new ArgumentNullException(nameof(mapper));
+        this._workScheduleService = workScheduleService ??  throw new ArgumentNullException(nameof(workScheduleService));
     }
 
     public async Task AddHolidaysAsync(HolidaysDto holidays)
@@ -84,6 +87,12 @@ public class CompanyPolicyService : ICompanyPolicyService
         policy.RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes;
         policy.MaximumConsecutiveWorkHoursPerWeek = policyDto.MaximumConsecutiveWorkHoursPerWeek;
         await this._dbContext.SaveChangesAsync();
+        var schedules = this._dbContext.WorkSchedules.ToList();
+        foreach (var schedule in schedules)
+        {
+            await this._workScheduleService.SetScheduleOfflineAsync(schedule.Id);
+            await this._workScheduleService.SetScheduleAsInvalidAsync(schedule.Id);
+        }
     }
 
     public Task<CompanyPolicyDto> GetPolicyAsync()

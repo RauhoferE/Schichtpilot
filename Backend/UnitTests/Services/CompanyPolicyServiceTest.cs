@@ -7,6 +7,7 @@ using Moq;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Services;
 using Schichtpilot.Exceptions;
+using Schichtpilot.Interfaces;
 
 namespace UnitTests.Services;
 
@@ -18,7 +19,7 @@ public class CompanyPolicyServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new HolidaysDto
         {
@@ -40,7 +41,7 @@ public class CompanyPolicyServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new HolidaysDto
         {
@@ -62,7 +63,7 @@ public class CompanyPolicyServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new HolidaysDto
         {
@@ -83,7 +84,7 @@ public class CompanyPolicyServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new HolidaysDto
         {
@@ -107,7 +108,7 @@ public class CompanyPolicyServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var result = await service.GetHolidaysAsync();
 
@@ -122,7 +123,7 @@ public class CompanyPolicyServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var dto = new CompanyPolicyDto
         {
@@ -156,7 +157,48 @@ public class CompanyPolicyServiceTest
         await dbContext.SaveChangesAsync();
 
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var scheduleServiceMock = new Mock<IWorkScheduleService>();
+
+        var scheduleA = new WorkSchedule
+        {
+            Id = 10,
+            Name = "Schedule A",
+            StartDate = new DateTime(2026, 1, 1),
+            EndDate = new DateTime(2026, 1, 7),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+        var scheduleB = new WorkSchedule
+        {
+            Id = 11,
+            Name = "Schedule B",
+            StartDate = new DateTime(2026, 1, 8),
+            EndDate = new DateTime(2026, 1, 14),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new HashSet<WorkScheduleShifts>(),
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        };
+
+        dbContext.WorkSchedules.AddRange(scheduleA, scheduleB);
+        await dbContext.SaveChangesAsync();
+
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(scheduleA.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(scheduleA.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleOfflineAsync(scheduleB.Id))
+            .Returns(Task.CompletedTask);
+        scheduleServiceMock
+            .Setup(x => x.SetScheduleAsInvalidAsync(scheduleB.Id))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, mapperMock, scheduleServiceMock);
 
         var dto = new CompanyPolicyDto
         {
@@ -176,6 +218,11 @@ public class CompanyPolicyServiceTest
         Assert.Equal(dto.RestPeriodInMinutes, updated.RestPeriodInMinutes);
         Assert.Equal(dto.RestPeriodThresholdInMinutes, updated.RestPeriodThresholdInMinutes);
         Assert.Equal(dto.MaximumConsecutiveWorkHoursPerWeek, updated.MaximumConsecutiveWorkHoursPerWeek);
+
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(scheduleA.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(scheduleA.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(scheduleB.Id), Times.Once);
+        scheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(scheduleB.Id), Times.Once);
     }
 
     [Fact]
@@ -205,7 +252,7 @@ public class CompanyPolicyServiceTest
             .Setup(m => m.Map<CompanyPolicyDto>(It.IsAny<WorkPolicy>()))
             .Returns(expected);
 
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         var result = await service.GetPolicyAsync();
 
@@ -221,9 +268,18 @@ public class CompanyPolicyServiceTest
     {
         await using var dbContext = CreateDbContext();
         var mapperMock = new Mock<IMapper>();
-        var service = new CompanyPolicyService(dbContext, mapperMock.Object);
+        var service = CreateService(dbContext, mapperMock);
 
         await Assert.ThrowsAsync<NotSetException>(() => service.GetPolicyAsync());
+    }
+
+    private static CompanyPolicyService CreateService(
+        SchichtpilotDbContext dbContext,
+        Mock<IMapper> mapperMock,
+        Mock<IWorkScheduleService>? workScheduleServiceMock = null)
+    {
+        var workScheduleService = workScheduleServiceMock ?? new Mock<IWorkScheduleService>();
+        return new CompanyPolicyService(dbContext, mapperMock.Object, workScheduleService.Object);
     }
 
     private static SchichtpilotDbContext CreateDbContext()
