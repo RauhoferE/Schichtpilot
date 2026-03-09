@@ -26,7 +26,7 @@ public class JobroleController : Controller
     public async Task<IActionResult> CreateJobRoleAsync([FromBody, Required] CreateJobRoleDto request)
     {
         await this._jobRoleService.CreateJobRoleAsync(request);
-        return NoContent();
+        return Created();
     }
     
     [HttpPut("{jobRoleId}")]

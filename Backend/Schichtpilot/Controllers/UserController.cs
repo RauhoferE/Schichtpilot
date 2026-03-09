@@ -23,11 +23,11 @@ public class UserController : Controller
     }
 
     [HttpPost("")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateUserAsync([FromBody, Required] CreateUserRequest request)
     {
         await this._userService.CreateUserAsync(this._mapper.Map<CreateUserRequest, UserDto>(request), request.Password);
-        return NoContent();
+        return Created();
     }
 
     [HttpGet("{userId}")]
