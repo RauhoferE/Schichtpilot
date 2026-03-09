@@ -70,7 +70,7 @@ public class ShiftController : Controller
         return NoContent();
     }
     
-    [HttpPost("{shiftId}/timeslot/{timeSlotId}")]
+    [HttpPost("{shiftId}/timeslot")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddTimeslotAsync([FromRoute, Required]int shiftId, [FromBody, Required]TimeSlotDto timeSlotDto)
     {
@@ -78,10 +78,11 @@ public class ShiftController : Controller
         return NoContent();
     }
     
-    [HttpPut("{shiftId}/timeslot")]
+    [HttpPut("{shiftId}/timeslot/{timeSlotId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateTimeslotAsync([FromRoute, Required]int shiftId, [FromBody, Required]TimeSlotDto timeSlotDto)
+    public async Task<IActionResult> UpdateTimeslotAsync([FromRoute, Required]int shiftId, [FromBody, Required]TimeSlotDto timeSlotDto, [FromRoute, Required]int timeSlotId)
     {
+        timeSlotDto.Id = timeSlotId;
         await  _shiftService.EditTimeSlotAsync(shiftId, timeSlotDto);
         return NoContent();
     }
