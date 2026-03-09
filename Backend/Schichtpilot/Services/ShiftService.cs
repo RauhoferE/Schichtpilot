@@ -469,7 +469,7 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task<QueryableShiftResponse> ViewShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
+    public async Task<QueryableShiftResponse> GetShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
     {
         //TODO: Add if shift is used in a schedule.
         IQueryable<Shift> query = this._dbContext.Shifts
