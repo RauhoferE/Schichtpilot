@@ -177,6 +177,17 @@ public class WorkScheduleService : IWorkScheduleService
                     {
                         continue;
                     }
+                    
+                    if (!RespectsMaximumWeeklyHours(
+                            userAssignments,
+                            slotStart,
+                            slotEnd,
+                            workPolicy.MaximumConsecutiveWorkHoursPerWeek,
+                            startDateOfSchedule.Date,
+                            endDateOfSchedule.Date.AddDays(1)))
+                    {
+                        continue;
+                    }
 
                     schedule.ShiftAssignments.Add(new ShiftAssignment
                     {
@@ -245,6 +256,38 @@ public class WorkScheduleService : IWorkScheduleService
         if (finalSegment > maxConsecutive) maxConsecutive = finalSegment;
 
         return maxConsecutive <= TimeSpan.FromHours(maximumConsecutiveWorkHours);
+    }
+    
+    private bool RespectsMaximumWeeklyHours(
+        List<(DateTime Start, DateTime End)> userAssignments,
+        DateTime newStart,
+        DateTime newEnd,
+        int maximumWeeklyHours,
+        DateTime windowStart,
+        DateTime windowEndExclusive)
+    {
+        TimeSpan total = TimeSpan.Zero;
+
+        foreach (var assignment in userAssignments)
+        {
+            var overlapStart = assignment.Start < windowStart ? windowStart : assignment.Start;
+            var overlapEnd = assignment.End > windowEndExclusive ? windowEndExclusive : assignment.End;
+
+            if (overlapStart < overlapEnd)
+            {
+                total += overlapEnd - overlapStart;
+            }
+        }
+
+        var newOverlapStart = newStart < windowStart ? windowStart : newStart;
+        var newOverlapEnd = newEnd > windowEndExclusive ? windowEndExclusive : newEnd;
+
+        if (newOverlapStart < newOverlapEnd)
+        {
+            total += newOverlapEnd - newOverlapStart;
+        }
+
+        return total <= TimeSpan.FromHours(maximumWeeklyHours);
     }
     
     private bool HasIntersections(List<Timeslot> slots)

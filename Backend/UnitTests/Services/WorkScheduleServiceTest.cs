@@ -22,7 +22,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
         await dbContext.SaveChangesAsync();
 
@@ -93,7 +94,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         await dbContext.SaveChangesAsync();
@@ -212,7 +214,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user = CreateUser(1);
@@ -274,7 +277,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user = CreateUser(1);
@@ -358,7 +362,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 6, // 8h chain should violate
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user = CreateUser(1);
@@ -385,6 +390,158 @@ public class WorkScheduleServiceTest
         };
 
         await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_WeeklyHoursExceeded_ThrowsException()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "WeeklyLimit");
+
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new()
+            {
+                Id = 11,
+                ShiftId = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(16, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            },
+            new()
+            {
+                Id = 12,
+                ShiftId = 1,
+                DayOfWeek = DayOfWeek.Tuesday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(16, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            }
+        };
+
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new() { ShiftId = 1, JobRoleId = 1, RequiredStaffCount = 1, JobRole = role, Shift = shift }
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(new WorkPolicy
+        {
+            MaximumConsecutiveWorkHoursPerDay = 12,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 8
+        });
+
+        var user = CreateUser(1);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(new UserJobRoles
+        {
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            User = user,
+            JobRole = role,
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = new GenerateScheduleDto
+        {
+            Name = "WeeklyLimitWeek",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            ShiftIds = new List<int> { 1 }
+        };
+
+        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_WeeklyHoursWithinLimit_AssignsAllTimeslots()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "WeeklyOk");
+
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new()
+            {
+                Id = 21,
+                ShiftId = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(16, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            },
+            new()
+            {
+                Id = 22,
+                ShiftId = 1,
+                DayOfWeek = DayOfWeek.Tuesday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(16, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            }
+        };
+
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new() { ShiftId = 1, JobRoleId = 1, RequiredStaffCount = 1, JobRole = role, Shift = shift }
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(new WorkPolicy
+        {
+            MaximumConsecutiveWorkHoursPerDay = 12,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 20
+        });
+
+        var user = CreateUser(1);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(new UserJobRoles
+        {
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            User = user,
+            JobRole = role,
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = new GenerateScheduleDto
+        {
+            Name = "WeeklyOkWeek",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            ShiftIds = new List<int> { 1 }
+        };
+
+        await service.GenerateScheduleAsync(dto);
+
+        var schedule = await dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .SingleAsync(x => x.Name == "WeeklyOkWeek");
+
+        Assert.Equal(2, schedule.ShiftAssignments.Count);
     }
 
     [Fact]
@@ -430,7 +587,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user = CreateUser(1);
@@ -558,7 +716,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         // 5 Users total:
@@ -666,7 +825,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var pendingUser1 = CreateUser(201);
@@ -784,7 +944,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var userNoPending = CreateUser(100);
@@ -882,7 +1043,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var userBoth = CreateUser(1);
@@ -1608,7 +1770,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user = CreateUser(1);
@@ -1695,7 +1858,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user = CreateUser(1);
@@ -1768,7 +1932,8 @@ public class WorkScheduleServiceTest
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
             RestPeriodInMinutes = 30,
-            RestPeriodThresholdInMinutes = 360
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
         });
 
         var user1 = CreateUser(1);
