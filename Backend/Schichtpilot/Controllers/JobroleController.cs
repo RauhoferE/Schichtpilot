@@ -56,7 +56,7 @@ public class JobroleController : Controller
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddUsersToRoleAsync([FromRoute, Required] int jobRoleId, [FromBody, Required] long[] userIds)
     {
-        await this._jobRoleService.AddUsersToJobRoleAsync(jobRoleId, userIds.ToList());
+        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userIds.ToList());
         return NoContent();
     }
     
@@ -64,7 +64,7 @@ public class JobroleController : Controller
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromBody, Required] long[] userIds)
     {
-        await this._jobRoleService.AddUsersToJobRoleAsync(jobRoleId, userIds.ToList());
+        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userIds.ToList());
         return NoContent();
     }
 }

@@ -176,7 +176,7 @@ public class JobRoleService : IJobRoleService
         }
     }
 
-    public async Task AddUsersToJobRoleAsync(int id, List<long> userIds)
+    public async Task AddUserToJobRoleAsync(int id, List<long> userIds)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
@@ -209,7 +209,7 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveUsersFromJobRoleAsync(int id, List<long> userIds)
+    public async Task RemoveUserFromJobRoleAsync(int id, List<long> userIds)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
 
