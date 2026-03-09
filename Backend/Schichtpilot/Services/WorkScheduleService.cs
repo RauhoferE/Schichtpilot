@@ -290,17 +290,17 @@ public class WorkScheduleService : IWorkScheduleService
     {
         if (slots == null || slots.Count < 2) return false;
 
-        var grouped = slots.GroupBy(s => s.DayOfWeek);
+        var groupedByDayOfWeek = slots.GroupBy(s => s.DayOfWeek);
 
-        foreach (var daySlots in grouped)
+        foreach (var daySlots in groupedByDayOfWeek)
         {
-            var ordered = daySlots
+            var daysOrderedAfterStartTime = daySlots
                 .OrderBy(s => s.StartTime)
                 .ToList();
 
-            for (int i = 0; i < ordered.Count - 1; i++)
+            for (int i = 0; i < daysOrderedAfterStartTime.Count - 1; i++)
             {
-                if (ordered[i + 1].StartTime < ordered[i].EndTime)
+                if (daysOrderedAfterStartTime[i + 1].StartTime < daysOrderedAfterStartTime[i].EndTime)
                 {
                     return true;
                 }
