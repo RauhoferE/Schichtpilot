@@ -466,7 +466,7 @@ public class WorkScheduleServiceTest
     }
 
     [Fact]
-    public async Task GenerateSchedule_WeeklyHoursWithinLimit_AssignsAllTimeslots()
+    public async Task GenerateSchedule_WeeklyHoursWithinLimit_SkipsHolidayTimeslot()
     {
         await using var dbContext = CreateDbContext();
 
@@ -512,6 +512,11 @@ public class WorkScheduleServiceTest
             MaximumConsecutiveWorkHoursPerWeek = 20
         });
 
+        dbContext.Holidays.Add(new Holiday
+        {
+            Date = new DateTime(2026, 1, 6)
+        });
+
         var user = CreateUser(1);
         dbContext.Users.Add(user);
         dbContext.UserJobRoles.Add(new UserJobRoles
@@ -541,7 +546,7 @@ public class WorkScheduleServiceTest
             .Include(x => x.ShiftAssignments)
             .SingleAsync(x => x.Name == "WeeklyOkWeek");
 
-        Assert.Equal(2, schedule.ShiftAssignments.Count);
+        Assert.Equal(1, schedule.ShiftAssignments.Count);
     }
 
     [Fact]
@@ -629,6 +634,82 @@ public class WorkScheduleServiceTest
         Assert.False(createdSchedule.IsActive);
         Assert.Single(createdSchedule.Shifts);
         Assert.Equal(2, createdSchedule.ShiftAssignments.Count);
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_HolidayOverlapsTimeslot_SkipsAssignmentsForThatTimeslot()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var role = CreateJobRole(1, "Nurse");
+        var shift = CreateShift(1, "Morning");
+
+        shift.Timeslots = new HashSet<Timeslot>
+        {
+            new()
+            {
+                Id = 1,
+                ShiftId = 1,
+                DayOfWeek = DayOfWeek.Monday,
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(12, 0),
+                Breaks = new HashSet<Data.Entities.Break>(),
+                ShiftAssignments = new HashSet<ShiftAssignment>()
+            }
+        };
+
+        shift.JobRequirements = new HashSet<ShiftRequirement>
+        {
+            new() { ShiftId = 1, JobRoleId = 1, RequiredStaffCount = 1, JobRole = role, Shift = shift }
+        };
+
+        dbContext.JobRoles.Add(role);
+        dbContext.Shifts.Add(shift);
+        dbContext.WorkPolicies.Add(new WorkPolicy
+        {
+            MaximumConsecutiveWorkHoursPerDay = 8,
+            RestPeriodInMinutes = 30,
+            RestPeriodThresholdInMinutes = 360,
+            MaximumConsecutiveWorkHoursPerWeek = 40
+        });
+
+        dbContext.Holidays.Add(new Holiday
+        {
+            Date = new DateTime(2026, 1, 5)
+        });
+
+        var user = CreateUser(1);
+        dbContext.Users.Add(user);
+        dbContext.UserJobRoles.Add(new UserJobRoles
+        {
+            UserId = user.Id,
+            JobRoleId = role.Id,
+            User = user,
+            JobRole = role,
+            ShiftAssignments = new HashSet<ShiftAssignment>()
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var dto = new GenerateScheduleDto
+        {
+            Name = "Holiday Week",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            ShiftIds = new List<int> { 1 }
+        };
+
+        await service.GenerateScheduleAsync(dto);
+
+        var createdSchedule = await dbContext.WorkSchedules
+            .Include(x => x.ShiftAssignments)
+            .FirstOrDefaultAsync(x => x.Name == "Holiday Week");
+
+        Assert.NotNull(createdSchedule);
+        Assert.True(createdSchedule.IsValid);
+        Assert.Empty(createdSchedule.ShiftAssignments);
     }
 
     [Fact]

@@ -126,6 +126,12 @@ public class WorkScheduleService : IWorkScheduleService
             var slotStart = timeSlotBaseDate.Add(timeslot.StartTime.ToTimeSpan());
             var slotEnd = timeSlotBaseDate.Add(timeslot.EndTime.ToTimeSpan());
 
+            // If there is a holiday when the timeslot starts or stops the shift is canceled 
+            if (this._dbContext.Holidays.Any(x => slotStart.Date == x.Date.Date || slotEnd.Date == x.Date.Date))
+            {
+                continue;
+            }
+
             foreach (var shiftRequirement in shift.JobRequirements)
             {
                 // Canditates with pending absence will be picked last
