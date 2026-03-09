@@ -54,17 +54,17 @@ public class JobroleController : Controller
     
     [HttpPost("{jobRoleId}/user/{userId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> AddUsersToRoleAsync([FromRoute, Required] int jobRoleId, [FromBody, Required] long[] userIds)
+    public async Task<IActionResult> AddUsersToRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
     {
-        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userIds.ToList());
+        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userId);
         return NoContent();
     }
     
     [HttpDelete("{jobRoleId}/user/{userId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromBody, Required] long[] userIds)
+    public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
     {
-        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userIds.ToList());
+        await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userId);
         return NoContent();
     }
 }
