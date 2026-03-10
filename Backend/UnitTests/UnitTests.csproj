@@ -25,4 +25,8 @@
       <ProjectReference Include="..\Schichtpilot\Schichtpilot.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Validator\" />
+    </ItemGroup>
+
 </Project>
