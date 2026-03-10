@@ -7,6 +7,6 @@ public class GetSchedulesRequest
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string? Searchstring { get; set; }
-    public List<int> ShiftIds { get; set; }
+    public List<int>? ShiftIds { get; set; }
     public string Status { get; set; }
 }
