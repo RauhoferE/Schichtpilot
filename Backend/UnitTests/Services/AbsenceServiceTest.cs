@@ -71,14 +71,13 @@ public class AbsenceServiceTest
 
         var dto = new CreateAbsenceDto
         {
-            UserId = 999,
             StartDate = DateTime.UtcNow.AddDays(1).Date,
             EndDate = DateTime.UtcNow.AddDays(2).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
         };
 
         await Assert.ThrowsAsync<UserNotFoundException>(
-            () => service.CreateAbsenceRequestAsync(dto));
+            () => service.CreateAbsenceRequestAsync(999, dto));
     }
 
     [Fact]
@@ -104,7 +103,6 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = 1,
             StartDate = DateTime.UtcNow.AddDays(-4).Date,  // Overlaps past
             EndDate = DateTime.UtcNow.AddDays(-2).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
@@ -112,7 +110,7 @@ public class AbsenceServiceTest
         };
 
         await Assert.ThrowsAsync<AlreadyExistsException>(
-            () => service.CreateAbsenceRequestAsync(dto));
+            () => service.CreateAbsenceRequestAsync(1, dto));
     }
 
 
@@ -138,14 +136,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(3).Date,
             EndDate = DateTime.UtcNow.AddDays(5).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation)
         };
 
         await Assert.ThrowsAsync<AlreadyExistsException>(
-            () => service.CreateAbsenceRequestAsync(dto));
+            () => service.CreateAbsenceRequestAsync(user.Id, dto));
     }
 
     [Fact]
@@ -171,14 +168,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(3).Date,
             EndDate = DateTime.UtcNow.AddDays(5).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
             Message = "Test"
         };
 
-        await service.CreateAbsenceRequestAsync(dto);
+        await service.CreateAbsenceRequestAsync(user.Id, dto);
 
         var absences = await dbContext.Absences.Where(x => x.UserId == user.Id).ToListAsync();
         Assert.Equal(2, absences.Count);
@@ -196,14 +192,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(1).Date,
             EndDate = DateTime.UtcNow.AddDays(2).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
             Message = "Vacation request"
         };
 
-        await service.CreateAbsenceRequestAsync(dto);
+        await service.CreateAbsenceRequestAsync(user.Id, dto);
 
         var absence = await dbContext.Absences.FirstOrDefaultAsync();
         Assert.NotNull(absence);
@@ -283,14 +278,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = new DateTime(2026, 1, 1),
             EndDate = new DateTime(2026, 1, 4),
             AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
             Message = "Sick leave"
         };
 
-        await service.CreateAbsenceRequestAsync(dto);
+        await service.CreateAbsenceRequestAsync(user.Id, dto);
 
         var absence = await dbContext.Absences.FirstOrDefaultAsync();
         Assert.NotNull(absence);

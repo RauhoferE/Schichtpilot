@@ -26,21 +26,21 @@ public class AbsenceService : IAbsenceService
         _workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
-    public async Task CreateAbsenceRequestAsync(CreateAbsenceDto dto)
+    public async Task CreateAbsenceRequestAsync(long userId, CreateAbsenceDto dto)
     {
         // FR149: User exists (Identity handles lockout, controller auth)
-        var user = await _dbContext.Users.FindAsync(dto.UserId);
+        var user = await _dbContext.Users.FindAsync(userId);
         if (user == null) {throw new UserNotFoundException("User not found");}
 
         // Overlap check
-        var overlapping = await _dbContext.Absences.AnyAsync(x => x.UserId == dto.UserId &&
+        var overlapping = await _dbContext.Absences.AnyAsync(x => x.UserId == userId &&
             x.Status != nameof(AbsenceStatusEnum.Denied) && dto.StartDate < x.EndDate && dto.EndDate > x.StartDate);
         if (overlapping) {throw new AlreadyExistsException("Overlapping absence exists");}
 
         // FR143-144: Pending persist
         var absence = new Absence
         {
-            UserId = dto.UserId,
+            UserId = userId,
             StartDate = dto.StartDate.Date,
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
@@ -58,7 +58,7 @@ public class AbsenceService : IAbsenceService
 
         if (absence.Status == nameof(AbsenceStatusEnum.Approved))
         {
-            await SetWorkSchedulesWithUserAsInvalid(dto.UserId, dto.StartDate, dto.EndDate);
+            await SetWorkSchedulesWithUserAsInvalid(userId, dto.StartDate, dto.EndDate);
         }
 
 // Email fire-and-forget (no rollback - acceptable for notifications)

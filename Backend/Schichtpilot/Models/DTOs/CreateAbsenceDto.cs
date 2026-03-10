@@ -2,7 +2,6 @@
 
 public class CreateAbsenceDto
 {
-    public required long UserId  { get; set; }
     public required DateTime StartDate { get; set; }
     public required DateTime EndDate { get; set; }
     public string AbsenceType {get;set;} // string → entity
