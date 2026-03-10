@@ -128,7 +128,7 @@ public class CompanyPolicyServiceTest
         var dto = new CompanyPolicyDto
         {
             MaximumConsecutiveWorkHoursPerDay = 10,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 48
         };
@@ -138,7 +138,7 @@ public class CompanyPolicyServiceTest
         var saved = await dbContext.WorkPolicies.SingleOrDefaultAsync();
         Assert.NotNull(saved);
         Assert.Equal(dto.MaximumConsecutiveWorkHoursPerDay, saved.MaximumConsecutiveWorkHoursPerDay);
-        Assert.Equal(dto.RestPeriodInMinutes, saved.RestPeriodInMinutes);
+        Assert.Equal(dto.MinimumRestPeriodInMinutes, saved.MinimumRestPeriodInMinutes);
         Assert.Equal(dto.RestPeriodThresholdInMinutes, saved.RestPeriodThresholdInMinutes);
         Assert.Equal(dto.MaximumConsecutiveWorkHoursPerWeek, saved.MaximumConsecutiveWorkHoursPerWeek);
     }
@@ -150,7 +150,7 @@ public class CompanyPolicyServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 15,
+            MinimumRestPeriodInMinutes = 15,
             RestPeriodThresholdInMinutes = 300,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -203,7 +203,7 @@ public class CompanyPolicyServiceTest
         var dto = new CompanyPolicyDto
         {
             MaximumConsecutiveWorkHoursPerDay = 12,
-            RestPeriodInMinutes = 45,
+            MinimumRestPeriodInMinutes = 45,
             RestPeriodThresholdInMinutes = 420,
             MaximumConsecutiveWorkHoursPerWeek = 50
         };
@@ -215,7 +215,7 @@ public class CompanyPolicyServiceTest
 
         var updated = policies[0];
         Assert.Equal(dto.MaximumConsecutiveWorkHoursPerDay, updated.MaximumConsecutiveWorkHoursPerDay);
-        Assert.Equal(dto.RestPeriodInMinutes, updated.RestPeriodInMinutes);
+        Assert.Equal(dto.MinimumRestPeriodInMinutes, updated.MinimumRestPeriodInMinutes);
         Assert.Equal(dto.RestPeriodThresholdInMinutes, updated.RestPeriodThresholdInMinutes);
         Assert.Equal(dto.MaximumConsecutiveWorkHoursPerWeek, updated.MaximumConsecutiveWorkHoursPerWeek);
 
@@ -232,7 +232,7 @@ public class CompanyPolicyServiceTest
         var entity = new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 9,
-            RestPeriodInMinutes = 20,
+            MinimumRestPeriodInMinutes = 20,
             RestPeriodThresholdInMinutes = 330,
             MaximumConsecutiveWorkHoursPerWeek = 45
         };
@@ -242,7 +242,7 @@ public class CompanyPolicyServiceTest
         var expected = new CompanyPolicyDto
         {
             MaximumConsecutiveWorkHoursPerDay = 9,
-            RestPeriodInMinutes = 20,
+            MinimumRestPeriodInMinutes = 20,
             RestPeriodThresholdInMinutes = 330,
             MaximumConsecutiveWorkHoursPerWeek = 45
         };
@@ -258,7 +258,7 @@ public class CompanyPolicyServiceTest
 
         Assert.NotNull(result);
         Assert.Equal(expected.MaximumConsecutiveWorkHoursPerDay, result.MaximumConsecutiveWorkHoursPerDay);
-        Assert.Equal(expected.RestPeriodInMinutes, result.RestPeriodInMinutes);
+        Assert.Equal(expected.MinimumRestPeriodInMinutes, result.MinimumRestPeriodInMinutes);
         Assert.Equal(expected.RestPeriodThresholdInMinutes, result.RestPeriodThresholdInMinutes);
         Assert.Equal(expected.MaximumConsecutiveWorkHoursPerWeek, result.MaximumConsecutiveWorkHoursPerWeek);
     }

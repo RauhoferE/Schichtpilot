@@ -71,14 +71,13 @@ public class AbsenceServiceTest
 
         var dto = new CreateAbsenceDto
         {
-            UserId = 999,
             StartDate = DateTime.UtcNow.AddDays(1).Date,
             EndDate = DateTime.UtcNow.AddDays(2).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
         };
 
         await Assert.ThrowsAsync<UserNotFoundException>(
-            () => service.CreateAbsenceRequestAsync(dto));
+            () => service.CreateAbsenceRequestAsync(999, dto));
     }
 
     [Fact]
@@ -96,7 +95,8 @@ public class AbsenceServiceTest
             StartDate = DateTime.UtcNow.AddDays(-5).Date,
             EndDate = DateTime.UtcNow.AddDays(-3).Date,
             Status = nameof(AbsenceStatusEnum.Approved),
-            Message = "Past vacation"
+            Message = "Past vacation",
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
         dbContext.Absences.Add(pastOverlap);
         await dbContext.SaveChangesAsync();
@@ -104,7 +104,6 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = 1,
             StartDate = DateTime.UtcNow.AddDays(-4).Date,  // Overlaps past
             EndDate = DateTime.UtcNow.AddDays(-2).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
@@ -112,7 +111,7 @@ public class AbsenceServiceTest
         };
 
         await Assert.ThrowsAsync<AlreadyExistsException>(
-            () => service.CreateAbsenceRequestAsync(dto));
+            () => service.CreateAbsenceRequestAsync(1, dto));
     }
 
 
@@ -130,7 +129,8 @@ public class AbsenceServiceTest
             UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(2).Date,
             EndDate = DateTime.UtcNow.AddDays(4).Date,
-            Status = nameof(AbsenceStatusEnum.Approved)
+            Status = nameof(AbsenceStatusEnum.Approved),
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
         dbContext.Absences.Add(overlapping);
         await dbContext.SaveChangesAsync();
@@ -138,14 +138,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(3).Date,
             EndDate = DateTime.UtcNow.AddDays(5).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation)
         };
 
         await Assert.ThrowsAsync<AlreadyExistsException>(
-            () => service.CreateAbsenceRequestAsync(dto));
+            () => service.CreateAbsenceRequestAsync(user.Id, dto));
     }
 
     [Fact]
@@ -163,7 +162,8 @@ public class AbsenceServiceTest
             StartDate = DateTime.UtcNow.AddDays(2).Date,
             EndDate = DateTime.UtcNow.AddDays(4).Date,
             Status = nameof(AbsenceStatusEnum.Denied),
-            ManagerMessage = "Test"
+            ManagerMessage = "Test",
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
         dbContext.Absences.Add(overlapping);
         await dbContext.SaveChangesAsync();
@@ -171,14 +171,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(3).Date,
             EndDate = DateTime.UtcNow.AddDays(5).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
             Message = "Test"
         };
 
-        await service.CreateAbsenceRequestAsync(dto);
+        await service.CreateAbsenceRequestAsync(user.Id, dto);
 
         var absences = await dbContext.Absences.Where(x => x.UserId == user.Id).ToListAsync();
         Assert.Equal(2, absences.Count);
@@ -196,14 +195,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(1).Date,
             EndDate = DateTime.UtcNow.AddDays(2).Date,
             AbsenceType = nameof(AbsenceTypeEnum.Vacation),
             Message = "Vacation request"
         };
 
-        await service.CreateAbsenceRequestAsync(dto);
+        await service.CreateAbsenceRequestAsync(user.Id, dto);
 
         var absence = await dbContext.Absences.FirstOrDefaultAsync();
         Assert.NotNull(absence);
@@ -283,14 +281,13 @@ public class AbsenceServiceTest
         var service = CreateService(dbContext);
         var dto = new CreateAbsenceDto
         {
-            UserId = user.Id,
             StartDate = new DateTime(2026, 1, 1),
             EndDate = new DateTime(2026, 1, 4),
             AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
             Message = "Sick leave"
         };
 
-        await service.CreateAbsenceRequestAsync(dto);
+        await service.CreateAbsenceRequestAsync(user.Id, dto);
 
         var absence = await dbContext.Absences.FirstOrDefaultAsync();
         Assert.NotNull(absence);
@@ -315,7 +312,7 @@ public class AbsenceServiceTest
     public async Task DeleteOwnAbsenceAsync_ApprovedAbsence_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Approved) });
+        dbContext.Absences.Add(new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Approved), AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
@@ -328,7 +325,7 @@ public class AbsenceServiceTest
     public async Task DeleteOwnAbsenceAsync_OwnPendingAbsence_DeletesSuccessfully()
     {
         await using var dbContext = CreateDbContext();
-        var absence = new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Pending) };
+        var absence = new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Pending), AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) };
         dbContext.Absences.Add(absence);
         await dbContext.SaveChangesAsync();
 
@@ -344,7 +341,7 @@ public class AbsenceServiceTest
     public async Task UpdateAbsenceStatusAsync_NotPending_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved) });
+        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
@@ -358,7 +355,7 @@ public class AbsenceServiceTest
     public async Task UpdateAbsenceStatusAsync_DeniedWithoutMessage_ThrowsValidationException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Pending) });
+        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Pending),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
@@ -426,7 +423,8 @@ public class AbsenceServiceTest
             UserId = user.Id,
             StartDate = new DateTime(2026, 1, 1),
             EndDate = new DateTime(2026, 1, 4),
-            Status = nameof(AbsenceStatusEnum.Pending)
+            Status = nameof(AbsenceStatusEnum.Pending),
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
 
         dbContext.JobRoles.Add(role);
@@ -519,7 +517,8 @@ public class AbsenceServiceTest
             UserId = user.Id,
             StartDate = new DateTime(2026, 1, 1),
             EndDate = new DateTime(2026, 1, 4),
-            Status = nameof(AbsenceStatusEnum.Pending)
+            Status = nameof(AbsenceStatusEnum.Pending),
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
 
         dbContext.JobRoles.Add(role);

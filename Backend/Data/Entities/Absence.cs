@@ -16,17 +16,18 @@ public class Absence
     [Required]
     public DateTime EndDate { get; set; }
     
-    [Required, MaxLength(50)]
-    public string AbsenceType { get; set; } = string.Empty; // "Vacation", "SickLeave", etc.
+    [Required]
+    public string AbsenceType { get; set; } // "Vacation", "SickLeave", etc.
     
-    [MaxLength(255)]
+    [MaxLength(250)]
     public string Message { get; set; } = string.Empty; // optional when accepted FR142
     
-    [MaxLength(25)]
+    [Required]
     public string Status { get; set; } = "Pending"; // string in DB, enum in DTOs
     
+    [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // FR158 sorting
     
-    [MaxLength(255)]
+    [MaxLength(250)]
     public string ManagerMessage { get; set; } = string.Empty; // FR164,168
 }

@@ -7,7 +7,7 @@ public class WorkPolicy
     public int Id { get; set; }
     
     [Required]
-    public int RestPeriodInMinutes { get; set; }
+    public int MinimumRestPeriodInMinutes { get; set; }
     
     [Required]
     public int RestPeriodThresholdInMinutes { get; set; }// After so many minutes a break of atleast RestPeriodInMinutes must be defined

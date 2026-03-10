@@ -21,11 +21,12 @@ public class AbsenceController : Controller
     private readonly IAbsenceService _absenceService;
     private readonly IMapper _mapper;
 
-    [HttpPost("")]
+    [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAbsenceAsync([FromBody, Required]CreateAbsenceDto dto)
     {
-        await this._absenceService.CreateAbsenceRequestAsync(dto);
+        //TODO: Add absence from auth 
+        await this._absenceService.CreateAbsenceRequestAsync(0, dto);
         return Created();
     }
     

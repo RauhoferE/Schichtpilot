@@ -2,8 +2,8 @@ namespace Schichtpilot.Models.Requests;
 
 public class GetAbsencesRequest
 {
-    public int Page { get; set; }
-    public int PageSize { get; set; }
+    public required int Page { get; set; }
+    public required int PageSize { get; set; }
     public List<string>? Status { get; set; }
     public List<string>? AbsenceType { get; set; }
     public DateTime? CreatedFrom { get; set; }

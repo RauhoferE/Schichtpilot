@@ -74,7 +74,7 @@ public class CompanyPolicyService : ICompanyPolicyService
             this._dbContext.WorkPolicies.Add(new WorkPolicy()
             {
                 MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay,
-                RestPeriodInMinutes = policyDto.RestPeriodInMinutes,
+                MinimumRestPeriodInMinutes = policyDto.MinimumRestPeriodInMinutes,
                 RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes,
                 MaximumConsecutiveWorkHoursPerWeek =  policyDto.MaximumConsecutiveWorkHoursPerWeek
             });
@@ -83,7 +83,7 @@ public class CompanyPolicyService : ICompanyPolicyService
         }
         
         policy.MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay;
-        policy.RestPeriodInMinutes = policyDto.RestPeriodInMinutes;
+        policy.MinimumRestPeriodInMinutes = policyDto.MinimumRestPeriodInMinutes;
         policy.RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes;
         policy.MaximumConsecutiveWorkHoursPerWeek = policyDto.MaximumConsecutiveWorkHoursPerWeek;
         await this._dbContext.SaveChangesAsync();

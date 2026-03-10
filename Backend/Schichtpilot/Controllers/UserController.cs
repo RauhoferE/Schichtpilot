@@ -22,7 +22,7 @@ public class UserController : Controller
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    [HttpPost("")]
+    [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateUserAsync([FromBody, Required] CreateUserRequest request)
     {
