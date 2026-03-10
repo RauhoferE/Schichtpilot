@@ -21,7 +21,7 @@ public class JobroleController : Controller
     private readonly IJobRoleService _jobRoleService;
     private readonly IMapper _mapper;
 
-    [HttpPost("")]
+    [HttpPost]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> CreateJobRoleAsync([FromBody, Required] CreateJobRoleDto request)
     {

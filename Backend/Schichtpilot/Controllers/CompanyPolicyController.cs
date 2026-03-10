@@ -43,7 +43,7 @@ public class CompanyPolicyController : Controller
         return NoContent();
     }
     
-    [HttpPut("")]
+    [HttpPut]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SetPolicyAsync([FromBody, Required] CompanyPolicyDto policy)
     {
@@ -51,7 +51,7 @@ public class CompanyPolicyController : Controller
         return NoContent();
     }
     
-    [HttpGet("")]
+    [HttpGet]
     [ProducesResponseType( typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPolicyAsync()
     {

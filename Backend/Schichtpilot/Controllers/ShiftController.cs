@@ -22,7 +22,7 @@ public class ShiftController : Controller
     
     private readonly IShiftService _shiftService;
 
-    [HttpPost("")]
+    [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateShiftAsync(CreateShiftDto request)
     {
