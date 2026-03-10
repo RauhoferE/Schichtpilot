@@ -1,3 +1,4 @@
+using System;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Requests;
 using Schichtpilot.Validation;
@@ -10,7 +11,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_ValidRequest_HasNoErrors()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
 
         var result = validator.Validate(request);
@@ -22,7 +23,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_EmailMissing_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Email = null!;
 
@@ -34,7 +35,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_EmailEmpty_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Email = string.Empty;
 
@@ -46,7 +47,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_EmailInvalidFormat_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Email = "not-an-email";
 
@@ -58,7 +59,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_PasswordMissing_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Password = null!;
 
@@ -70,7 +71,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_PasswordEmpty_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Password = string.Empty;
 
@@ -87,7 +88,7 @@ public class CreateUserRequestValidatorTest
     [InlineData("NoSpecial1")] // missing special
     public void Validate_PasswordDoesNotMeetRequirements_HasError(string password)
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Password = password;
 
@@ -99,7 +100,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_BirthdateInFuture_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.Birthdate = DateTime.Now.AddDays(1);
 
@@ -111,7 +112,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_FirstNameMissing_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.FirstName = null!;
 
@@ -123,7 +124,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_FirstNameTooShort_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.FirstName = "Al";
 
@@ -135,7 +136,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_FirstNameTooLong_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.FirstName = new string('A', 21);
 
@@ -147,7 +148,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_LastNameMissing_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.LastName = null!;
 
@@ -159,7 +160,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_LastNameTooShort_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.LastName = "Li";
 
@@ -171,7 +172,7 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_LastNameTooLong_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.LastName = new string('B', 21);
 
@@ -183,13 +184,18 @@ public class CreateUserRequestValidatorTest
     [Fact]
     public void Validate_AddressMissing_HasError()
     {
-        var validator = new CreateUserRequestValidator();
+        var validator = CreateValidator();
         var request = CreateValidRequest();
         request.AddressDto = null!;
 
         var result = validator.Validate(request);
 
         AssertHasError(result, nameof(CreateUserRequest.AddressDto));
+    }
+
+    private static CreateUserRequestValidator CreateValidator()
+    {
+        return new CreateUserRequestValidator(new AddressDtoValidator());
     }
 
     private static CreateUserRequest CreateValidRequest()

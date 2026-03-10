@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Validation;
 using Xunit;
@@ -9,7 +11,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_ValidRequest_HasNoErrors()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
 
         var result = validator.Validate(dto);
@@ -21,7 +23,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_NameNull_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.Name = null!;
 
@@ -33,7 +35,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_NameEmpty_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.Name = string.Empty;
 
@@ -45,7 +47,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_NameTooShort_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.Name = "AB";
 
@@ -57,7 +59,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_NameTooLong_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.Name = new string('N', 26);
 
@@ -69,7 +71,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_ColorNull_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.ColorAsHex = null!;
 
@@ -81,7 +83,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_ColorEmpty_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.ColorAsHex = string.Empty;
 
@@ -93,7 +95,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_ColorInvalid_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.ColorAsHex = "123456";
 
@@ -105,7 +107,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_TimeSlotsOverlapping_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.TimeSlots = new List<TimeSlotDto>
         {
@@ -133,7 +135,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_TimeSlotsDuplicateWeekday_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.TimeSlots = new List<TimeSlotDto>
         {
@@ -161,7 +163,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_JobRequirementsRequiredStaffCountZero_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.JobRequirements = new List<ShiftRequirementDto>
         {
@@ -181,7 +183,7 @@ public class CreateShiftDtoValidatorTest
     [Fact]
     public void Validate_JobRequirementsDuplicateJobId_HasError()
     {
-        var validator = new CreateShiftDtoValidator();
+        var validator = CreateValidator();
         var dto = CreateValidDto();
         dto.JobRequirements = new List<ShiftRequirementDto>
         {
@@ -202,6 +204,13 @@ public class CreateShiftDtoValidatorTest
         var result = validator.Validate(dto);
 
         AssertHasError(result, nameof(CreateShiftDto.JobRequirements));
+    }
+
+    private static CreateShiftDtoValidator CreateValidator()
+    {
+        return new CreateShiftDtoValidator(
+            new ShiftRequirementDtoValidator(),
+            new TimeSlotDtoValidator());
     }
 
     private static CreateShiftDto CreateValidDto()

@@ -5,7 +5,7 @@ namespace Schichtpilot.Validation;
 
 public class CreateShiftDtoValidator : AbstractValidator<CreateShiftDto>
 {
-    public CreateShiftDtoValidator()
+    public CreateShiftDtoValidator(IValidator<ShiftRequirementDto> shiftDtoValidator, IValidator<TimeSlotDto> timeSlotDtoValidator)
     {
         RuleFor(x => x.Name).NotNull().NotEmpty()
             .MinimumLength(3).MaximumLength(25);
@@ -14,8 +14,10 @@ public class CreateShiftDtoValidator : AbstractValidator<CreateShiftDto>
         RuleFor(x => x.TimeSlots)
             .Must(HaveNoOverlappingSlots)
             .Must(x => x.DistinctBy(y => y.DayOfWeek).Count() == x.Count());
+        RuleForEach(x => x.TimeSlots).SetValidator(timeSlotDtoValidator);
         RuleForEach(x => x.JobRequirements).NotNull()
-            .Must(x => x.RequiredStaffCount > 0);
+            .Must(x => x.RequiredStaffCount > 0)
+            .SetValidator(shiftDtoValidator);
         RuleFor(x => x.JobRequirements).NotNull()
             .Must(x => x.DistinctBy(y => y.JobId)
                 .Count() == x.Count);
