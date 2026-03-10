@@ -137,7 +137,7 @@ public class CreateUserRequestValidatorTest
     {
         var validator = new CreateUserRequestValidator();
         var request = CreateValidRequest();
-        request.FirstName = new string('A', 101);
+        request.FirstName = new string('A', 21);
 
         var result = validator.Validate(request);
 
@@ -173,7 +173,7 @@ public class CreateUserRequestValidatorTest
     {
         var validator = new CreateUserRequestValidator();
         var request = CreateValidRequest();
-        request.LastName = new string('B', 101);
+        request.LastName = new string('B', 21);
 
         var result = validator.Validate(request);
 
@@ -205,7 +205,7 @@ public class CreateUserRequestValidatorTest
             {
                 Street = "Main Street 1",
                 City = "Testville",
-                PostalCode = 12345
+                PostalCode = 1234
             }
         };
     }

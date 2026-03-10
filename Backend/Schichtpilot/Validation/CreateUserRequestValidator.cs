@@ -15,8 +15,8 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
         RuleFor(x => x.Birthdate).Must(x => x.Date < DateTime.Now).WithMessage("Birthdate must be in the past");
         RuleFor(x => x.FirstName).NotNull().NotEmpty().WithMessage("First name is required");
         RuleFor(x => x.LastName).NotNull().NotEmpty().WithMessage("Last name is required");
-        RuleFor(x => x.FirstName).MinimumLength(3).MaximumLength(100).WithMessage("First name must be between 3 and 100 characters");
-        RuleFor(x => x.LastName).MinimumLength(3).MaximumLength(100).WithMessage("Last name must be between 3 and 100 characters");
+        RuleFor(x => x.FirstName).MinimumLength(3).MaximumLength(20).WithMessage("First name must be between 3 and 20 characters");
+        RuleFor(x => x.LastName).MinimumLength(3).MaximumLength(20).WithMessage("Last name must be between 3 and 20 characters");
         RuleFor(x => x.AddressDto).NotNull().WithMessage("Address is required");
     }
     

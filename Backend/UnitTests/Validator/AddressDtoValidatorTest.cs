@@ -67,6 +67,18 @@ public class AddressDtoValidatorTest
     }
 
     [Fact]
+    public void Validate_CityTooLong_HasError()
+    {
+        var validator = new AddressDtoValidator();
+        var dto = CreateValidAddress();
+        dto.City = new string('C', 21);
+
+        var result = validator.Validate(dto);
+
+        AssertHasError(result, nameof(AddressDto.City));
+    }
+
+    [Fact]
     public void Validate_StreetEmpty_HasError()
     {
         var validator = new AddressDtoValidator();
@@ -84,6 +96,18 @@ public class AddressDtoValidatorTest
         var validator = new AddressDtoValidator();
         var dto = CreateValidAddress();
         dto.Street = "A";
+
+        var result = validator.Validate(dto);
+
+        AssertHasError(result, nameof(AddressDto.Street));
+    }
+
+    [Fact]
+    public void Validate_StreetTooLong_HasError()
+    {
+        var validator = new AddressDtoValidator();
+        var dto = CreateValidAddress();
+        dto.Street = new string('S', 51);
 
         var result = validator.Validate(dto);
 
