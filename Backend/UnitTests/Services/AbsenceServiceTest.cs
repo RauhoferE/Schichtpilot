@@ -95,7 +95,8 @@ public class AbsenceServiceTest
             StartDate = DateTime.UtcNow.AddDays(-5).Date,
             EndDate = DateTime.UtcNow.AddDays(-3).Date,
             Status = nameof(AbsenceStatusEnum.Approved),
-            Message = "Past vacation"
+            Message = "Past vacation",
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
         dbContext.Absences.Add(pastOverlap);
         await dbContext.SaveChangesAsync();
@@ -128,7 +129,8 @@ public class AbsenceServiceTest
             UserId = user.Id,
             StartDate = DateTime.UtcNow.AddDays(2).Date,
             EndDate = DateTime.UtcNow.AddDays(4).Date,
-            Status = nameof(AbsenceStatusEnum.Approved)
+            Status = nameof(AbsenceStatusEnum.Approved),
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
         dbContext.Absences.Add(overlapping);
         await dbContext.SaveChangesAsync();
@@ -160,7 +162,8 @@ public class AbsenceServiceTest
             StartDate = DateTime.UtcNow.AddDays(2).Date,
             EndDate = DateTime.UtcNow.AddDays(4).Date,
             Status = nameof(AbsenceStatusEnum.Denied),
-            ManagerMessage = "Test"
+            ManagerMessage = "Test",
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
         dbContext.Absences.Add(overlapping);
         await dbContext.SaveChangesAsync();
@@ -309,7 +312,7 @@ public class AbsenceServiceTest
     public async Task DeleteOwnAbsenceAsync_ApprovedAbsence_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Approved) });
+        dbContext.Absences.Add(new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Approved), AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
@@ -322,7 +325,7 @@ public class AbsenceServiceTest
     public async Task DeleteOwnAbsenceAsync_OwnPendingAbsence_DeletesSuccessfully()
     {
         await using var dbContext = CreateDbContext();
-        var absence = new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Pending) };
+        var absence = new Absence { Id = 1, UserId = 1, Status = nameof(AbsenceStatusEnum.Pending), AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) };
         dbContext.Absences.Add(absence);
         await dbContext.SaveChangesAsync();
 
@@ -338,7 +341,7 @@ public class AbsenceServiceTest
     public async Task UpdateAbsenceStatusAsync_NotPending_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved) });
+        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
@@ -352,7 +355,7 @@ public class AbsenceServiceTest
     public async Task UpdateAbsenceStatusAsync_DeniedWithoutMessage_ThrowsValidationException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Pending) });
+        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Pending),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
@@ -420,7 +423,8 @@ public class AbsenceServiceTest
             UserId = user.Id,
             StartDate = new DateTime(2026, 1, 1),
             EndDate = new DateTime(2026, 1, 4),
-            Status = nameof(AbsenceStatusEnum.Pending)
+            Status = nameof(AbsenceStatusEnum.Pending),
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
 
         dbContext.JobRoles.Add(role);
@@ -513,7 +517,8 @@ public class AbsenceServiceTest
             UserId = user.Id,
             StartDate = new DateTime(2026, 1, 1),
             EndDate = new DateTime(2026, 1, 4),
-            Status = nameof(AbsenceStatusEnum.Pending)
+            Status = nameof(AbsenceStatusEnum.Pending),
+            AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave)
         };
 
         dbContext.JobRoles.Add(role);
