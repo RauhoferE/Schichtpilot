@@ -21,7 +21,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -93,7 +93,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -213,7 +213,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -276,7 +276,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -361,7 +361,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 6, // 8h chain should violate
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -434,7 +434,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 12,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 8
         });
@@ -507,7 +507,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 12,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 20
         });
@@ -591,7 +591,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -668,7 +668,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -796,7 +796,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -905,7 +905,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -1024,7 +1024,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -1123,7 +1123,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -1850,7 +1850,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -1938,7 +1938,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });
@@ -2012,7 +2012,7 @@ public class WorkScheduleServiceTest
         dbContext.WorkPolicies.Add(new WorkPolicy
         {
             MaximumConsecutiveWorkHoursPerDay = 8,
-            RestPeriodInMinutes = 30,
+            MinimumRestPeriodInMinutes = 30,
             RestPeriodThresholdInMinutes = 360,
             MaximumConsecutiveWorkHoursPerWeek = 40
         });

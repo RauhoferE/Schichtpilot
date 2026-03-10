@@ -29,7 +29,7 @@ public class CompanyPolicyController : Controller
 
     [HttpPost("holidays")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> AddHolidayAsync([FromBody, Required] HolidaysDto holidays)
+    public async Task<IActionResult> AddHolidaysAsync([FromBody, Required] HolidaysDto holidays)
     {
         await this._companyService.AddHolidaysAsync(holidays);
         return NoContent();
@@ -37,7 +37,7 @@ public class CompanyPolicyController : Controller
     
     [HttpDelete("holidays")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RemoveHolidayAsync([FromBody, Required] HolidaysDto holidays)
+    public async Task<IActionResult> RemoveHolidaysAsync([FromBody, Required] HolidaysDto holidays)
     {
         await this._companyService.RemoveHolidaysAsync(holidays);
         return NoContent();
@@ -53,7 +53,7 @@ public class CompanyPolicyController : Controller
     
     [HttpGet("")]
     [ProducesResponseType( typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPolicyAsync([FromBody, Required] CompanyPolicyDto policy)
+    public async Task<IActionResult> GetPolicyAsync()
     {
         return Ok(await this._companyService.GetPolicyAsync());
     }

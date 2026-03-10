@@ -141,7 +141,7 @@ public class ShiftService : IShiftService
         // Check if ANY break in this block is >= 30 minutes
         // And ensure that break starts BEFORE the 4-hour mark
         bool hasValidBreak = combinedBreaks.Any(b => 
-            (b.EndTime - b.StartTime).TotalMinutes >= policy.RestPeriodInMinutes && 
+            (b.EndTime - b.StartTime).TotalMinutes >= policy.MinimumRestPeriodInMinutes && 
             (b.StartTime - start).TotalMinutes <= policy.RestPeriodThresholdInMinutes);
 
         return hasValidBreak;
