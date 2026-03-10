@@ -68,7 +68,7 @@ public class StatusUpdateDtoValidatorTest
     }
 
     [Fact]
-    public void Validate_ManagerMessageNull_WhenStatusNotDenied_HasError()
+    public void Validate_ManagerMessageNull_WhenStatusNotDenied_HasNoError()
     {
         var validator = new StatusUpdateDtoValidator();
         var dto = CreateApprovedDto();
@@ -76,7 +76,8 @@ public class StatusUpdateDtoValidatorTest
 
         var result = validator.Validate(dto);
 
-        AssertHasError(result, nameof(StatusUpdateDto.ManagerMessage));
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public class StatusUpdateDtoValidatorTest
     }
 
     [Fact]
-    public void Validate_ManagerMessageNull_WhenStatusDenied_HasNoErrorsForMessage()
+    public void Validate_ManagerMessageNull_WhenStatusDenied_HasErrorsForMessage()
     {
         var validator = new StatusUpdateDtoValidator();
         var dto = CreateDeniedDto();
@@ -124,7 +125,7 @@ public class StatusUpdateDtoValidatorTest
 
         var result = validator.Validate(dto);
 
-        Assert.DoesNotContain(result.Errors, error => error.PropertyName == nameof(StatusUpdateDto.ManagerMessage));
+        AssertHasError(result, nameof(StatusUpdateDto.ManagerMessage));
     }
 
     [Fact]
@@ -137,6 +138,18 @@ public class StatusUpdateDtoValidatorTest
         var result = validator.Validate(dto);
 
         AssertHasError(result, nameof(StatusUpdateDto.ManagerMessage));
+    }
+    
+    [Fact]
+    public void Validate_ManagerMessageNotEmpty_WhenStatusDenied_HasNoError()
+    {
+        var validator = new StatusUpdateDtoValidator();
+        var dto = CreateDeniedDto();
+
+        var result = validator.Validate(dto);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
     }
 
     private static StatusUpdateDto CreateApprovedDto()

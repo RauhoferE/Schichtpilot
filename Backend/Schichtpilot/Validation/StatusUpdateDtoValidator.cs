@@ -12,6 +12,7 @@ public class StatusUpdateDtoValidator : AbstractValidator<StatusUpdateDto>
             .IsEnumName(typeof(AbsenceStatusEnum)).Must(x => x != nameof(AbsenceStatusEnum.Pending));
         RuleFor(x => x.ManagerMessage).MinimumLength(3).MaximumLength(250)
             .When(x => x.ManagerMessage != null);
-        RuleFor(x => x.ManagerMessage).NotEmpty().NotNull().When(x => x.Status != nameof(AbsenceStatusEnum.Denied));
+        RuleFor(x => x.ManagerMessage).NotEmpty().NotNull()
+            .When(x => x.Status == nameof(AbsenceStatusEnum.Denied));
     }
 }

@@ -13,6 +13,7 @@ public class GetAbsencesRequestValidator : AbstractValidator<GetAbsencesRequest>
             .WithMessage("Pagesize has to be between 1 and 100");
         RuleForEach(x => x.Status).IsEnumName(typeof(AbsenceStatusEnum))
             .When(x => x.Status != null && x.Status.Count > 0);
-        RuleForEach(x => x.AbsenceType).IsEnumName(typeof(AbsenceTypeEnum)).When(x => x.AbsenceType != null && x.AbsenceType.Count > 0);
+        RuleForEach(x => x.AbsenceType).IsEnumName(typeof(AbsenceTypeEnum))
+            .When(x => x.AbsenceType != null && x.AbsenceType.Count > 0);
     }
 }
