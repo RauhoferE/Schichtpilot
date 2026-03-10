@@ -7,5 +7,5 @@ public class CreateJobRoleDto
     public required string Description {get; set;}
     
     //TODO: Check for distinct job roles
-    public List<int> DependentOnJobRoleIds {get; set;}
+    public required List<int> DependentOnJobRoleIds {get; set;}
 }
