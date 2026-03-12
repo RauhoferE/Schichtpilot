@@ -26,5 +26,21 @@ public class DtoMappingProfile : Profile
             .ForMember(dest => dest.StreetAddress, opt => opt.MapFrom(src => src.AddressDto.Street));
         CreateMap<JobRole, JobRoleShortDto>();
         
+        CreateMap<Timeslot, TimeSlotDto>();
+        CreateMap<Break, BreakDto>();
+        CreateMap<Shift, ShiftDto>()
+            .ForMember(dest => dest.TimeSlots, opt => opt.MapFrom(src => src.Timeslots));
+        CreateMap<ShiftRequirement, ShiftRequirementDto>()
+            .ForMember(dest => dest.JobId, opt => opt.MapFrom(src => src.JobRoleId))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobRole.Name));
+        CreateMap<Shift, ShortShiftDto>();
+        CreateMap<WorkSchedule, WorkScheduleShortDto>()
+            .ForMember(dest => dest.ShiftCount, opt => opt.MapFrom(src => src.Shifts.Count));
+        CreateMap<WorkSchedule, WorkScheduleDto>()
+            .ForMember(dest => dest.Shifts, opt => opt.MapFrom(src => src.Shifts.Select(x => x.Shift)))
+            .ForMember(dest => dest.AssignedUsers, opt => opt.MapFrom(src => src.ShiftAssignments));
+        CreateMap<ShiftAssignment, AssignedUserDto>()
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.UserJobRole.User))
+            .ForMember(dest => dest.JobRole, opt => opt.MapFrom(src => src.UserJobRole.JobRole));
     }
 }
