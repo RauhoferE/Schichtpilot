@@ -18,6 +18,9 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=169306e9_002D56cf_002D44b2_002D8964_002Dd1846aff769c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Solution /&gt;
 &lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c08e8c31_002D5cb9_002D4d3d_002Dace9_002D52e7561a3ad8/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from DtoMappingProfileTest.cs" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;ProjectFile&gt;01D0BABE-3E66-4F0C-A040-E2FE75CF827C/d:Mapping/f:DtoMappingProfileTest.cs&lt;/ProjectFile&gt;
+&lt;/SessionState&gt;</s:String>
 	
 	
 	
