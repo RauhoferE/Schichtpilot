@@ -2,6 +2,7 @@ using AutoMapper;
 using Data.Entities;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Enums;
+using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Mapping;
 
@@ -42,5 +43,18 @@ public class DtoMappingProfile : Profile
         CreateMap<ShiftAssignment, AssignedUserDto>()
             .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.UserJobRole.User))
             .ForMember(dest => dest.JobRole, opt => opt.MapFrom(src => src.UserJobRole.JobRole));
+
+        CreateMap<GetAbsencesRequest, PaginationDto>();
+        CreateMap<GetAbsencesRequest, AbsenceFilterDto>();
+        CreateMap<GetJobRolesRequest, PaginationDto>();
+        CreateMap<GetShiftsRequest, PaginationDto>();
+        CreateMap<GetShiftsRequest, ShiftFilterDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ShiftStatusEnum));
+        CreateMap<CreateUserRequest, UserDto>();
+        CreateMap<GetUsersRequest, PaginationDto>();
+        CreateMap<GetUsersRequest, UserSortingDto>();
+        CreateMap<GetUsersRequest, UserFilterDto>();
+        CreateMap<GetSchedulesRequest, PaginationDto>();
+        CreateMap<GetSchedulesRequest, ScheduleFilterDot>();
     }
 }

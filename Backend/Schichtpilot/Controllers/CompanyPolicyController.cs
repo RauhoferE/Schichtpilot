@@ -10,15 +10,12 @@ namespace Schichtpilot.Controllers;
 [Route("api/[controller]")]
 public class CompanyPolicyController : Controller
 {
-    public CompanyPolicyController(ICompanyPolicyService companyService, IMapper mapper)
+    public CompanyPolicyController(ICompanyPolicyService companyService)
     {
         _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
-        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
     private readonly ICompanyPolicyService _companyService;
-    
-    private readonly IMapper _mapper;
     
     [HttpGet("holidays")]
     [ProducesResponseType( typeof(HolidaysDto), StatusCodes.Status200OK)]
