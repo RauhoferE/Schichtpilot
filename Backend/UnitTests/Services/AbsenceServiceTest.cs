@@ -36,7 +36,6 @@ public class AbsenceServiceTest
                 {
                     Id = e.Id,
                     UserId = e.UserId,
-                    UserName = e.User.UserName ?? "Unknown",
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
                     Message = e.Message,
