@@ -63,7 +63,7 @@ public class AbsenceService : IAbsenceService
 
 // Email fire-and-forget (no rollback - acceptable for notifications)
         _ = Task.Run(async () => 
-            await _emailService.SendNewAbsenceNotificationAsync(absence.Id, user.FirstName + " " + user.LastName));
+            await _emailService.SendNewAbsenceMailToManager(absence.Id, user.FirstName + " " + user.LastName));
     }
 
     private async Task SetWorkSchedulesWithUserAsInvalid(long userId, DateTime startDate, DateTime endDate)
