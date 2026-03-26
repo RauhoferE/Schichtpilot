@@ -1,10 +1,13 @@
 using System.Reflection;
 using AutoMapper;
 using Data;
+using Data.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.OpenApi;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Mapping;
 using Schichtpilot.Middleware;
@@ -34,6 +37,47 @@ public class Program
         
         // Database
         builder.Services.AddDbContext<SchichtpilotDbContext>(options => options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+        
+        // Authentication
+        var authCookieName = config["AuthCookieName"] ?? throw new Exception("AuthCookieName configuration is missing.");
+        
+        builder.Services.AddIdentity<User, IdentityRole>(opt =>
+            {
+                opt.Password.RequireDigit = true;
+                opt.Password.RequiredLength = 8;
+                opt.Password.RequireNonAlphanumeric = true;
+                opt.Password.RequireUppercase = true;
+                opt.Password.RequireLowercase = true;
+                opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(60);
+                opt.Lockout.MaxFailedAccessAttempts = 5;
+                opt.User.RequireUniqueEmail = true;
+            })
+            .AddEntityFrameworkStores<SchichtpilotDbContext>();
+        
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            // Stop the cookie from redirecting to a Login Page
+            options.Events.OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            };
+    
+            // Stop the cookie from redirecting to an Access Denied Page
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            };
+
+            options.Cookie.Name = authCookieName;
+            options.Cookie.HttpOnly = true; // Security: Prevents JS from reading the cookie
+            options.Cookie.SameSite = SameSiteMode.Strict;
+            if (builder.Environment.IsDevelopment())
+            {
+                options.Cookie.SameSite = SameSiteMode.Lax;
+            }
+        });
 
         // Add services to the container.
         builder.Services.AddTransient<IEmailService, EmailService>();
@@ -70,25 +114,54 @@ public class Program
         });
         
         // CORS
+        var cors = config["AllowedCors"] ?? throw new Exception("AllowedCors configuration is missing.");
         if (builder.Environment.IsDevelopment())
         {
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("DevCors", builder =>
                 {
-                    builder.WithOrigins("http://localhost:4200");
+                    builder.WithOrigins(cors);
                     builder.AllowAnyHeader();
                     builder.AllowAnyMethod();
                     builder.AllowCredentials();
                 });
             });
         }
+        
+        // Swagger
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            { 
+                Title = "Schichtpilot", 
+                Version = "v1" 
+            });
+
+            // 2. Add the definition to Swagger
+            options.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
+            {
+                Name = authCookieName,
+                In = ParameterLocation.Cookie,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "CookieAuth",
+                Description = "Cookie-based authentication"
+            });
+
+            // 2. Make it global so every protected endpoint shows a lock icon
+            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("CookieAuth", document)] = []
+            });
+        });
 
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
+            app.UseSwagger();
+            app.UseSwaggerUI();
             app.MapOpenApi();
         }
 
@@ -99,9 +172,8 @@ public class Program
             app.UseCors("DevCors");
         }
         
-
+        app.UseAuthentication();
         app.UseAuthorization();
-
 
         app.MapControllers();
 
