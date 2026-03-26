@@ -213,7 +213,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = CreateService(dbContext, mapperMock);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddDependenciesToJobRoleAsync(role.Id, role.Id));
+        await Assert.ThrowsAsync<InvalidDependencyException>(() => service.AddDependenciesToJobRoleAsync(role.Id, role.Id));
     }
 
     [Fact]
@@ -500,7 +500,7 @@ public class JobRoleServiceTest
         var mapperMock = new Mock<IMapper>();
         var service = CreateService(dbContext, mapperMock);
 
-        await Assert.ThrowsAsync<Exception>(() => service.DeleteRoleAsync(role.Id));
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.DeleteRoleAsync(role.Id));
     }
 
     [Fact]

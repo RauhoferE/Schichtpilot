@@ -4,6 +4,7 @@ using Data.Entities;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Enums;
@@ -37,7 +38,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 999 }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.GenerateScheduleAsync(dto));
         Assert.Equal("One or more shifts were not found.", ex.Message);
     }
 
@@ -122,7 +123,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1, 2 }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.GenerateScheduleAsync(dto));
         Assert.Equal("Shifts have intersections with each other.", ex.Message);
     }
 
@@ -177,7 +178,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.GenerateScheduleAsync(dto));
         Assert.Equal("WorkPolicy not configured.", ex.Message);
     }
 
@@ -241,7 +242,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -316,7 +317,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -389,7 +390,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -462,7 +463,7 @@ public class WorkScheduleServiceTest
             ShiftIds = new List<int> { 1 }
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.GenerateScheduleAsync(dto));
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.GenerateScheduleAsync(dto));
     }
 
     [Fact]
@@ -1473,7 +1474,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.GetScheduleAsync(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.GetScheduleAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1528,7 +1529,7 @@ public class WorkScheduleServiceTest
 
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteScheduleAsync(schedule.Id));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.DeleteScheduleAsync(schedule.Id));
         Assert.Equal("Cannot delete active schedule", ex.Message);
     }
 
@@ -1538,7 +1539,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteScheduleAsync(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteScheduleAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1575,7 +1576,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleActiveAsync(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.SetScheduleActiveAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1601,7 +1602,7 @@ public class WorkScheduleServiceTest
 
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleActiveAsync(schedule.Id));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.SetScheduleActiveAsync(schedule.Id));
         Assert.Equal("Schedule with id 30 is invalid.", ex.Message);
     }
 
@@ -1639,7 +1640,7 @@ public class WorkScheduleServiceTest
 
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleActiveAsync(schedule.Id));
+        var ex = await Assert.ThrowsAsync<InvalidDependencyException>(() => service.SetScheduleActiveAsync(schedule.Id));
         Assert.Contains("overlapping", ex.Message);
     }
 
@@ -1677,7 +1678,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleOfflineAsync(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.SetScheduleOfflineAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1715,7 +1716,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.SetScheduleAsInvalidAsync(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.SetScheduleAsInvalidAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1753,7 +1754,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.RemoveAllShiftAssignments(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.RemoveAllShiftAssignments(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
@@ -1815,7 +1816,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
             service.ChangeScheduleDateAsync(999, new DateTime(2026, 1, 5), new DateTime(2026, 1, 11)));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
@@ -1904,7 +1905,7 @@ public class WorkScheduleServiceTest
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.ReGenerateScheduleAsync(999));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.ReGenerateScheduleAsync(999));
         Assert.Equal("Schedule with id 999 not found.", ex.Message);
     }
 
