@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Newtonsoft.Json;
 using Schichtpilot.Exceptions;
 
 namespace Schichtpilot.Middleware;
@@ -62,5 +64,20 @@ public class ExceptionFilter : IExceptionFilter
         {
             statusCode = StatusCodes.Status424FailedDependency;
         }
+
+        context.Result = new ContentResult
+        {
+            Content = JsonConvert.SerializeObject(
+                new
+                {
+                    statusCode,
+                    message = responseMessage,
+#if DEBUG
+                    stackTrace = exception.StackTrace,
+                    exceptionType = exception.GetType().Name
+#endif
+                })
+
+        };
     }
 }
