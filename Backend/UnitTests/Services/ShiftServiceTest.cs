@@ -37,7 +37,7 @@ public class ShiftServiceTest
             JobRequirements = new List<ShiftRequirementDto>()
         };
 
-        await Assert.ThrowsAsync<Exception>(() => service.CreateShiftAsync(dto));
+        await Assert.ThrowsAsync<AlreadyExistsException>(() => service.CreateShiftAsync(dto));
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class ShiftServiceTest
             }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateShiftAsync(dto));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.CreateShiftAsync(dto));
         Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
@@ -356,7 +356,7 @@ public class ShiftServiceTest
             }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddTimeSlotAsync(1, timeSlot));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.AddTimeSlotAsync(1, timeSlot));
         Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
@@ -533,7 +533,7 @@ public class ShiftServiceTest
             }
         };
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.EditTimeSlotAsync(1, timeSlot));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.EditTimeSlotAsync(1, timeSlot));
         Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 
@@ -662,7 +662,7 @@ public class ShiftServiceTest
 
         var service = CreateService(dbContext, mapperMock);
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.DeleteTimeSlotAsync(1, 1));
+        var ex = await Assert.ThrowsAsync<PolicyConflictException>(() => service.DeleteTimeSlotAsync(1, 1));
         Assert.Equal("Not enough breaks added in the shifts", ex.Message);
     }
 

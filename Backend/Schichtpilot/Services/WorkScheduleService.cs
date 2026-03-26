@@ -2,6 +2,7 @@ using AutoMapper;
 using Data;
 using Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Enums;
@@ -30,7 +31,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (shifts.Count != generateScheduleDto.ShiftIds.Count)
         {
-            throw new Exception("One or more shifts were not found.");
+            throw new NotFoundException("One or more shifts were not found.");
         }
         
         var schedule = new WorkSchedule
@@ -72,13 +73,13 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (HasIntersections(allTimeslots))
         {
-            throw new Exception("Shifts have intersections with each other.");
+            throw new PolicyConflictException("Shifts have intersections with each other.");
         }
         
         var workPolicy = await _dbContext.WorkPolicies.FirstOrDefaultAsync();
         if (workPolicy == null)
         {
-            throw new Exception("WorkPolicy not configured.");
+            throw new PolicyConflictException("WorkPolicy not configured.");
         }
 
         var requiredJobRoleIds = shifts
@@ -215,7 +216,7 @@ public class WorkScheduleService : IWorkScheduleService
 
                 if (assignedCount < shiftRequirement.RequiredStaffCount)
                 {
-                    throw new Exception(
+                    throw new PolicyConflictException(
                         $"Not enough staff for ShiftId={shift.Id}, TimeslotId={timeslot.Id}, JobRoleId={shiftRequirement.JobRoleId}.");
                 }
             }
@@ -331,7 +332,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
 
         var shifts = schedule.Shifts.Select(x => x.Shift).ToList();
@@ -444,7 +445,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
 
         return this._mapper.Map<WorkSchedule, WorkScheduleDto>(schedule);
@@ -459,12 +460,12 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
 
         if (schedule.IsActive)
         {
-            throw new Exception("Cannot delete active schedule");
+            throw new PolicyConflictException("Cannot delete active schedule");
         }
         
         this._dbContext.WorkSchedules.Remove(schedule);
@@ -480,12 +481,12 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
 
         if (!schedule.IsValid)
         {
-            throw new Exception($"Schedule with id {scheduleId} is invalid.");
+            throw new PolicyConflictException($"Schedule with id {scheduleId} is invalid.");
         }
         
         var overlappingSchedule = this._dbContext.WorkSchedules
@@ -494,7 +495,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (overlappingSchedule != null)
         {
-            throw new Exception($"Schedule is overlapping with another active schedule {overlappingSchedule.Name}.");
+            throw new InvalidDependencyException($"Schedule is overlapping with another active schedule {overlappingSchedule.Name}.");
         }
         
         schedule.IsActive = true;
@@ -508,7 +509,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
         // TODO: Send an email to managers that schedule has been set as offline
         schedule.IsActive = false;
@@ -522,7 +523,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
         
         schedule.IsValid = false;
@@ -538,7 +539,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
 
         await this.RemoveAllShiftAssignments(schedule);
@@ -551,7 +552,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         if (schedule == null)
         {
-            throw new Exception($"Schedule with id {scheduleId} not found.");
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
         
         schedule.StartDate = startDate;

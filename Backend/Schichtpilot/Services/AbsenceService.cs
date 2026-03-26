@@ -139,10 +139,6 @@ public class AbsenceService : IAbsenceService
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
         if (absence == null) {throw new NotFoundException("Pending absence not found");}
-        
-        //TODO: Not needed since validation is before
-        if (dto.Status == nameof(AbsenceStatusEnum.Denied) && string.IsNullOrEmpty(dto.ManagerMessage))
-        {throw new ValidationException("Denial requires message");}
 
         absence.Status = dto.Status;
         absence.ManagerMessage = dto.ManagerMessage;
