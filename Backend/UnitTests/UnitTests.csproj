@@ -27,7 +27,6 @@
 
     <ItemGroup>
       <Folder Include="Mapping\" />
-      <Folder Include="Validator\" />
     </ItemGroup>
 
 </Project>
