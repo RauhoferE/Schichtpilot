@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Data.Entities;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Responses;
@@ -6,6 +7,8 @@ namespace Schichtpilot.Interfaces;
 
 public interface IUserService
 {
+    Task<long> GetUserIdAsync(ClaimsPrincipal user);
+    
     Task CreateUserAsync(UserDto userDto, string password);
 
     Task<UserDto> GetUserDataAsync(int userId);

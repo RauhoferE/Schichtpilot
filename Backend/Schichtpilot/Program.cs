@@ -175,6 +175,7 @@ public class Program
         
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<UserContextMiddleware>();
 
         app.MapControllers();
 

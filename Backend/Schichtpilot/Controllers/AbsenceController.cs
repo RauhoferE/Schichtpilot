@@ -28,8 +28,7 @@ public class AbsenceController : Controller
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAbsenceAsync([FromBody, Required]CreateAbsenceDto dto)
     {
-        //TODO: Add absence from auth 
-        await this._absenceService.CreateAbsenceRequestAsync(0, dto);
+        await this._absenceService.CreateAbsenceRequestAsync(this.GetUserIdFromContext(), dto);
         return Created();
     }
     
@@ -38,8 +37,7 @@ public class AbsenceController : Controller
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAbsenceAsync([FromRoute, Required]int absenceId)
     {
-        //TODO: Add correct user Id via authentication
-        await this._absenceService.DeleteOwnAbsenceAsync(absenceId, 0);
+        await this._absenceService.DeleteOwnAbsenceAsync(absenceId, this.GetUserIdFromContext());
         return NoContent();
     }
     
@@ -67,8 +65,7 @@ public class AbsenceController : Controller
     {
         var paginationDto = _mapper.Map<PaginationDto>(request);
         var filterDto =  _mapper.Map<AbsenceFilterDto>(request);
-        //TODO: Add userid from auth
-        return Ok(await this._absenceService.ViewUserAbsencesAsync(paginationDto, filterDto, 0));
+        return Ok(await this._absenceService.ViewUserAbsencesAsync(paginationDto, filterDto, this.GetUserIdFromContext()));
     }
     
     [HttpGet("all")]
@@ -79,5 +76,11 @@ public class AbsenceController : Controller
         var paginationDto = _mapper.Map<PaginationDto>(request);
         var filterDto =  _mapper.Map<AbsenceFilterDto>(request);
         return Ok(await this._absenceService.ViewAllAbsencesAsync(paginationDto, filterDto));
+    }
+
+    private long GetUserIdFromContext()
+    {
+        var userIdObject = HttpContext.Items["UserId"] ?? 0;
+        return Convert.ToInt64(userIdObject);
     }
 }
