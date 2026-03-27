@@ -41,7 +41,7 @@ public class Program
         // Authentication
         var authCookieName = config["AuthCookieName"] ?? throw new Exception("AuthCookieName configuration is missing.");
         
-        builder.Services.AddIdentity<User, IdentityRole>(opt =>
+        builder.Services.AddIdentity<User, IdentityRole<long>>(opt =>
             {
                 opt.Password.RequireDigit = true;
                 opt.Password.RequiredLength = 8;
@@ -114,7 +114,7 @@ public class Program
         });
         
         // CORS
-        var cors = config["AllowedCors"] ?? throw new Exception("AllowedCors configuration is missing.");
+        var cors = config.GetSection("AllowedCors").Get<string[]>() ?? throw new Exception("AllowedCors configuration is missing.");
         if (builder.Environment.IsDevelopment())
         {
             builder.Services.AddCors(options =>
