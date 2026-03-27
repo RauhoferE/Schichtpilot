@@ -12,6 +12,7 @@ using Schichtpilot.Interfaces;
 using Schichtpilot.Mapping;
 using Schichtpilot.Middleware;
 using Schichtpilot.Services;
+using Schichtpilot.Settings;
 using Serilog;
 
 namespace Schichtpilot;
@@ -72,12 +73,11 @@ public class Program
 
             options.Cookie.Name = authCookieName;
             options.Cookie.HttpOnly = true; // Security: Prevents JS from reading the cookie
-            options.Cookie.SameSite = SameSiteMode.Strict;
-            if (builder.Environment.IsDevelopment())
-            {
-                options.Cookie.SameSite = SameSiteMode.Lax;
-            }
+            options.Cookie.SameSite = builder.Environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict;
         });
+        
+        // Add settings
+        builder.Services.Configure<AuthenticationSettings>(config.GetSection("AuthenticationSettings"));
 
         // Add services to the container.
         builder.Services.AddTransient<IEmailService, EmailService>();
@@ -165,6 +165,7 @@ public class Program
             app.MapOpenApi();
         }
 
+        app.UseSerilogRequestLogging();
         app.UseHttpsRedirection();
         app.UseRouting();
         if (app.Environment.IsDevelopment())

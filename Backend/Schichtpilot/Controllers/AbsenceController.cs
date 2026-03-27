@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -22,6 +24,7 @@ public class AbsenceController : Controller
     private readonly IMapper _mapper;
 
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAbsenceAsync([FromBody, Required]CreateAbsenceDto dto)
     {
@@ -31,6 +34,7 @@ public class AbsenceController : Controller
     }
     
     [HttpDelete("{absenceId}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAbsenceAsync([FromRoute, Required]int absenceId)
     {
@@ -40,6 +44,7 @@ public class AbsenceController : Controller
     }
     
     [HttpPut("{absenceId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateAbsenceAsync([FromRoute, Required]int absenceId, [FromBody, Required]StatusUpdateDto dto)
     {
@@ -48,6 +53,7 @@ public class AbsenceController : Controller
     }
     
     [HttpGet("{absenceId}")]
+    [Authorize]
     [ProducesResponseType( typeof(AbsenceDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAbsenceAsync([FromRoute, Required]int absenceId)
     {
@@ -55,6 +61,7 @@ public class AbsenceController : Controller
     }
     
     [HttpGet("user")]
+    [Authorize]
     [ProducesResponseType( typeof(QueryableAbsenceResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserAbsencesAsync([FromQuery, Required]GetAbsencesRequest request)
     {
@@ -65,6 +72,7 @@ public class AbsenceController : Controller
     }
     
     [HttpGet("all")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType( typeof(QueryableAbsenceResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllAbsencesAsync([FromQuery, Required]GetAbsencesRequest request)
     {

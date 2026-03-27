@@ -77,11 +77,13 @@ IdentityUserClaim<long>,
                 {
                     Id = 1,
                     Name = UserRolesClass.Admin,
+                    NormalizedName = UserRolesClass.Admin.ToUpper()
                 },
                 new IdentityRole<long>()
                 {
                     Id = 2,
-                    Name = UserRolesClass.User
+                    Name = UserRolesClass.User,
+                    NormalizedName = UserRolesClass.User.ToUpper()
                 }
             );
         });

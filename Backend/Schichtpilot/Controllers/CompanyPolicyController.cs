@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -18,6 +20,7 @@ public class CompanyPolicyController : Controller
     private readonly ICompanyPolicyService _companyService;
     
     [HttpGet("holidays")]
+    [Authorize]
     [ProducesResponseType( typeof(HolidaysDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHolidayAsync()
     {
@@ -25,6 +28,7 @@ public class CompanyPolicyController : Controller
     }
 
     [HttpPost("holidays")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddHolidaysAsync([FromBody, Required] HolidaysDto holidays)
     {
@@ -33,6 +37,7 @@ public class CompanyPolicyController : Controller
     }
     
     [HttpDelete("holidays")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveHolidaysAsync([FromBody, Required] HolidaysDto holidays)
     {
@@ -41,6 +46,7 @@ public class CompanyPolicyController : Controller
     }
     
     [HttpPut]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SetPolicyAsync([FromBody, Required] CompanyPolicyDto policy)
     {
@@ -49,6 +55,7 @@ public class CompanyPolicyController : Controller
     }
     
     [HttpGet]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType( typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPolicyAsync()
     {

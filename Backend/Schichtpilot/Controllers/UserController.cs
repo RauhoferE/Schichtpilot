@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -31,6 +33,7 @@ public class UserController : Controller
     }
 
     [HttpGet("{userId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserDataAsync([FromRoute, Required] int userId)
     {
@@ -38,6 +41,7 @@ public class UserController : Controller
     }
     
     [HttpGet("all")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableUserResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsersAsync([FromQuery] GetUsersRequest request)
     {

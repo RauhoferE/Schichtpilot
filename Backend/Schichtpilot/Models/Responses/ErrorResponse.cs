@@ -1,6 +1,8 @@
+using Schichtpilot.Models.DTOs;
+
 namespace Schichtpilot.Models.Responses;
 
 public class ErrorResponse
 {
-    public IEnumerable<string> Errors { get; set; } = new List<string>();
+    public List<ErrorStateDto> ErrorStates { get; set; } = new List<ErrorStateDto>();
 }

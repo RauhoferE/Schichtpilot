@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -23,6 +25,7 @@ public class WorkscheduleController : Controller
 
     
     [HttpPost("generate")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> GenerateScheduleAsync([FromBody, Required] GenerateScheduleDto dto)
     {
@@ -31,6 +34,7 @@ public class WorkscheduleController : Controller
     }
     
     [HttpPost("generate/{scheduleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> GenerateScheduleAsync([FromRoute, Required] int scheduleId)
     {
@@ -39,6 +43,7 @@ public class WorkscheduleController : Controller
     }
     
     [HttpPost("publish/{scheduleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> PublishScheduleAsync([FromRoute, Required] int scheduleId)
     {
@@ -47,6 +52,7 @@ public class WorkscheduleController : Controller
     }
     
     [HttpDelete("{scheduleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteScheduleAsync([FromRoute, Required] int scheduleId)
     {
@@ -55,6 +61,7 @@ public class WorkscheduleController : Controller
     }
     
     [HttpPatch("{scheduleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateScheduleAsync([FromRoute, Required] int scheduleId, [FromBody, Required] UpdateScheduleRequest dto)
     {
@@ -63,13 +70,17 @@ public class WorkscheduleController : Controller
     }
     
     [HttpGet("{scheduleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(WorkScheduleDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetScheduleAsync([FromRoute, Required] int scheduleId)
     {
         return Ok(await this._workScheduleService.GetScheduleAsync(scheduleId));
     }
     
+    // TODO: Get active schedules for all users
+    
     [HttpGet("all")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableSchedules), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSchedulesAsync([FromBody, Required] GetSchedulesRequest request)
     {
@@ -79,6 +90,7 @@ public class WorkscheduleController : Controller
     }
     
     [HttpPatch("{scheduleId}/inactive")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SetScheduleInActiveAsync([FromRoute, Required] int scheduleId)
     {
@@ -87,6 +99,7 @@ public class WorkscheduleController : Controller
     }
     
     [HttpPatch("{scheduleId}/active")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SetScheduleAsActiveAsync([FromRoute, Required] int scheduleId)
     {

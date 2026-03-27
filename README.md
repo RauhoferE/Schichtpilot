@@ -75,3 +75,63 @@ Before commiting anything to the main branch the code needs:
 - OneDrive (Artefacts)
 - Discord (Temporary artefacts)
 - Whatsapp (Temporary artefacts)
+
+## Appsettings Development
+
+```
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "AuthCookieName": "SchichtpilotAuth",
+  "AllowedCors": [
+    "http://localhost:4200"
+  ],
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost,1433;Database=Schichtpilot.Test;User Id=sa;Password=YourStrongPassword;TrustServerCertificate=True;"
+  },
+  "AuthenticationSettings":{
+    "JwtKey": "yoursupersecurekeyonlyusedforclientcookie",
+    "TokenLifeTimeInMinutes": 720
+  
+},
+  "Kestrel": {
+    "Endpoints": {
+      "Https": {
+        "Url": "https://localhost:5001",
+        "Certificate": {
+          "Path": "localhost.p12",
+          "Password": "changeit"
+        }
+      }
+    }
+  },
+  "Serilog": {
+    "Using": [
+      "Serilog.Sinks.Console"
+    ],
+    "MinimumLevel": {
+      "Default": "Information"
+    },
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "Path": "/tmp/Schichtpilot.Log/Schichtpilot.Log-.txt",
+          "rollingInterval": "Day",
+          "Timestamp": "yyyy-mm-dd HH:mm:ss",
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm.ss.ffff}] [{Level}] {Message}{NewLine:1}{Exception:1}"
+        }
+      }
+    ]
+  }
+}
+
+```
