@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AutoMapper;
 using Core;
 using Data;
@@ -18,6 +19,45 @@ namespace UnitTests.Services;
 [TestSubject(typeof(UserService))]
 public class UserServiceTest
 {
+    [Fact]
+    public async Task GetUserIdAsync_UserNotFound_ThrowsException()
+    {
+        var userManagerMock = CreateUserManagerMock();
+        var mapperMock = new Mock<IMapper>();
+        var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
+        var principal = CreateClaimsPrincipal();
+
+        userManagerMock
+            .Setup(manager => manager.GetUserAsync(principal))
+            .ReturnsAsync((User?)null);
+
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+
+        await Assert.ThrowsAsync<Exception>(() => service.GetUserIdAsync(principal));
+    }
+
+    [Fact]
+    public async Task GetUserIdAsync_UserFound_ReturnsId()
+    {
+        var userManagerMock = CreateUserManagerMock();
+        var mapperMock = new Mock<IMapper>();
+        var loggerMock = new Mock<ILogger<UserService>>();
+        await using var dbContext = CreateDbContext();
+        var principal = CreateClaimsPrincipal();
+        var user = CreateUserWithId(123);
+
+        userManagerMock
+            .Setup(manager => manager.GetUserAsync(principal))
+            .ReturnsAsync(user);
+
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+
+        var result = await service.GetUserIdAsync(principal);
+
+        Assert.Equal(123, result);
+    }
+
     [Fact]
     public async Task CreateUserAsync_UserAlreadyExists_LogsWarningAndReturns()
     {
@@ -338,6 +378,14 @@ public class UserServiceTest
         Assert.Equal(2, result.Count);
         Assert.Single(users);
         Assert.Equal(matchingUser2.Email, users[0].Email);
+    }
+
+    private static ClaimsPrincipal CreateClaimsPrincipal()
+    {
+        var identity = new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.NameIdentifier, "user@test.com") },
+            "TestAuth");
+        return new ClaimsPrincipal(identity);
     }
 
     private static Mock<UserManager<User>> CreateUserManagerMock()

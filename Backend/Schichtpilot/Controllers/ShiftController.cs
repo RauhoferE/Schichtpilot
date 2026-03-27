@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -23,6 +25,7 @@ public class ShiftController : Controller
     private readonly IShiftService _shiftService;
 
     [HttpPost]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateShiftAsync(CreateShiftDto request)
     {
@@ -31,6 +34,7 @@ public class ShiftController : Controller
     }
     
     [HttpGet("{shiftId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(ShiftDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetShiftAsync([FromRoute, Required]int shiftId)
     {
@@ -38,6 +42,7 @@ public class ShiftController : Controller
     }
     
     [HttpGet("all")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableShiftResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetShiftsAsync([FromBody, Required] GetShiftsRequest request)
     {
@@ -47,6 +52,7 @@ public class ShiftController : Controller
     }
     
     [HttpPut("{shiftId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateShiftAsync([FromRoute, Required]int shiftId,  EditShiftDto request)
     {
@@ -55,6 +61,7 @@ public class ShiftController : Controller
     }
     
     [HttpDelete("{shiftId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteShiftAsync([FromRoute, Required]int shiftId)
     {
@@ -63,6 +70,7 @@ public class ShiftController : Controller
     }
     
     [HttpDelete("{shiftId}/timeslot/{timeSlotId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteTimeslotAsync([FromRoute, Required]int shiftId, [FromRoute, Required]int timeSlotId)
     {
@@ -71,6 +79,7 @@ public class ShiftController : Controller
     }
     
     [HttpPost("{shiftId}/timeslot")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddTimeslotAsync([FromRoute, Required]int shiftId, [FromBody, Required]TimeSlotDto timeSlotDto)
     {
@@ -79,6 +88,7 @@ public class ShiftController : Controller
     }
     
     [HttpPut("{shiftId}/timeslot/{timeSlotId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateTimeslotAsync([FromRoute, Required]int shiftId, [FromBody, Required]TimeSlotDto timeSlotDto, [FromRoute, Required]int timeSlotId)
     {
@@ -88,6 +98,7 @@ public class ShiftController : Controller
     }
     
     [HttpPost("{shiftId}/job")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddJobRequirementAsync([FromRoute, Required]int shiftId, [FromBody, Required]ShiftRequirementDto jobrequirementRequest)
     {
@@ -96,6 +107,7 @@ public class ShiftController : Controller
     }
     
     [HttpPatch("{shiftId}/job/{jobId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ChangeJobRequirementCountAsync([FromRoute, Required]int shiftId, [FromRoute, Required]int jobId, [FromQuery, Required]int staffCount)
     {
@@ -109,6 +121,7 @@ public class ShiftController : Controller
     }
     
     [HttpDelete("{shiftId}/job/{jobId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveJobRequirementAsync([FromRoute, Required]int shiftId, [FromRoute, Required]int jobId)
     {

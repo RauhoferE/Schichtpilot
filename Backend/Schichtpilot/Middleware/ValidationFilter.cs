@@ -26,6 +26,7 @@ public class ValidationFilter : IAsyncActionFilter
                         FieldName = error.Key,
                         Message = subError
                     };
+                    errorResponse.ErrorStates.Add(errorState);
                 }
             }
             

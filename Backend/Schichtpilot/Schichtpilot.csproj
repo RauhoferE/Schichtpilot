@@ -24,6 +24,7 @@
         <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     </ItemGroup>
 
     <ItemGroup>
@@ -40,6 +41,12 @@
       <Reference Include="Newtonsoft.Json">
         <HintPath>..\..\..\..\.nuget\packages\newtonsoft.json\13.0.3\lib\net6.0\Newtonsoft.Json.dll</HintPath>
       </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="localhost.p12">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

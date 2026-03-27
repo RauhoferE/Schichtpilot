@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -22,6 +24,7 @@ public class JobroleController : Controller
     private readonly IMapper _mapper;
 
     [HttpPost]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> CreateJobRoleAsync([FromBody, Required] CreateJobRoleDto request)
     {
@@ -30,6 +33,7 @@ public class JobroleController : Controller
     }
     
     [HttpPut("{jobRoleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateJobRoleAsync([FromRoute, Required] int jobRoleId, [FromBody, Required] EditJobRoleDto request)
     {
@@ -38,6 +42,7 @@ public class JobroleController : Controller
     }
     
     [HttpPost("{jobRoleId}/dependency/{dependencyId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddJobRoleDependencyAsync([FromRoute, Required] int jobRoleId, [FromRoute, Required] int dependencyId)
     {
@@ -46,6 +51,7 @@ public class JobroleController : Controller
     }
     
     [HttpDelete("{jobRoleId}/dependency/{dependencyId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteJobRoleDependencyAsync([FromRoute, Required] int jobRoleId, [FromRoute, Required] int dependencyId)
     {
@@ -54,6 +60,7 @@ public class JobroleController : Controller
     }
     
     [HttpPost("{jobRoleId}/user/{userId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddUsersToRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
     {
@@ -62,6 +69,7 @@ public class JobroleController : Controller
     }
     
     [HttpDelete("{jobRoleId}/user/{userId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
     {
@@ -70,6 +78,7 @@ public class JobroleController : Controller
     }
     
     [HttpDelete("{jobRoleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteJobRoleAsync([FromRoute, Required] int jobRoleId)
     {
@@ -78,6 +87,7 @@ public class JobroleController : Controller
     }
     
     [HttpGet("{jobRoleId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType( typeof(JobRoleDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetJobRoleAsync([FromRoute, Required] int jobRoleId)
     {
@@ -85,6 +95,7 @@ public class JobroleController : Controller
     }
     
     [HttpGet("all")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType( typeof(QueryableJobRoleResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetJobRolesAsync([FromQuery] GetJobRolesRequest request)
     {
