@@ -51,19 +51,16 @@ public class AbsenceService : IAbsenceService
         };
 
         _dbContext.Absences.Add(absence);
-        
-        // Save first (idempotent)
-        //_dbContext.Absences.Add(absence);
         await _dbContext.SaveChangesAsync();
 
         if (absence.Status == nameof(AbsenceStatusEnum.Approved))
         {
             await SetWorkSchedulesWithUserAsInvalid(userId, dto.StartDate, dto.EndDate);
         }
-
-// Email fire-and-forget (no rollback - acceptable for notifications)
+        //map tp AbsenceDto and pass User object
+        var absenceDto = _mapper.Map<AbsenceDto>(absence);
         _ = Task.Run(async () => 
-            await _emailService.SendNewAbsenceMailToManager(absence.Id, user.FirstName + " " + user.LastName));
+            await _emailService.SendNewAbsenceMailToManager(user, absenceDto));
     }
 
     private async Task SetWorkSchedulesWithUserAsInvalid(long userId, DateTime startDate, DateTime endDate)
@@ -138,11 +135,16 @@ public class AbsenceService : IAbsenceService
         var absence = await _dbContext.Absences
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
-        if (absence == null) {throw new NotFoundException("Pending absence not found");}
+       
+        if (absence == null)
+        {
+            throw new NotFoundException("Pending absence not found");
+        }
         
-        //TODO: Not needed since validation is before
         if (dto.Status == nameof(AbsenceStatusEnum.Denied) && string.IsNullOrEmpty(dto.ManagerMessage))
-        {throw new ValidationException("Denial requires message");}
+        {
+            throw new ValidationException("Denial requires message");
+        }
 
         absence.Status = dto.Status;
         absence.ManagerMessage = dto.ManagerMessage;
@@ -150,10 +152,23 @@ public class AbsenceService : IAbsenceService
 
         if (dto.Status ==  nameof(AbsenceStatusEnum.Approved))
         {
-            await this.SetWorkSchedulesWithUserAsInvalid(absence.UserId, absence.StartDate, absence.EndDate);
+            await SetWorkSchedulesWithUserAsInvalid(absence.UserId, absence.StartDate, absence.EndDate);
         }
         
-        //TODO: Send email
+        // Send email
+        var absenceDto = _mapper.Map<AbsenceDto>(absence);
+        if (dto.Status == nameof(AbsenceStatusEnum.Approved))
+        {
+            _= Task.Run(async () =>
+                await _emailService.SendApprovalMail(absence.User, absenceDto));
+        }
+
+        if (dto.Status == nameof(AbsenceStatusEnum.Denied))
+        {
+            _= Task.Run(async () =>
+                await _emailService.SendRejectionMail(absence.User, absenceDto));   
+        }
+        
     }
    
     private static Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
