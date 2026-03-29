@@ -1,11 +1,17 @@
-﻿namespace Schichtpilot.Interfaces;
+﻿using Data.Entities;
+using Schichtpilot.Models.DTOs;
 
-public interface IEmailService 
+public interface IEmailService
 {
-    Task SendNewAbsenceMailToManager(int absenceId, string userName);
-    Task SendApprovalMail(string email, object data);
-    Task SendRejectionMail(string email, object data);
-    Task SendSchedule(string email, object data);
-    Task SendScheduleInActiveMail(string email, object data);
-    Task SendUserRegisterMail(string email, object data);
+    // All managers notified
+    Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence);
+
+    // Specific employee
+    Task SendApprovalMail(User employee, AbsenceDto absence);
+    Task SendRejectionMail(User employee, AbsenceDto absence);
+    Task SendScheduleInActiveMail(User employee, WorkScheduleDto schedule);
+    Task SendUserRegisterMail(User newUser, string temporaryPassword);
+
+    // All employees
+    Task SendScheduleMail(WorkScheduleDto schedule); 
 }
