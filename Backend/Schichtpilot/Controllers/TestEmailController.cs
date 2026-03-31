@@ -1,11 +1,10 @@
 ﻿using Data.Entities;
-using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using Schichtpilot.Models.DTOs;
+using Models.DTOs;
 
 [ApiController]
 [Route("api/test-email")]

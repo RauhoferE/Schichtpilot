@@ -1,8 +1,10 @@
 ﻿using Azure;
 using Azure.Communication.Email;
+using Data.Entities;
+using Microsoft.Extensions.Options;
+using Schichtpilot.Configuration;
 using Schichtpilot.Models.DTOs;
 using System.Text;
-using Data.Entities;
 
 namespace Schichtpilot.Services;
 
@@ -27,30 +29,35 @@ public class EmailService : IEmailService
     };
 
     public EmailService(
-        IConfiguration configuration,
-       // UserManager<User> userManager,
+        IOptions<AzureEmailSettings> emailSettings,
+        // UserManager<User> userManager,
         ILogger<EmailService> logger)
     {
         // _userManager = userManager;
         _logger = logger;
 
-        var connectionString = configuration["AzureEmail:ConnectionString"]
-                               ?? throw new InvalidOperationException("AzureEmail:ConnectionString is missing.");
+        var settings = emailSettings.Value;
 
-        _senderAddress = configuration["AzureEmail:SenderAddress"]
-                         ?? throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
+        if (string.IsNullOrEmpty(settings.ConnectionString))
+            throw new InvalidOperationException("AzureEmail:ConnectionString is missing.");
 
-        _emailClient = new EmailClient(connectionString);
-        _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services" ,"EmailTemplate");
+        if (string.IsNullOrEmpty(settings.SenderAddress))
+            throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
+
+        _emailClient   = new EmailClient(settings.ConnectionString);
+        _senderAddress = settings.SenderAddress;
+        _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
     }
 
+    // ──────────────────────────────────────────────────────────────
     // All managers notified
-    
+    // ──────────────────────────────────────────────────────────────
+
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
         var testManagers = new List<(string Email, string Name)>
         {
-            ("rezaifariba01@gmail.com", "Fariba Rezai"),
+            ("manager1@gmail.com", "Manager 1"),
             ("manager2@gmail.com", "Manager 2")
         };
 
@@ -66,7 +73,9 @@ public class EmailService : IEmailService
                 { "{{Message}}", absence.Message }
             };
 
-            return SendTemplateAsync(m.Email, $"New Absence Request from {employee.FirstName}", "absence.html",
+            return SendTemplateAsync(
+                m.Email, $"New Absence Request from {employee.FirstName}",
+                "absence.html",
                 placeholders);
         });
         await Task.WhenAll(tasks);
@@ -162,7 +171,10 @@ public class EmailService : IEmailService
                 { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") },
                 { "{{ShiftTable}}", shiftTable }
             };
-            return SendTemplateAsync(e.Email, $"Your Schedule for {schedule.StartDate:dd.MM.yyyy}", "schedule.html",
+
+            return SendTemplateAsync(
+                e.Email, $"Your Schedule for {schedule.StartDate:dd.MM.yyyy}",
+                "schedule.html",
                 placeholders);
         });
 
@@ -184,10 +196,10 @@ public class EmailService : IEmailService
             .Where(s => s.TimeSlots != null)
             .SelectMany(s => s.TimeSlots.Select(ts => new
             {
-                Day = ts.DayOfWeek,
+                Day       = ts.DayOfWeek,
                 ShiftName = s.Name,
                 StartTime = ts.StartTime.ToString(@"HH\:mm"),
-                EndTime = ts.EndTime.ToString(@"HH\:mm")
+                EndTime   = ts.EndTime.ToString(@"HH\:mm")
             }))
             .GroupBy(ts => ts.Day)
             .ToDictionary(g => g.Key, g => g.First());
@@ -228,7 +240,7 @@ public class EmailService : IEmailService
         sb.Append("</tbody></table>");
         return sb.ToString();
     }
-    
+
     private async Task SendTemplateAsync(
         string toEmail,
         string subject,
@@ -239,17 +251,18 @@ public class EmailService : IEmailService
 
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Email template not found: {filePath}");
-        
-        // load HTML file from disk
+
+        // Load HTML file from disk
         var html = await File.ReadAllTextAsync(filePath);
-        
-        //replace placeholder with values
+
+        // Replace placeholders with real values
         foreach (var (key, value) in placeholders)
             html = html.Replace(key, value);
 
         await SendAsync(toEmail, subject, html);
     }
-    //communication with Azure
+
+    // Communication with Azure
     private async Task SendAsync(string toEmail, string subject, string htmlBody)
     {
         try
