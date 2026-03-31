@@ -107,7 +107,7 @@ public class JobRoleService : IJobRoleService
 
         if (await this.WouldCreateCycle(dependencyId, jobRoleId))
         {
-            throw new InvalidOperationException("Circular dependency detected!");
+            throw new InvalidDependencyException("Circular dependency detected!");
         }
 
         this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
@@ -269,8 +269,7 @@ public class JobRoleService : IJobRoleService
 
         if (usedInShifts)
         {
-            //TODO: Exception
-            throw new Exception("Jobrole still active in shift!");
+            throw new PolicyConflictException("Jobrole still active in shift!");
         }
         
         this._dbContext.JobRoles.Remove(jobRoleToModify);

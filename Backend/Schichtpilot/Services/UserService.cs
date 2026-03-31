@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AutoMapper;
 using Core;
 using Data;
@@ -26,6 +27,18 @@ public class UserService : IUserService
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+    }
+
+    public async Task<long> GetUserIdAsync(ClaimsPrincipal user)
+    {
+        var userEntity = await this._userManager.GetUserAsync(user);
+
+        if (userEntity == null)
+        {
+            throw new Exception("Error when getting user");
+        }
+        
+        return userEntity.Id;
     }
 
     public async Task CreateUserAsync(UserDto userDto, string password)

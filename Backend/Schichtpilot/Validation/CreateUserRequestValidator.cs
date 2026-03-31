@@ -11,7 +11,7 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
         RuleFor(x => x.Email).NotNull().NotEmpty().WithMessage("Email is required");
         RuleFor(x => x.Email).EmailAddress().WithMessage("Invalid email");
         RuleFor(x => x.Password).NotNull().NotEmpty().WithMessage("Password is required");
-        RuleFor(x => x.Password).Matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$").WithMessage("Password needs to be atleast 8 characters long and contain 1 uppercase, 1 lowercase, 1 number and 1 special character");
+        RuleFor(x => x.Password).Matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{12,}$").WithMessage("Password needs to be atleast 12 characters long and contain 1 uppercase, 1 lowercase, 1 number and 1 special character");
         RuleFor(x => x.Birthdate).NotNull().WithMessage("Birthdate is required");
         RuleFor(x => x.Birthdate).Must(x => x.Date < DateTime.Now).WithMessage("Birthdate must be in the past");
         RuleFor(x => x.FirstName).NotNull().NotEmpty().WithMessage("First name is required");

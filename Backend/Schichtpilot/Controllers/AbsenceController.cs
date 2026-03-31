@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
@@ -22,24 +24,25 @@ public class AbsenceController : Controller
     private readonly IMapper _mapper;
 
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAbsenceAsync([FromBody, Required]CreateAbsenceDto dto)
     {
-        //TODO: Add absence from auth 
-        await this._absenceService.CreateAbsenceRequestAsync(0, dto);
+        await this._absenceService.CreateAbsenceRequestAsync(this.GetUserIdFromContext(), dto);
         return Created();
     }
     
     [HttpDelete("{absenceId}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAbsenceAsync([FromRoute, Required]int absenceId)
     {
-        //TODO: Add correct user Id via authentication
-        await this._absenceService.DeleteOwnAbsenceAsync(absenceId, 0);
+        await this._absenceService.DeleteOwnAbsenceAsync(absenceId, this.GetUserIdFromContext());
         return NoContent();
     }
     
     [HttpPut("{absenceId}")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateAbsenceAsync([FromRoute, Required]int absenceId, [FromBody, Required]StatusUpdateDto dto)
     {
@@ -48,6 +51,7 @@ public class AbsenceController : Controller
     }
     
     [HttpGet("{absenceId}")]
+    [Authorize]
     [ProducesResponseType( typeof(AbsenceDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAbsenceAsync([FromRoute, Required]int absenceId)
     {
@@ -55,21 +59,28 @@ public class AbsenceController : Controller
     }
     
     [HttpGet("user")]
+    [Authorize]
     [ProducesResponseType( typeof(QueryableAbsenceResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserAbsencesAsync([FromQuery, Required]GetAbsencesRequest request)
     {
         var paginationDto = _mapper.Map<PaginationDto>(request);
         var filterDto =  _mapper.Map<AbsenceFilterDto>(request);
-        //TODO: Add userid from auth
-        return Ok(await this._absenceService.ViewUserAbsencesAsync(paginationDto, filterDto, 0));
+        return Ok(await this._absenceService.ViewUserAbsencesAsync(paginationDto, filterDto, this.GetUserIdFromContext()));
     }
     
     [HttpGet("all")]
+    [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType( typeof(QueryableAbsenceResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllAbsencesAsync([FromQuery, Required]GetAbsencesRequest request)
     {
         var paginationDto = _mapper.Map<PaginationDto>(request);
         var filterDto =  _mapper.Map<AbsenceFilterDto>(request);
         return Ok(await this._absenceService.ViewAllAbsencesAsync(paginationDto, filterDto));
+    }
+
+    private long GetUserIdFromContext()
+    {
+        var userIdObject = HttpContext.Items["UserId"] ?? 0;
+        return Convert.ToInt64(userIdObject);
     }
 }

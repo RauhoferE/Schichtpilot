@@ -24,7 +24,8 @@ public class DtoMappingProfile : Profile
         CreateMap<UserDto, User>(MemberList.None)
             .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.AddressDto.City))
             .ForMember(dest => dest.PostalCode, opt => opt.MapFrom(src => src.AddressDto.PostalCode))
-            .ForMember(dest => dest.StreetAddress, opt => opt.MapFrom(src => src.AddressDto.Street));
+            .ForMember(dest => dest.StreetAddress, opt => opt.MapFrom(src => src.AddressDto.Street))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
         CreateMap<JobRole, JobRoleShortDto>();
         
         CreateMap<Timeslot, TimeSlotDto>();

@@ -57,6 +57,12 @@ IdentityUserClaim<long>,
     
     // Here should be the DBSets
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(w => 
+            w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         
@@ -71,11 +77,13 @@ IdentityUserClaim<long>,
                 {
                     Id = 1,
                     Name = UserRolesClass.Admin,
+                    NormalizedName = UserRolesClass.Admin.ToUpper()
                 },
                 new IdentityRole<long>()
                 {
                     Id = 2,
                     Name = UserRolesClass.User,
+                    NormalizedName = UserRolesClass.User.ToUpper()
                 }
             );
         });
@@ -141,7 +149,6 @@ IdentityUserClaim<long>,
             entity.Property(a => a.AbsenceType).IsRequired().HasMaxLength(100);
             entity.Property(a => a.Status).HasMaxLength(20);
             entity.Property(e => e.Status)
-                .HasConversion<string>()  // Enum → "Pending"[web:1]
                 .HasDefaultValue("Pending");
         });
         
@@ -186,8 +193,5 @@ IdentityUserClaim<long>,
                 .HasForeignKey(e => new {e.UserId, e.JobRoleId});
 
         });
-        
-        base.OnModelCreating(modelBuilder); 
-        
     }
 }

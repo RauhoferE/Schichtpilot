@@ -30,7 +30,7 @@ public class ShiftService : IShiftService
 
         if (shiftWithSameName != null)
         {
-            throw new Exception($"Shift with name {shift.Name} already exists");
+            throw new AlreadyExistsException($"Shift with name {shift.Name} already exists");
         }
 
         var jobRoleRequirementsForShift = new List<ShiftRequirement>();
@@ -58,8 +58,7 @@ public class ShiftService : IShiftService
 
         if (!(await this.HasRequiredBreak(shift.TimeSlots)))
         {
-            //TODO: Add Custom Exception
-            throw new Exception($"Not enough breaks added in the shifts");
+            throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
 
         this._dbContext.Shifts.Add(new Shift()
@@ -91,8 +90,7 @@ public class ShiftService : IShiftService
 
         if (companyPolicy == null)
         {
-            //TODO: Add custom exception
-            throw new Exception($"Company policy needs to be defined first");
+            throw new NotFoundException($"Company policy needs to be defined first");
         }
         
 // 1. Order slots chronologically to handle the "Midnight Stitch"
@@ -189,8 +187,7 @@ public class ShiftService : IShiftService
         
         if (!(await this.HasRequiredBreak(shiftToDelete.Timeslots.Where(x => x.Id != timeSlotId).Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList())))
         {
-            //TODO: Add Custom Exception
-            throw new Exception($"Not enough breaks added in the shifts");
+            throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
         
         shiftToDelete.Timeslots.Remove(timeSlot);
@@ -250,8 +247,7 @@ public class ShiftService : IShiftService
         
         if (!(await this.HasRequiredBreak(shiftToModiy.Timeslots.Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList())))
         {
-            //TODO: Add Custom Exception
-            throw new Exception($"Not enough breaks added in the shifts");
+            throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
 
         await this._dbContext.SaveChangesAsync();
@@ -296,8 +292,7 @@ public class ShiftService : IShiftService
         
         if (!(await this.HasRequiredBreak(timeSlotsToCheck)))
         {
-            //TODO: Add Custom Exception
-            throw new Exception($"Not enough breaks added in the shifts");
+            throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
         
         this._dbContext.Breaks.RemoveRange(timeSlotToModify.Breaks);

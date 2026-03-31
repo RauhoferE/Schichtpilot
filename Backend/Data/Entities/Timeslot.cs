@@ -10,12 +10,10 @@ public class Timeslot
     [Required]
     public DayOfWeek DayOfWeek { get; set; }
 
-    // TODO: If the EndTime goes over midnight create two timeslots like so:
+    // If the EndTime goes over midnight create two timeslots like so:
     // Monday 22-24
     // Tuesday 24-02
     // And always check in teh request that start time is smaller than endtime.
-    // TODO: Check that its only one timeslot per day!!!!
-    // TODO: Timeslots can only be 20 hours long!!!! or put it in company policy?
     [Required]
     public TimeOnly StartTime { get; set; }
     
