@@ -35,7 +35,7 @@ jobs:
           push: true # Now we set this to true
           # The tag must be lowercase: ghcr.io/your-username/repository-name:tag
           tags: |
-            ghcr.io/RauhoferE/schichtpilot:latest
-            ghcr.io/RauhoferE/schichtpilot:${{ github.sha }}
+            ghcr.io/rauhofere/schichtpilot:latest
+            ghcr.io/rauhofere/schichtpilot:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
