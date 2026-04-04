@@ -4,6 +4,9 @@ using Data.Entities;
 using Microsoft.Extensions.Options;
 using Schichtpilot.Models.DTOs;
 using System.Text;
+using Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Settings;
 
 namespace Schichtpilot.Services;
@@ -16,21 +19,11 @@ public class EmailService : IEmailService
     private readonly string _senderAddress;
     private readonly string _templatesPath;
     private readonly ILogger<EmailService> _logger;
-
-    // Tuesday–Sunday: Monday is the restaurant's weekly day off
-    private static readonly DayOfWeek[] WorkWeek =
-    {
-        DayOfWeek.Tuesday,
-        DayOfWeek.Wednesday,
-        DayOfWeek.Thursday,
-        DayOfWeek.Friday,
-        DayOfWeek.Saturday,
-        DayOfWeek.Sunday
-    };
+    private readonly UserManager<User> _userManager;
 
     public EmailService(
         IOptions<AzureEmailSettings> emailSettings,
-        // UserManager<User> userManager,
+        UserManager<User> userManager,
         ILogger<EmailService> logger)
     {
         // _userManager = userManager;
@@ -43,7 +36,9 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrEmpty(settings.SenderAddress))
             throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
-
+        
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        
         _emailClient   = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
         _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
@@ -55,17 +50,13 @@ public class EmailService : IEmailService
 
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
-        var testManagers = new List<(string Email, string Name)>
-        {
-            ("manager1@gmail.com", "Manager 1"),
-            ("manager2@gmail.com", "Manager 2")
-        };
+        var managers = await this._userManager.GetUsersInRoleAsync("Admin");
 
-        var tasks = testManagers.Select(m =>
+        var tasks = managers.Select(m =>
         {
             var placeholders = new Dictionary<string, string>
             {
-                { "{{ManagerName}}", m.Name },
+                { "{{ManagerName}}", $"{m.FirstName} {m.LastName}"},
                 { "{{EmployeeName}}", $"{employee.FirstName} {employee.LastName}" },
                 { "{{StartDate}}", absence.StartDate.ToString("dd.MM.yyyy") },
                 { "{{EndDate}}", absence.EndDate.ToString("dd.MM.yyyy") },
@@ -217,7 +208,7 @@ public class EmailService : IEmailService
               </thead>
               <tbody>");
 
-        foreach (var day in WorkWeek)
+        foreach (var day in Enum.GetValues<DayOfWeek>())
         {
             slotsByDay.TryGetValue(day, out var slot);
             var hasShift = slot is not null;
