@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi;
-using Schichtpilot.Configuration;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Mapping;
 using Schichtpilot.Middleware;
@@ -87,7 +86,7 @@ public class Program
 
         //  AzureEmail settings
         builder.Services.Configure<AzureEmailSettings>(
-            config.GetSection(AzureEmailSettings.SectionName));
+            config.GetSection("AzureEmail"));
 
         // Add services to the container
         builder.Services.AddTransient<IEmailService, EmailService>();
@@ -172,7 +171,6 @@ public class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI();
-            app.MapOpenApi();
         }
 
         app.UseSerilogRequestLogging();

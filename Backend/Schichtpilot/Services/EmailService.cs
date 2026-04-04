@@ -2,9 +2,9 @@
 using Azure.Communication.Email;
 using Data.Entities;
 using Microsoft.Extensions.Options;
-using Schichtpilot.Configuration;
 using Schichtpilot.Models.DTOs;
 using System.Text;
+using Schichtpilot.Settings;
 
 namespace Schichtpilot.Services;
 
@@ -290,7 +290,6 @@ public class EmailService : IEmailService
             _logger.LogError(ex,
                 "ACS failed sending to {Email} | Code: {Code} | Message: {Message}",
                 toEmail, ex.ErrorCode, ex.Message);
-            throw;
         }
     }
 
