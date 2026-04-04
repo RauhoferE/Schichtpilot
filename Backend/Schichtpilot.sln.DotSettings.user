@@ -21,6 +21,9 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=169306e9_002D56cf_002D44b2_002D8964_002Dd1846aff769c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Solution /&gt;
 &lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=32860aab_002D67f2_002D47c5_002D996e_002D3c25dd3105be/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from &amp;lt;UnitTests&amp;gt;" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Project Location="/home/emre/Documents/Repos/Schichtpilot/Backend/UnitTests" Presentation="&amp;lt;UnitTests&amp;gt;" /&gt;
+&lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c08e8c31_002D5cb9_002D4d3d_002Dace9_002D52e7561a3ad8/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="All tests from DtoMappingProfileTest.cs" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Project Location="/home/emre/RiderProjects/Schichtpilot/Backend/UnitTests" Presentation="&amp;lt;UnitTests&amp;gt;" /&gt;
 &lt;/SessionState&gt;</s:String>

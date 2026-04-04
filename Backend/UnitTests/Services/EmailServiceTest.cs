@@ -1,15 +1,16 @@
 ﻿using Data.Entities;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Schichtpilot.Models.DTOs;
+using Schichtpilot.Services;
 
 
-namespace Schichtpilot.Tests.Services;
+namespace UnitTests.Services;
 
 // ══════════════════════════════════════════════════════════════════
 // 1. BuildShiftTable — mirrors the private static method in EmailService
 //    Tests the Tues–Sun logic, day-off rendering, slot lookup
 // ══════════════════════════════════════════════════════════════════
-
 public class BuildShiftTableTests
 {
     private static readonly DayOfWeek[] WorkWeek =
@@ -257,7 +258,6 @@ public class BuildShiftTableTests
 // ══════════════════════════════════════════════════════════════════
 // 2. Placeholder replacement — the core template engine logic
 // ══════════════════════════════════════════════════════════════════
-
 public class PlaceholderReplacementTests
 {
     // Mirrors SendTemplateAsync's replacement loop
@@ -392,7 +392,6 @@ public class PlaceholderReplacementTests
 // ══════════════════════════════════════════════════════════════════
 // 3. FullName helper
 // ══════════════════════════════════════════════════════════════════
-
 public class FullNameTests
 {
     private static string FullName(User user) =>
@@ -430,7 +429,6 @@ public class FullNameTests
 // ══════════════════════════════════════════════════════════════════
 // 4. Date formatting — dd.MM.yyyy used in all placeholders
 // ══════════════════════════════════════════════════════════════════
-
 public class DateFormattingTests
 {
     [Fact]
@@ -465,7 +463,6 @@ public class DateFormattingTests
 // ══════════════════════════════════════════════════════════════════
 // 5. Template file existence check
 // ══════════════════════════════════════════════════════════════════
-
 public class TemplateFileTests : IDisposable
 {
     private readonly string _tempDir;
