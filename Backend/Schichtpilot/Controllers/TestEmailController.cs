@@ -1,4 +1,5 @@
 ﻿using Data.Entities;
+using Schichtpilot.Interfaces;
 using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Controllers;
@@ -95,7 +96,7 @@ public class TestEmailController : ControllerBase
             Email = toEmail
         };
 
-        await _emailService.SendUserRegisterMail(fakeUser, "Temp@1234!");
+        await _emailService.SendUserRegisterMail(fakeUser);
         return Ok($"Registration email sent to {toEmail}.");
     }
 

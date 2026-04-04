@@ -4,6 +4,7 @@ using Core;
 using Data;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
@@ -19,14 +20,16 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly ILogger<UserService> _logger;
     private readonly SchichtpilotDbContext _dbContext;
+    private readonly IEmailService _emailService;
 
     public UserService(UserManager<User> userManager, IMapper mapper, ILogger<UserService> logger,
-        SchichtpilotDbContext dbContext)
+        SchichtpilotDbContext dbContext, IEmailService emailService)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
     }
 
     public async Task<long> GetUserIdAsync(ClaimsPrincipal user)
@@ -63,6 +66,8 @@ public class UserService : IUserService
             throw new AccountCreationException($"Couldn't add user to user role: {creatUserResult.Errors.Select(error => error.Description)}");
         }
         
+        _= Task.Run(async () =>
+            await _emailService.SendUserRegisterMail(userToCreate));
     }
 
     public Task<UserDto> GetUserDataAsync(int userId)

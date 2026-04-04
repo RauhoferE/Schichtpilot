@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Schichtpilot.Exceptions;
 using Schichtpilot.Models.DTOs;
+using Schichtpilot.Interfaces;
 using Schichtpilot.Models.Enums;
 using Schichtpilot.Services;
 
@@ -25,6 +26,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var principal = CreateClaimsPrincipal();
 
@@ -32,7 +34,7 @@ public class UserServiceTest
             .Setup(manager => manager.GetUserAsync(principal))
             .ReturnsAsync((User?)null);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         await Assert.ThrowsAsync<Exception>(() => service.GetUserIdAsync(principal));
     }
@@ -43,6 +45,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var principal = CreateClaimsPrincipal();
         var user = CreateUserWithId(123);
@@ -51,7 +54,7 @@ public class UserServiceTest
             .Setup(manager => manager.GetUserAsync(principal))
             .ReturnsAsync(user);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         var result = await service.GetUserIdAsync(principal);
 
@@ -64,6 +67,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
@@ -76,7 +80,7 @@ public class UserServiceTest
             .Setup(manager => manager.FindByEmailAsync(mappedUser.Email!))
             .ReturnsAsync(mappedUser);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         await service.CreateUserAsync(userDto, "password");
 
@@ -91,6 +95,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
@@ -107,7 +112,7 @@ public class UserServiceTest
             .Setup(manager => manager.CreateAsync(mappedUser, "password"))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "create failed" }));
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         await Assert.ThrowsAsync<AccountCreationException>(
             () => service.CreateUserAsync(userDto, "password"));
@@ -121,6 +126,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
@@ -141,7 +147,7 @@ public class UserServiceTest
             .Setup(manager => manager.AddToRoleAsync(mappedUser, UserRolesClass.User))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "role failed" }));
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         await Assert.ThrowsAsync<AccountCreationException>(
             () => service.CreateUserAsync(userDto, "password"));
@@ -153,6 +159,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var userDto = CreateUserDto();
         var mappedUser = CreateUser();
@@ -173,7 +180,7 @@ public class UserServiceTest
             .Setup(manager => manager.AddToRoleAsync(mappedUser, UserRolesClass.User))
             .ReturnsAsync(IdentityResult.Success);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         await service.CreateUserAsync(userDto, "password");
 
@@ -187,9 +194,10 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         await Assert.ThrowsAsync<UserNotFoundException>(() => service.GetUserDataAsync(999));
     }
@@ -200,6 +208,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
         var user = CreateUserWithId(42);
         var expectedDto = CreateUserDto();
@@ -211,7 +220,7 @@ public class UserServiceTest
             .Setup(mapper => mapper.Map<User, UserDto>(user))
             .Returns(expectedDto);
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         var result = await service.GetUserDataAsync(42);
 
@@ -229,6 +238,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
 
         mapperMock
@@ -259,7 +269,7 @@ public class UserServiceTest
         dbContext.Users.AddRange(userB, userA);
         await dbContext.SaveChangesAsync();
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         var result = await service.GetUsersAsync(
             new PaginationDto { Page = 2, PageSize = 1 },
@@ -279,6 +289,7 @@ public class UserServiceTest
         var userManagerMock = CreateUserManagerMock();
         var mapperMock = new Mock<IMapper>();
         var loggerMock = new Mock<ILogger<UserService>>();
+        var emailServiceMock = new Mock<IEmailService>();
         await using var dbContext = CreateDbContext();
 
         mapperMock
@@ -359,7 +370,7 @@ public class UserServiceTest
         dbContext.Users.AddRange(matchingUser1, matchingUser2, nonMatchingStatus, nonMatchingRole);
         await dbContext.SaveChangesAsync();
 
-        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext);
+        var service = new UserService(userManagerMock.Object, mapperMock.Object, loggerMock.Object, dbContext, emailServiceMock.Object);
 
         var filter = new UserFilterDto
         {

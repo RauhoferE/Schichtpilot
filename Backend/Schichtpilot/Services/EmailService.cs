@@ -7,6 +7,7 @@ using System.Text;
 using Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Schichtpilot.Interfaces;
 using Schichtpilot.Settings;
 
 namespace Schichtpilot.Services;
@@ -126,13 +127,12 @@ public class EmailService : IEmailService
             placeholders);
     }
 
-    public async Task SendUserRegisterMail(User newUser, string temporaryPassword)
+    public async Task SendUserRegisterMail(User newUser)
     {
         var placeholders = new Dictionary<string, string>
         {
             { "{{FullName}}", FullName(newUser) },
-            { "{{Email}}", newUser.Email! },
-            { "{{TemporaryPassword}}", temporaryPassword }
+            { "{{Email}}", newUser.Email! }
         };
 
         await SendTemplateAsync(

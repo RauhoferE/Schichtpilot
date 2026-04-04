@@ -1,6 +1,8 @@
 ﻿using Data.Entities;
 using Schichtpilot.Models.DTOs;
 
+namespace Schichtpilot.Interfaces;
+
 public interface IEmailService
 {
     // All managers notified
@@ -10,7 +12,7 @@ public interface IEmailService
     Task SendApprovalMail(User employee, AbsenceDto absence);
     Task SendRejectionMail(User employee, AbsenceDto absence);
     Task SendScheduleInActiveMail(User employee, WorkScheduleDto schedule);
-    Task SendUserRegisterMail(User newUser, string temporaryPassword);
+    Task SendUserRegisterMail(User newUser);
 
     // All employees
     Task SendScheduleMail(WorkScheduleDto schedule); 
