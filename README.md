@@ -76,6 +76,17 @@ Before commiting anything to the main branch the code needs:
 - Discord (Temporary artefacts)
 - Whatsapp (Temporary artefacts)
 
+## Docker 
+
+```
+docker run -d \
+  -p 80:8080 \
+  -p 443:8081 \
+  -v /home/user/schichtpilot/appsettings.Production.json:/app/appsettings.json:ro \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  ghcr.io/rauhofere/schichtpilot:latest
+```
+
 ## Appsettings Development
 
 ```
