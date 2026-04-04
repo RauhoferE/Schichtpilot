@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Absence Declined</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #F4F1EC; font-family: 'DM Sans', sans-serif; padding: 40px 16px; }
+        .wrapper { max-width: 580px; margin: 0 auto; }
+        .header { background: #1A1A2E; border-radius: 12px 12px 0 0; padding: 32px 40px; display: flex; align-items: center; gap: 14px; }
+        .logo-mark { width: 42px; height: 42px; background: #E8C547; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .brand { color: #fff; font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+        .brand span { color: #E8C547; }
+        .body { background: #fff; padding: 40px; border-left: 1px solid #E8E3D9; border-right: 1px solid #E8E3D9; }
+        .status-banner { background: linear-gradient(135deg, #F8D7DA, #F5C6CB); border: 1px solid #F1B0B7; border-radius: 10px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+        .status-icon { font-size: 32px; }
+        .status-title { font-size: 18px; font-weight: 600; color: #721C24; }
+        .status-sub { font-size: 13px; color: #8B2635; margin-top: 2px; }
+        .greeting { color: #555; font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+        .card { background: #F8F6F1; border: 1px solid #E8E3D9; border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+        .card-header { background: #1A1A2E; color: #E8C547; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 10px 20px; }
+        .row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #E8E3D9; }
+        .row:last-child { border-bottom: none; }
+        .row-label { font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; width: 110px; flex-shrink: 0; }
+        .row-value { font-size: 14px; color: #1A1A2E; font-weight: 500; }
+        .row-value.mono { font-family: 'DM Mono', monospace; font-size: 13px; }
+        .manager-note { background: #F8F6F1; border-left: 3px solid #DC3545; border-radius: 0 6px 6px 0; padding: 14px 16px; color: #444; font-size: 14px; line-height: 1.6; margin-bottom: 28px; font-style: italic; }
+        .note { font-size: 13px; color: #888; line-height: 1.6; }
+        .footer { background: #F0EDE6; border: 1px solid #E8E3D9; border-top: none; border-radius: 0 0 12px 12px; padding: 20px 40px; text-align: center; font-size: 12px; color: #AAA; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <div class="logo-mark">🍽</div>
+        <div class="brand">Schicht<span>pilot</span></div>
+    </div>
+
+    <div class="body">
+        <div class="status-banner">
+            <div class="status-icon">❌</div>
+            <div>
+                <div class="status-title">Your Request Has Been Declined</div>
+                <div class="status-sub">Please review the manager's note below.</div>
+            </div>
+        </div>
+
+        <p class="greeting">Hello {{EmployeeName}},<br/><br/>
+            Unfortunately, your absence request for the period below has been declined by your manager. Please see their note for further context.
+        </p>
+
+        <div class="card">
+            <div class="card-header">Requested Period</div>
+            <div class="card-body">
+                <div class="row">
+                    <span class="row-label">From</span>
+                    <span class="row-value mono">{{StartDate}}</span>
+                </div>
+                <div class="row">
+                    <span class="row-label">Until</span>
+                    <span class="row-value mono">{{EndDate}}</span>
+                </div>
+            </div>
+        </div>
+
+        <p style="font-size:13px;color:#666;margin-bottom:10px;font-weight:600;">Manager's note:</p>
+        <div class="manager-note">"{{ManagerMessage}}"</div>
+
+        <p class="note">If you believe this decision was made in error, please speak with your manager directly. You may also submit a new request through the Schichtpilot system.</p>
+    </div>
+
+    <div class="footer">
+        © Schichtpilot — This is an automated notification. Please do not reply to this email.
+    </div>
+</div>
+</body>
+</html>

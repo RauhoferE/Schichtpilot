@@ -26,22 +26,24 @@ public class Program
             .AddJsonFile("appsettings.json", true, true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", false, true)
             .AddEnvironmentVariables();
-        
-        //Serilog
+
+        // Serilog
         builder.Host.UseSerilog((_, loggerconfiguration) =>
         {
             loggerconfiguration.ReadFrom.Configuration(builder.Configuration);
         });
-        
+
         var config = configuration.Build();
         Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(config).CreateLogger();
-        
+
         // Database
-        builder.Services.AddDbContext<SchichtpilotDbContext>(options => options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
-        
+        builder.Services.AddDbContext<SchichtpilotDbContext>(options =>
+            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+
         // Authentication
-        var authCookieName = config["AuthCookieName"] ?? throw new Exception("AuthCookieName configuration is missing.");
-        
+        var authCookieName = config["AuthCookieName"]
+            ?? throw new Exception("AuthCookieName configuration is missing.");
+
         builder.Services.AddIdentity<User, IdentityRole<long>>(opt =>
             {
                 opt.Password.RequireDigit = true;
@@ -54,7 +56,7 @@ public class Program
                 opt.User.RequireUniqueEmail = true;
             })
             .AddEntityFrameworkStores<SchichtpilotDbContext>();
-        
+
         builder.Services.ConfigureApplicationCookie(options =>
         {
             // Stop the cookie from redirecting to a Login Page
@@ -63,7 +65,7 @@ public class Program
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return Task.CompletedTask;
             };
-    
+
             // Stop the cookie from redirecting to an Access Denied Page
             options.Events.OnRedirectToAccessDenied = context =>
             {
@@ -72,14 +74,21 @@ public class Program
             };
 
             options.Cookie.Name = authCookieName;
-            options.Cookie.HttpOnly = true; // Security: Prevents JS from reading the cookie
-            options.Cookie.SameSite = builder.Environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.Strict;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = builder.Environment.IsDevelopment()
+                ? SameSiteMode.Lax
+                : SameSiteMode.Strict;
         });
-        
-        // Add settings
-        builder.Services.Configure<AuthenticationSettings>(config.GetSection("AuthenticationSettings"));
 
-        // Add services to the container.
+        // Add settings
+        builder.Services.Configure<AuthenticationSettings>(
+            config.GetSection("AuthenticationSettings"));
+
+        //  AzureEmail settings
+        builder.Services.Configure<AzureEmailSettings>(
+            config.GetSection("AzureEmail"));
+
+        // Add services to the container
         builder.Services.AddTransient<IEmailService, EmailService>();
         builder.Services.AddTransient<IUserService, UserService>();
         builder.Services.AddTransient<ICompanyPolicyService, CompanyPolicyService>();
@@ -97,12 +106,12 @@ public class Program
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         builder.Services.AddFluentValidationAutoValidation();
 
-        // Automapper
+        // AutoMapper
         var mapperConfig = new MapperConfiguration(cfg =>
         {
             cfg.AddProfile(new DtoMappingProfile());
         }, new NullLoggerFactory());
-        
+
         IMapper mapper = mapperConfig.CreateMapper();
         builder.Services.AddSingleton(mapper);
 
@@ -112,9 +121,11 @@ public class Program
         {
             options.Filters.Add<ExceptionFilter>();
         });
-        
+
         // CORS
-        var cors = config.GetSection("AllowedCors").Get<string[]>() ?? throw new Exception("AllowedCors configuration is missing.");
+        var cors = config.GetSection("AllowedCors").Get<string[]>()
+            ?? throw new Exception("AllowedCors configuration is missing.");
+
         if (builder.Environment.IsDevelopment())
         {
             builder.Services.AddCors(options =>
@@ -128,27 +139,25 @@ public class Program
                 });
             });
         }
-        
+
         // Swagger
         builder.Services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc("v1", new OpenApiInfo
-            { 
-                Title = "Schichtpilot", 
-                Version = "v1" 
+            {
+                Title   = "Schichtpilot",
+                Version = "v1"
             });
 
-            // 2. Add the definition to Swagger
             options.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
             {
-                Name = authCookieName,
-                In = ParameterLocation.Cookie,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "CookieAuth",
+                Name        = authCookieName,
+                In          = ParameterLocation.Cookie,
+                Type        = SecuritySchemeType.ApiKey,
+                Scheme      = "CookieAuth",
                 Description = "Cookie-based authentication"
             });
 
-            // 2. Make it global so every protected endpoint shows a lock icon
             options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
             {
                 [new OpenApiSecuritySchemeReference("CookieAuth", document)] = []
@@ -157,22 +166,22 @@ public class Program
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
+        // Configure the HTTP request pipeline
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
-            app.MapOpenApi();
         }
 
         app.UseSerilogRequestLogging();
         app.UseHttpsRedirection();
         app.UseRouting();
+
         if (app.Environment.IsDevelopment())
         {
             app.UseCors("DevCors");
         }
-        
+
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMiddleware<UserContextMiddleware>();

@@ -13,12 +13,15 @@ public class WorkScheduleService : IWorkScheduleService
 {
     private readonly SchichtpilotDbContext _dbContext;
     
+    private readonly IEmailService _emailService;
+    
     private readonly IMapper _mapper;
 
-    public WorkScheduleService(SchichtpilotDbContext dbContext, IMapper mapper)
+    public WorkScheduleService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
     }
 
     public async Task GenerateScheduleAsync(GenerateScheduleDto generateScheduleDto)
@@ -359,8 +362,25 @@ public class WorkScheduleService : IWorkScheduleService
 
     public async Task PublishScheduleAsync(int scheduleId)
     {
-        //TODO: Send via emailservice
-        throw new NotImplementedException();
+        var schedule = this._dbContext.WorkSchedules
+            .FirstOrDefault(x => x.Id == scheduleId);
+
+        if (schedule == null)
+        {
+            throw new NotFoundException($"Schedule with id {scheduleId} not found.");
+        }
+
+        if (!schedule.IsValid)
+        {
+            throw new PolicyConflictException($"Schedule with id {scheduleId} is invalid.");
+        }
+        
+        if (!schedule.IsActive)
+        {
+            throw new PolicyConflictException($"Only active schedules can be published.");
+        }
+        
+        _ = Task.Run(async () => this._emailService.SendScheduleMail(await this.GetScheduleAsync(scheduleId)));
     }
 
     public async Task<QueryableSchedules> GetSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter)
@@ -441,6 +461,10 @@ public class WorkScheduleService : IWorkScheduleService
             .Include(x => x.ShiftAssignments)
             .ThenInclude(x => x.UserJobRole)
             .ThenInclude(x => x.JobRole)
+            .Include(x => x.ShiftAssignments)
+            .ThenInclude(x => x.UserJobRole)
+            .ThenInclude(x => x.User)
+            .AsSplitQuery()
             .FirstOrDefault(x => x.Id == scheduleId);
 
         if (schedule == null)
@@ -475,8 +499,6 @@ public class WorkScheduleService : IWorkScheduleService
     public async Task SetScheduleActiveAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
-            .Include(x => x.Shifts)
-            .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
 
         if (schedule == null)
@@ -500,6 +522,8 @@ public class WorkScheduleService : IWorkScheduleService
         
         schedule.IsActive = true;
         await this._dbContext.SaveChangesAsync();
+        _= Task.Run(async () =>
+            await _emailService.SendScheduleMail(await this.GetScheduleAsync(scheduleId)));
     }
 
     public async Task SetScheduleOfflineAsync(int scheduleId)
@@ -511,9 +535,11 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
-        // TODO: Send an email to managers that schedule has been set as offline
+
         schedule.IsActive = false;
         await this._dbContext.SaveChangesAsync();
+        _= Task.Run(async () =>
+            await _emailService.SendScheduleInActiveMail(await this.GetScheduleAsync(scheduleId)));
     }
 
     public async Task SetScheduleAsInvalidAsync(int scheduleId)

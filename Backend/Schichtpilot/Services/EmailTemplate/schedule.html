@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Weekly Schedule</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #F4F1EC; font-family: 'DM Sans', sans-serif; padding: 40px 16px; }
+        .wrapper { max-width: 620px; margin: 0 auto; }
+        .header { background: #1A1A2E; border-radius: 12px 12px 0 0; padding: 32px 40px; display: flex; align-items: center; gap: 14px; }
+        .logo-mark { width: 42px; height: 42px; background: #E8C547; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .brand { color: #fff; font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+        .brand span { color: #E8C547; }
+        .body { background: #fff; padding: 40px; border-left: 1px solid #E8E3D9; border-right: 1px solid #E8E3D9; }
+        .tag { display: inline-block; background: #E8F4FD; color: #0C5DA5; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; margin-bottom: 20px; }
+        h1 { font-size: 22px; font-weight: 600; color: #1A1A2E; margin-bottom: 6px; }
+        .week-range { font-size: 14px; color: #888; margin-bottom: 28px; font-family: 'DM Mono', monospace; }
+        .greeting { color: #555; font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+        .schedule-name { font-size: 13px; color: #666; margin-bottom: 16px; }
+        .schedule-name strong { color: #1A1A2E; }
+        .note { font-size: 13px; color: #888; line-height: 1.6; margin-top: 24px; }
+        .footer { background: #F0EDE6; border: 1px solid #E8E3D9; border-top: none; border-radius: 0 0 12px 12px; padding: 20px 40px; text-align: center; font-size: 12px; color: #AAA; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <div class="logo-mark">🍽</div>
+        <div class="brand">Schicht<span>pilot</span></div>
+    </div>
+
+    <div class="body">
+        <div class="tag">Schedule Published</div>
+        <h1>Your Weekly Schedule</h1>
+        <div class="week-range">{{WeekStart}} – {{WeekEnd}}</div>
+
+        <p class="greeting">Hello {{EmployeeName}},<br/><br/>
+            Your schedule for the upcoming week has been published. Please review your shifts below and be on time.
+        </p>
+
+        <p class="schedule-name">Schedule: <strong>{{ScheduleName}}</strong></p>
+
+        {{ShiftTable}}
+
+        <p class="note">If you have any questions about your shifts, please contact your manager through the Schichtpilot system. Changes to the schedule will be communicated via a new notification.</p>
+    </div>
+
+    <div class="footer">
+        © Schichtpilot — This is an automated notification. Please do not reply to this email.
+    </div>
+</div>
+</body>
+</html>

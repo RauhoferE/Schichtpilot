@@ -1,6 +1,6 @@
 ﻿namespace Schichtpilot.Models.DTOs;
 
-using Schichtpilot.Models.Enums;
+using Enums;
 
 public class AbsenceDto
 {
