@@ -20,7 +20,7 @@ public class EmailService : IEmailService
     // private readonly UserManager<User> _userManager;
     private readonly string _senderAddress;
     private readonly string _templatesPath;
-    private readonly bool sendMail;
+    private readonly bool _sendMail;
     private readonly ILogger<EmailService> _logger;
     private readonly UserManager<User> _userManager;
 
@@ -34,7 +34,7 @@ public class EmailService : IEmailService
 
         var settings = emailSettings.Value;
 
-        this.sendMail = settings.SendMail;
+        _sendMail = settings.SendMail;
 
         if (string.IsNullOrEmpty(settings.ConnectionString))
             throw new InvalidOperationException("AzureEmail:ConnectionString is missing.");
@@ -272,7 +272,7 @@ public class EmailService : IEmailService
         foreach (var (key, value) in placeholders)
             html = html.Replace(key, value);
 
-        if (sendMail)
+        if (_sendMail)
         {
             await SendAsync(toEmail, subject, html);
         }
