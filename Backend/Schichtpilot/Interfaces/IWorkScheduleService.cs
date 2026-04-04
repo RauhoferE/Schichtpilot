@@ -20,6 +20,8 @@ public interface IWorkScheduleService
     // Dont show deleted schedule
     Task<QueryableSchedules> GetSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter);
     
+    Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate);
+    
     // Cannot be done on active schedule or deleted schedule
     Task<WorkScheduleDto> GetScheduleAsync(int  scheduleId);
 
