@@ -30,7 +30,7 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./Backend
           file: Backend/Schichtpilot/Dockerfile
           push: true # Now we set this to true
           # The tag must be lowercase: ghcr.io/your-username/repository-name:tag
