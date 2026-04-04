@@ -87,51 +87,56 @@ Before commiting anything to the main branch the code needs:
     }
   },
   "AllowedHosts": "*",
-  "AuthCookieName": "SchichtpilotAuth",
+  "AuthCookieName": "SchichtPilotAuthCookie",
   "AllowedCors": [
     "http://localhost:4200"
   ],
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost,1433;Database=Schichtpilot.Test;User Id=sa;Password=YourStrongPassword;TrustServerCertificate=True;"
+    "DefaultConnection": "_dbConnectionString_"
   },
-  "AuthenticationSettings":{
-    "JwtKey": "yoursupersecurekeyonlyusedforclientcookie",
+  "AuthenticationSettings": {
+    "JwtKey": "_jwtKey_",
     "TokenLifeTimeInMinutes": 720
-  
-},
-  "Kestrel": {
-    "Endpoints": {
-      "Https": {
-        "Url": "https://localhost:5001",
-        "Certificate": {
-          "Path": "localhost.p12",
-          "Password": "changeit"
-        }
-      }
-    }
+  },
+  "AzureEmail": {
+    "ConnectionString": "_connectionstring_",
+    "SenderAddress": "_senderAddress_",
+    "SendMail": false
   },
   "Serilog": {
-    "Using": [
-      "Serilog.Sinks.Console"
-    ],
+    "Using": ["Serilog.Sinks.Console"],
     "MinimumLevel": {
       "Default": "Information"
     },
-    "WriteTo": [
-      {
-        "Name": "Console"
-      },
+    "WriteTo": [{
+      "Name": "Console"
+    },
       {
         "Name": "File",
         "Args": {
           "Path": "/tmp/Schichtpilot.Log/Schichtpilot.Log-.txt",
           "rollingInterval": "Day",
-          "Timestamp": "yyyy-mm-dd HH:mm:ss",
-          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm.ss.ffff}] [{Level}] {Message}{NewLine:1}{Exception:1}"
+          "Timestapm": "yyyy-mm-dd HH:mm:ss",
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.ffff}] [{Level}] {Message}{NewLine:1}{Exception:1}"
         }
       }
     ]
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Https":{
+        "Url": "https://0.0.0.0:8081",
+        "Certificate": {
+          "Path": "_certificate_",
+          "Password": "_password_"
+        }
+      },
+      "Http": {
+        "Url": "http://0.0.0.0:8080"
+      }
+    }
   }
 }
+
 
 ```
