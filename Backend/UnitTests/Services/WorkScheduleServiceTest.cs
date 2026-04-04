@@ -2082,6 +2082,43 @@ public class WorkScheduleServiceTest
     }
 
     [Fact]
+    public async Task GetActiveScheduleForDateAsync_NotFound_ThrowsNotFoundException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.GetActiveScheduleForDateAsync(new DateTime(2026, 1, 5)));
+    }
+
+    [Fact]
+    public async Task GetActiveScheduleForDateAsync_FindsActiveSchedule_ReturnsDto()
+    {
+        await using var dbContext = CreateDbContext();
+        var schedule = new WorkSchedule
+        {
+            Name = "Week 1",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            ShiftAssignments = new HashSet<ShiftAssignment>(),
+            Shifts = new HashSet<WorkScheduleShifts>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var result = await service.GetActiveScheduleForDateAsync(new DateTime(2026, 1, 5));
+
+        Assert.NotNull(result);
+        Assert.Equal(schedule.Id, result.Id);
+        Assert.Equal(schedule.Name, result.Name);
+    }
+
+    [Fact]
     public async Task PublishScheduleAsync_NotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();

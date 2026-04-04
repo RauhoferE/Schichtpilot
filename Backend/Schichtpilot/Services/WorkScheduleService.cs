@@ -405,6 +405,26 @@ public class WorkScheduleService : IWorkScheduleService
         };
     }
 
+    public async Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate)
+    {
+        var activeSchedules = await this.GetSchedulesAsync(new PaginationDto()
+        {
+            Page = 1,
+            PageSize = 1
+        },  new ScheduleFilterDot()
+        {
+            StartDate = startDate,
+            Status = ScheduleStatusEnum.Active
+        });
+
+        if (activeSchedules.Count == 0)
+        {
+            throw new NotFoundException($"No active schedule for date {startDate}.");
+        }
+
+        return await this.GetScheduleAsync(activeSchedules.WorkSchedules.First().Id);
+    }
+
     private async Task<IQueryable<WorkSchedule>> FilterSchedulesAsync(IQueryable<WorkSchedule> query, ScheduleFilterDot filter)
     {
         if (!string.IsNullOrEmpty(filter.Searchstring))

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
+using Schichtpilot.Models.Enums;
 using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Controllers;
@@ -77,7 +78,13 @@ public class WorkscheduleController : Controller
         return Ok(await this._workScheduleService.GetScheduleAsync(scheduleId));
     }
     
-    // TODO: Get active schedules for all users
+    [HttpGet("active")]
+    [Authorize(Roles = UserRolesClass.User)]
+    [ProducesResponseType(typeof(WorkScheduleDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActiveScheduleForDateAsync([FromQuery, Required] DateTime startDate)
+    {
+        return Ok(await this._workScheduleService.GetActiveScheduleForDateAsync(startDate));
+    }
     
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
