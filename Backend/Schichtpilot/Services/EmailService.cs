@@ -4,6 +4,7 @@ using Data.Entities;
 using Microsoft.Extensions.Options;
 using Schichtpilot.Models.DTOs;
 using System.Text;
+using Core;
 using Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +52,7 @@ public class EmailService : IEmailService
 
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
-        var managers = await this._userManager.GetUsersInRoleAsync("Admin");
+        var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
 
         var tasks = managers.Select(m =>
         {
@@ -110,21 +111,45 @@ public class EmailService : IEmailService
             placeholders);
     }
 
-    public async Task SendScheduleInActiveMail(User employee, WorkScheduleDto schedule)
+    public async Task SendScheduleInActiveMail(WorkScheduleDto schedule)
     {
-        var placeholders = new Dictionary<string, string>
+        var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
+        var tasks = schedule.AssignedUsers.Select(e =>
         {
-            { "{{EmployeeName}}", FullName(employee) },
-            { "{{ScheduleName}}", schedule.Name },
-            { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
-            { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") }
-        };
+            var placeholders = new Dictionary<string, string>
+            {
+                { "{{EmployeeName}}", $"{e.User.FirstName} {e.User.LastName}" },
+                { "{{ScheduleName}}", schedule.Name },
+                { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
+                { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") }
+            };
 
-        await SendTemplateAsync(
-            employee.Email!,
-            "Your Schedule Has Been Deactivated",
-            "scheduleInactive.html",
-            placeholders);
+            return SendTemplateAsync(
+                e.User.Email!,
+                "Your Schedule Has Been Deactivated",
+                "scheduleInactive.html",
+                placeholders);
+        });
+
+        var managerTasks = managers.Select(e =>
+        {
+            var placeholders = new Dictionary<string, string>
+            {
+                { "{{EmployeeName}}", FullName(e) },
+                { "{{ScheduleName}}", schedule.Name },
+                { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
+                { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") }
+            };
+
+            return SendTemplateAsync(
+                e.Email!,
+                "Your Schedule Has Been Deactivated",
+                "scheduleInactiveManager.html",
+                placeholders);
+        });
+
+        await Task.WhenAll(tasks);
+        await Task.WhenAll(managerTasks);
     }
 
     public async Task SendUserRegisterMail(User newUser)
@@ -144,19 +169,13 @@ public class EmailService : IEmailService
 
     public async Task SendScheduleMail(WorkScheduleDto schedule)
     {
-        // 🧪 TEMP: hardcoded test recipient — replace with UserManager later
-        var testEmployees = new List<(string Email, string Name)>
-        {
-            ("your-real-email@gmail.com", "Test Employee")
-        };
-
         var shiftTable = BuildShiftTable(schedule);
 
-        var tasks = testEmployees.Select(e =>
+        var tasks = schedule.AssignedUsers.Select(e =>
         {
             var placeholders = new Dictionary<string, string>
             {
-                { "{{EmployeeName}}", e.Name },
+                { "{{EmployeeName}}", e.User.LastName },
                 { "{{ScheduleName}}", schedule.Name },
                 { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
                 { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") },
@@ -164,7 +183,7 @@ public class EmailService : IEmailService
             };
 
             return SendTemplateAsync(
-                e.Email, $"Your Schedule for {schedule.StartDate:dd.MM.yyyy}",
+                e.User.Email, $"Your Schedule for {schedule.StartDate:dd.MM.yyyy}",
                 "schedule.html",
                 placeholders);
         });

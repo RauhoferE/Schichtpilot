@@ -184,7 +184,7 @@ public class TestEmailController : ControllerBase
             IsValid = false
         };
 
-        await _emailService.SendScheduleInActiveMail(fakeEmployee, fakeSchedule);
+        await _emailService.SendScheduleInActiveMail(fakeSchedule);
         return Ok($"Schedule deactivation email sent to {toEmail}.");
     }
 }

@@ -11,7 +11,7 @@ public interface IEmailService
     // Specific employee
     Task SendApprovalMail(User employee, AbsenceDto absence);
     Task SendRejectionMail(User employee, AbsenceDto absence);
-    Task SendScheduleInActiveMail(User employee, WorkScheduleDto schedule);
+    Task SendScheduleInActiveMail(WorkScheduleDto schedule);
     Task SendUserRegisterMail(User newUser);
 
     // All employees
