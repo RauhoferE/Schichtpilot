@@ -1,0 +1,41 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: ["main"]
+
+# This is critical: The workflow needs permission to write to the registry
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Backend/Schichtpilot/Dockerfile
+          push: true # Now we set this to true
+          # The tag must be lowercase: ghcr.io/your-username/repository-name:tag
+          tags: |
+            ghcr.io/schichtpilot:latest
+            ghcr.io/schichtpilot:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
