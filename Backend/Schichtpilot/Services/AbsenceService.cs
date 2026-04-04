@@ -140,11 +140,6 @@ public class AbsenceService : IAbsenceService
         {
             throw new NotFoundException("Pending absence not found");
         }
-        
-        if (dto.Status == nameof(AbsenceStatusEnum.Denied) && string.IsNullOrEmpty(dto.ManagerMessage))
-        {
-            throw new ValidationException("Denial requires message");
-        }
 
         absence.Status = dto.Status;
         absence.ManagerMessage = dto.ManagerMessage;
