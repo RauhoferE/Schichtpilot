@@ -1,6 +1,7 @@
 ﻿using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Models.DTOs;
+
 public class AbsenceFilterDto
 {
     public List<AbsenceStatusEnum>? Status { get; set; }

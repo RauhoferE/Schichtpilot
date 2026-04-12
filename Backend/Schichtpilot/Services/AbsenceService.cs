@@ -16,9 +16,9 @@ public class AbsenceService : IAbsenceService
     private readonly SchichtpilotDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IEmailService _emailService;
-    private readonly IWorkScheduleService  _workScheduleService;
+    private readonly IWorkScheduleService _workScheduleService;
 
-    public AbsenceService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService, IWorkScheduleService  workScheduleService)
+    public AbsenceService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService, IWorkScheduleService workScheduleService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -30,12 +30,12 @@ public class AbsenceService : IAbsenceService
     {
         // FR149: User exists (Identity handles lockout, controller auth)
         var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null) {throw new UserNotFoundException("User not found");}
+        if (user == null) { throw new UserNotFoundException("User not found"); }
 
         // Overlap check
         var overlapping = await _dbContext.Absences.AnyAsync(x => x.UserId == userId &&
             x.Status != nameof(AbsenceStatusEnum.Denied) && dto.StartDate < x.EndDate && dto.EndDate > x.StartDate);
-        if (overlapping) {throw new AlreadyExistsException("Overlapping absence exists");}
+        if (overlapping) { throw new AlreadyExistsException("Overlapping absence exists"); }
 
         // FR143-144: Pending persist
         var absence = new Absence
@@ -59,7 +59,7 @@ public class AbsenceService : IAbsenceService
         }
         //map tp AbsenceDto and pass User object
         var absenceDto = _mapper.Map<AbsenceDto>(absence);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
             await _emailService.SendNewAbsenceMailToManager(user, absenceDto));
     }
 
@@ -85,12 +85,12 @@ public class AbsenceService : IAbsenceService
     {
         var absence = await _dbContext.Absences
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId && x.Status == nameof(AbsenceStatusEnum.Pending));
-        if (absence == null) {throw new NotFoundException("Own pending absence not found");}
+        if (absence == null) { throw new NotFoundException("Own pending absence not found"); }
 
         _dbContext.Absences.Remove(absence);
-         await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
     }
-    
+
     public async Task<QueryableAbsenceResponse> ViewUserAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId)
     {
         IQueryable<Absence> query = _dbContext.Absences
@@ -126,7 +126,7 @@ public class AbsenceService : IAbsenceService
     public async Task<AbsenceDto> GetAbsenceDetailAsync(int id)
     {
         var absence = await _dbContext.Absences.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
-        if (absence == null) {throw new NotFoundException("Absence not found");}
+        if (absence == null) { throw new NotFoundException("Absence not found"); }
         return _mapper.Map<AbsenceDto>(absence);
     }
 
@@ -135,7 +135,7 @@ public class AbsenceService : IAbsenceService
         var absence = await _dbContext.Absences
             .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.Id == id && x.Status == nameof(AbsenceStatusEnum.Pending));
-       
+
         if (absence == null)
         {
             throw new NotFoundException("Pending absence not found");
@@ -145,30 +145,30 @@ public class AbsenceService : IAbsenceService
         absence.ManagerMessage = dto.ManagerMessage;
         await _dbContext.SaveChangesAsync();
 
-        if (dto.Status ==  nameof(AbsenceStatusEnum.Approved))
+        if (dto.Status == nameof(AbsenceStatusEnum.Approved))
         {
             await SetWorkSchedulesWithUserAsInvalid(absence.UserId, absence.StartDate, absence.EndDate);
         }
-        
+
         // Send email
         var absenceDto = _mapper.Map<AbsenceDto>(absence);
         if (dto.Status == nameof(AbsenceStatusEnum.Approved))
         {
-            _= Task.Run(async () =>
+            _ = Task.Run(async () =>
                 await _emailService.SendApprovalMail(absence.User, absenceDto));
         }
 
         if (dto.Status == nameof(AbsenceStatusEnum.Denied))
         {
-            _= Task.Run(async () =>
-                await _emailService.SendRejectionMail(absence.User, absenceDto));   
+            _ = Task.Run(async () =>
+                await _emailService.SendRejectionMail(absence.User, absenceDto));
         }
-        
+
     }
-   
+
     private static Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
     {
-        if (filter == null) {return Task.FromResult(query);}
+        if (filter == null) { return Task.FromResult(query); }
 
         // FR148: Date/emp/type search (UserName via FirstName/LastName/Email)
         if (!string.IsNullOrEmpty(filter.Searchstring))
@@ -181,15 +181,15 @@ public class AbsenceService : IAbsenceService
         }
 
         if (filter.Status?.Any() == true)
-        { query = query.Where(x => filter.Status.Select(s => s.ToString()).Contains(x.Status));}
+        { query = query.Where(x => filter.Status.Select(s => s.ToString()).Contains(x.Status)); }
 
         if (filter.AbsenceType?.Any() == true)
         {
             query = query.Where(x => filter.AbsenceType.Select(t => t.ToString()).Contains(x.AbsenceType));
         }
 
-        if (filter.StartDateFrom.HasValue) {query = query.Where(x => x.StartDate >= filter.StartDateFrom.Value);}
-        if (filter.StartDateTo.HasValue) {query = query.Where(x => x.StartDate <= filter.StartDateTo.Value);}
+        if (filter.StartDateFrom.HasValue) { query = query.Where(x => x.StartDate >= filter.StartDateFrom.Value); }
+        if (filter.StartDateTo.HasValue) { query = query.Where(x => x.StartDate <= filter.StartDateTo.Value); }
 
         return Task.FromResult(query);
     }

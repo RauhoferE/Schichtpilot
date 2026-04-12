@@ -29,7 +29,7 @@ public class ValidationFilter : IAsyncActionFilter
                     errorResponse.ErrorStates.Add(errorState);
                 }
             }
-            
+
             context.Result = new BadRequestObjectResult(errorResponse);
             return;
         }

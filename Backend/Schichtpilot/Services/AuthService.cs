@@ -38,16 +38,16 @@ public class AuthService : IAuthService
         {
             throw new LoginException($"User with email: {email} not found ");
         }
-        
-        var result = await this._signInManager.PasswordSignInAsync(user, password, false,  false);
+
+        var result = await this._signInManager.PasswordSignInAsync(user, password, false, false);
 
         if (!result.Succeeded)
         {
             throw new LoginException($"Login failed for: {email}");
         }
-        
-        var roles  = await this._userManager.GetRolesAsync(user);
-    
+
+        var roles = await this._userManager.GetRolesAsync(user);
+
         return await this.GenerateJwtTokenAsync(user, roles);
     }
 
@@ -71,7 +71,7 @@ public class AuthService : IAuthService
 
         foreach (var role in roles)
         {
-            claims.Add(new  Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
         var tokenDescriptor = new SecurityTokenDescriptor()

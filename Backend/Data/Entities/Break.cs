@@ -5,13 +5,13 @@ namespace Data.Entities;
 public class Break
 {
     public int Id { get; set; }
-    
+
     [Required]
     public TimeOnly StartTime { get; set; }
-    
+
     [Required]
     public TimeOnly EndTime { get; set; }
-    
+
     public int TimeslotId { get; set; }
     public Timeslot Timeslot { get; set; }
 }

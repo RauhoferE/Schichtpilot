@@ -139,7 +139,7 @@ public class StatusUpdateDtoValidatorTest
 
         AssertHasError(result, nameof(StatusUpdateDto.ManagerMessage));
     }
-    
+
     [Fact]
     public void Validate_ManagerMessageNotEmpty_WhenStatusDenied_HasNoError()
     {

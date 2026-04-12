@@ -31,7 +31,7 @@ public class JobroleController : Controller
         await this._jobRoleService.CreateJobRoleAsync(request);
         return Created();
     }
-    
+
     [HttpPut("{jobRoleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -40,7 +40,7 @@ public class JobroleController : Controller
         await this._jobRoleService.UpdateJobRoleAsync(jobRoleId, request);
         return NoContent();
     }
-    
+
     [HttpPost("{jobRoleId}/dependency/{dependencyId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -49,7 +49,7 @@ public class JobroleController : Controller
         await this._jobRoleService.AddDependenciesToJobRoleAsync(jobRoleId, dependencyId);
         return NoContent();
     }
-    
+
     [HttpDelete("{jobRoleId}/dependency/{dependencyId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -58,7 +58,7 @@ public class JobroleController : Controller
         await this._jobRoleService.RemoveDependenciesToJobRoleAsync(jobRoleId, dependencyId);
         return NoContent();
     }
-    
+
     [HttpPost("{jobRoleId}/user/{userId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -67,7 +67,7 @@ public class JobroleController : Controller
         await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userId);
         return NoContent();
     }
-    
+
     [HttpDelete("{jobRoleId}/user/{userId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -76,7 +76,7 @@ public class JobroleController : Controller
         await this._jobRoleService.RemoveUserFromJobRoleAsync(jobRoleId, userId);
         return NoContent();
     }
-    
+
     [HttpDelete("{jobRoleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -85,18 +85,18 @@ public class JobroleController : Controller
         await this._jobRoleService.DeleteRoleAsync(jobRoleId);
         return NoContent();
     }
-    
+
     [HttpGet("{jobRoleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
-    [ProducesResponseType( typeof(JobRoleDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(JobRoleDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetJobRoleAsync([FromRoute, Required] int jobRoleId)
     {
         return Ok(await this._jobRoleService.GetJobRoleAsync(jobRoleId));
     }
-    
+
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
-    [ProducesResponseType( typeof(QueryableJobRoleResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QueryableJobRoleResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetJobRolesAsync([FromQuery] GetJobRolesRequest request)
     {
         var paginationDto = this._mapper.Map<PaginationDto>(request);

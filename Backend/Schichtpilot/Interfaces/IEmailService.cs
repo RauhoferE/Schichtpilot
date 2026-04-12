@@ -15,5 +15,5 @@ public interface IEmailService
     Task SendUserRegisterMail(User newUser);
 
     // All employees
-    Task SendScheduleMail(WorkScheduleDto schedule); 
+    Task SendScheduleMail(WorkScheduleDto schedule);
 }

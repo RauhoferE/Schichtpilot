@@ -340,7 +340,7 @@ public class AbsenceServiceTest
     public async Task UpdateAbsenceStatusAsync_NotPending_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
+        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved), AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);

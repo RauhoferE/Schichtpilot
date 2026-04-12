@@ -547,7 +547,7 @@ public class WorkScheduleServiceTest
             .Include(x => x.ShiftAssignments)
             .SingleAsync(x => x.Name == "WeeklyOkWeek");
 
-        Assert.Equal(1, schedule.ShiftAssignments.Count);
+        Assert.Single(schedule.ShiftAssignments);
     }
 
     [Fact]
