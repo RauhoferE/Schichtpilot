@@ -12,9 +12,9 @@ namespace Schichtpilot.Services;
 public class WorkScheduleService : IWorkScheduleService
 {
     private readonly SchichtpilotDbContext _dbContext;
-    
+
     private readonly IEmailService _emailService;
-    
+
     private readonly IMapper _mapper;
 
     public WorkScheduleService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService)
@@ -36,7 +36,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException("One or more shifts were not found.");
         }
-        
+
         var schedule = new WorkSchedule
         {
             Name = generateScheduleDto.Name,
@@ -47,7 +47,7 @@ public class WorkScheduleService : IWorkScheduleService
             ShiftAssignments = new HashSet<ShiftAssignment>(),
             Shifts = new HashSet<WorkScheduleShifts>()
         };
-        
+
         foreach (var shift in shifts)
         {
             schedule.Shifts.Add(new WorkScheduleShifts
@@ -56,10 +56,10 @@ public class WorkScheduleService : IWorkScheduleService
                 WorkSchedule = schedule
             });
         }
-        
+
         this._dbContext.WorkSchedules.Add(schedule);
         await this._dbContext.SaveChangesAsync();
-        
+
         await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
@@ -78,7 +78,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException("Shifts have intersections with each other.");
         }
-        
+
         var workPolicy = await _dbContext.WorkPolicies.FirstOrDefaultAsync();
         if (workPolicy == null)
         {
@@ -162,7 +162,7 @@ public class WorkScheduleService : IWorkScheduleService
                     {
                         break;
                     }
-                    
+
                     // Approved absences still block assignment
                     var candidateApprovedAbsenceOverlap = approvedAbsences.Any(a =>
                         a.UserId == candidate.UserId &&
@@ -187,13 +187,13 @@ public class WorkScheduleService : IWorkScheduleService
                     {
                         continue;
                     }
-                    
+
                     if (!RespectsMaximumConsecutiveHours(userAssignments, slotStart, slotEnd,
                             workPolicy.MaximumConsecutiveWorkHoursPerDay))
                     {
                         continue;
                     }
-                    
+
                     if (!RespectsMaximumWeeklyHours(
                             userAssignments,
                             slotStart,
@@ -277,7 +277,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         return currentConsecutiveHoursOfUser <= TimeSpan.FromHours(maximumConsecutiveWorkHours);
     }
-    
+
     private bool RespectsMaximumWeeklyHours(
         List<(DateTime Start, DateTime End)> userAssignments,
         DateTime newTimeslotStart,
@@ -290,12 +290,12 @@ public class WorkScheduleService : IWorkScheduleService
         {
             total += assignment.End - assignment.Start;
         }
-        
+
         total += newTimeslotEnd - newTimeslotStart;
 
         return total <= TimeSpan.FromHours(maximumWeeklyHours);
     }
-    
+
     private bool HasIntersections(List<Timeslot> slots)
     {
         if (slots == null || slots.Count < 2) return false;
@@ -331,7 +331,7 @@ public class WorkScheduleService : IWorkScheduleService
             .ThenInclude(x => x.JobRequirements)
             .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
-        
+
 
         if (schedule == null)
         {
@@ -339,14 +339,14 @@ public class WorkScheduleService : IWorkScheduleService
         }
 
         var shifts = schedule.Shifts.Select(x => x.Shift).ToList();
-        
+
         // Set to inactive since we dont know if generation is possible
         schedule.IsActive = false;
         schedule.IsValid = false;
-        
+
         // Remove all previous assignments
         await RemoveAllShiftAssignments(schedule);
-        
+
         await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
@@ -374,12 +374,12 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException($"Schedule with id {scheduleId} is invalid.");
         }
-        
+
         if (!schedule.IsActive)
         {
             throw new PolicyConflictException($"Only active schedules can be published.");
         }
-        
+
         _ = Task.Run(async () => this._emailService.SendScheduleMail(await this.GetScheduleAsync(scheduleId)));
     }
 
@@ -389,12 +389,12 @@ public class WorkScheduleService : IWorkScheduleService
             .Include(x => x.Shifts)
             .ThenInclude(x => x.Shift)
             .AsQueryable();
-        
+
         if (filter != null)
         {
             query = await this.FilterSchedulesAsync(query, filter);
         }
-        
+
         return new QueryableSchedules()
         {
             Count = query.Count(),
@@ -411,7 +411,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             Page = 1,
             PageSize = 1
-        },  new ScheduleFilterDot()
+        }, new ScheduleFilterDot()
         {
             StartDate = startDate,
             Status = ScheduleStatusEnum.Active
@@ -442,7 +442,7 @@ public class WorkScheduleService : IWorkScheduleService
             query = query.Where(x => x.StartDate <= filter.EndDate);
         }
 
-        switch (filter.Status)  
+        switch (filter.Status)
         {
             case ScheduleStatusEnum.All:
                 break;
@@ -466,7 +466,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             query = query.Where(x => x.Shifts.Any(y => filter.ShiftIds.Contains(y.ShiftId)));
         }
-        
+
         return query;
     }
 
@@ -511,7 +511,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException("Cannot delete active schedule");
         }
-        
+
         this._dbContext.WorkSchedules.Remove(schedule);
         await this._dbContext.SaveChangesAsync();
     }
@@ -530,19 +530,19 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException($"Schedule with id {scheduleId} is invalid.");
         }
-        
+
         var overlappingSchedule = this._dbContext.WorkSchedules
-            .FirstOrDefault(x => schedule.StartDate < x.EndDate && x.StartDate < schedule.EndDate 
+            .FirstOrDefault(x => schedule.StartDate < x.EndDate && x.StartDate < schedule.EndDate
                                                                 && schedule.Id != x.Id && schedule.IsActive);
 
         if (overlappingSchedule != null)
         {
             throw new InvalidDependencyException($"Schedule is overlapping with another active schedule {overlappingSchedule.Name}.");
         }
-        
+
         schedule.IsActive = true;
         await this._dbContext.SaveChangesAsync();
-        _= Task.Run(async () =>
+        _ = Task.Run(async () =>
             await _emailService.SendScheduleMail(await this.GetScheduleAsync(scheduleId)));
     }
 
@@ -558,7 +558,7 @@ public class WorkScheduleService : IWorkScheduleService
 
         schedule.IsActive = false;
         await this._dbContext.SaveChangesAsync();
-        _= Task.Run(async () =>
+        _ = Task.Run(async () =>
             await _emailService.SendScheduleInActiveMail(await this.GetScheduleAsync(scheduleId)));
     }
 
@@ -571,7 +571,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
-        
+
         schedule.IsValid = false;
         await this._dbContext.SaveChangesAsync();
     }
@@ -581,7 +581,7 @@ public class WorkScheduleService : IWorkScheduleService
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
-        
+
 
         if (schedule == null)
         {
@@ -600,7 +600,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
-        
+
         schedule.StartDate = startDate;
         schedule.EndDate = endDate;
         await this._dbContext.SaveChangesAsync();

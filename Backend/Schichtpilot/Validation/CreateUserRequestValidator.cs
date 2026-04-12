@@ -21,5 +21,5 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
         RuleFor(x => x.AddressDto).NotNull().WithMessage("Address is required");
         RuleFor(x => x.AddressDto).SetValidator(addressDtoValidator);
     }
-    
+
 }

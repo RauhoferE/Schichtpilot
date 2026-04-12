@@ -40,7 +40,7 @@ public class UserService : IUserService
         {
             throw new Exception("Error when getting user");
         }
-        
+
         return userEntity.Id;
     }
 
@@ -53,20 +53,20 @@ public class UserService : IUserService
             this._logger.LogWarning($"User already exists for: {userToCreate.Email}");
             return;
         }
-        
+
         var creatUserResult = await this._userManager.CreateAsync(userToCreate, password);
         if (!creatUserResult.Succeeded)
         {
             throw new AccountCreationException($"Couldn't create user: {creatUserResult.Errors.Select(error => error.Description)}");
         }
-        
+
         var addUserToRoleResult = await this._userManager.AddToRoleAsync(userToCreate, UserRolesClass.User);
         if (!addUserToRoleResult.Succeeded)
         {
             throw new AccountCreationException($"Couldn't add user to user role: {creatUserResult.Errors.Select(error => error.Description)}");
         }
-        
-        _= Task.Run(async () =>
+
+        _ = Task.Run(async () =>
             await _emailService.SendUserRegisterMail(userToCreate));
     }
 
@@ -77,12 +77,12 @@ public class UserService : IUserService
             .Include(x => x.JobRoles)
             .ThenInclude(x => x.JobRole)
             .FirstOrDefault(x => x.Id == userId);
-        
+
         if (user == null)
         {
             throw new UserNotFoundException();
         }
-        
+
         return Task.FromResult(this._mapper.Map<User, UserDto>(user));
     }
 
@@ -92,12 +92,12 @@ public class UserService : IUserService
             .Include(x => x.JobRoles)
             .ThenInclude(x => x.JobRole)
             .AsQueryable();
-        
+
         if (userFilterDto != null)
         {
             users = await this.FilterUsersAsync(users, userFilterDto);
         }
-        
+
         users = await this.SortUsersAsync(users, userSortingDto);
 
         return new QueryableUserResponse()
@@ -131,7 +131,7 @@ public class UserService : IUserService
 
             return Task.FromResult(users);
         }
-        
+
         switch (userSortingDto.SortProperty)
         {
             case UserSortEnum.Id:
@@ -181,7 +181,7 @@ public class UserService : IUserService
                 users = users.Where(x => x.LockoutEnd.HasValue);
                 break;
             case AccountStatusEnum.Ok:
-                users = users.Where(x => !x.LockoutEnd.HasValue &&  x.EmailConfirmed);
+                users = users.Where(x => !x.LockoutEnd.HasValue && x.EmailConfirmed);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

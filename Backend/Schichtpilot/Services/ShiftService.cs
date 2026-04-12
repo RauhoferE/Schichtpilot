@@ -11,7 +11,7 @@ namespace Schichtpilot.Services;
 
 public class ShiftService : IShiftService
 {
-    public ShiftService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService  scheduleService)
+    public ShiftService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService scheduleService)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -19,14 +19,14 @@ public class ShiftService : IShiftService
     }
 
     private readonly SchichtpilotDbContext _dbContext;
-    
+
     private readonly IMapper _mapper;
-    
-    private readonly IWorkScheduleService  _scheduleService;
-    
+
+    private readonly IWorkScheduleService _scheduleService;
+
     public async Task CreateShiftAsync(CreateShiftDto shift)
     {
-        var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x =>  x.Name == shift.Name);
+        var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x => x.Name == shift.Name);
 
         if (shiftWithSameName != null)
         {
@@ -49,7 +49,7 @@ public class ShiftService : IShiftService
                 RequiredStaffCount = shiftJobRequirement.RequiredStaffCount,
             });
         }
-        
+
         var missingPrerequisiteJobs = await this.GetMissingPrerequisites(shift.JobRequirements);
         if (missingPrerequisiteJobs.Any())
         {
@@ -92,8 +92,8 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Company policy needs to be defined first");
         }
-        
-// 1. Order slots chronologically to handle the "Midnight Stitch"
+
+        // 1. Order slots chronologically to handle the "Midnight Stitch"
         // We use a helper to turn DayOfWeek + TimeOnly into a relative linear offset
         var sortedSlots = shiftTimeSlots
             .OrderBy(s => (int)s.DayOfWeek)
@@ -103,11 +103,11 @@ public class ShiftService : IShiftService
         for (int i = 0; i < sortedSlots.Count; i++)
         {
             var currentSlot = sortedSlots[i];
-            
+
             // 2. Identify Continuous Work Block (Stitching)
             var workBlockEnd = currentSlot.EndTime;
             var combinedBreaks = new List<BreakDto>(currentSlot.Breaks);
-            
+
             // Look ahead to see if the next slot "stitches" (Midnight wrap)
             int nextIndex = (i + 1) % sortedSlots.Count;
             var nextSlot = sortedSlots[nextIndex];
@@ -132,14 +132,14 @@ public class ShiftService : IShiftService
     private bool ValidateBlock(TimeOnly start, TimeOnly end, List<BreakDto> combinedBreaks, WorkPolicy policy)
     {
         double workDurationHours = (end - start).TotalMinutes;
-        
+
         // If the total work session is less than 4 hours, no break is strictly required by this rule
         if (workDurationHours <= policy.RestPeriodThresholdInMinutes) return true;
 
         // Check if ANY break in this block is >= 30 minutes
         // And ensure that break starts BEFORE the 4-hour mark
-        bool hasValidBreak = combinedBreaks.Any(b => 
-            (b.EndTime - b.StartTime).TotalMinutes >= policy.MinimumRestPeriodInMinutes && 
+        bool hasValidBreak = combinedBreaks.Any(b =>
+            (b.EndTime - b.StartTime).TotalMinutes >= policy.MinimumRestPeriodInMinutes &&
             (b.StartTime - start).TotalMinutes <= policy.RestPeriodThresholdInMinutes);
 
         return hasValidBreak;
@@ -147,7 +147,7 @@ public class ShiftService : IShiftService
 
     public async Task ManageShiftAsync(int shiftId, EditShiftDto shift)
     {
-        var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x =>  x.Name == shift.Name && x.Id != shiftId);
+        var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x => x.Name == shift.Name && x.Id != shiftId);
 
         if (shiftWithSameName != null)
         {
@@ -160,7 +160,7 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
+
         shiftToModify.Name = shift.Name;
         shiftToModify.ColorAsHex = shift.ColorAsHex;
         await this._dbContext.SaveChangesAsync();
@@ -184,15 +184,15 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Timeslot with {timeSlotId} does not exist!");
         }
-        
+
         if (!(await this.HasRequiredBreak(shiftToDelete.Timeslots.Where(x => x.Id != timeSlotId).Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList())))
         {
             throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
-        
+
         shiftToDelete.Timeslots.Remove(timeSlot);
         await this._dbContext.SaveChangesAsync();
-        
+
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
@@ -201,7 +201,7 @@ public class ShiftService : IShiftService
         var schedulesWithShift = this._dbContext.WorkScheduleShifts
             .Include(x => x.WorkSchedule)
             .Include(x => x.Shift)
-            .Where(x=> x.ShiftId ==  shiftId)
+            .Where(x => x.ShiftId == shiftId)
             .ToList()
             .Select(x => x.WorkSchedule);
 
@@ -222,7 +222,7 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
+
         // Check if there is already a timeslot here
         // Only one timeslot per day
         var timeSlotsOnSameDay = shiftToModiy.Timeslots
@@ -232,7 +232,7 @@ public class ShiftService : IShiftService
         {
             throw new AlreadyExistsException($"Timeslot for ${timeSlot.DayOfWeek} already exists.");
         }
-        
+
         shiftToModiy.Timeslots.Add(new Timeslot()
         {
             DayOfWeek = timeSlot.DayOfWeek,
@@ -244,14 +244,14 @@ public class ShiftService : IShiftService
                 EndTime = x.EndTime
             }).ToHashSet()
         });
-        
+
         if (!(await this.HasRequiredBreak(shiftToModiy.Timeslots.Select(x => this._mapper.Map<Timeslot, TimeSlotDto>(x)).ToList())))
         {
             throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
 
         await this._dbContext.SaveChangesAsync();
-        
+
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
@@ -266,14 +266,14 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
+
         var timeSlotToModify = shiftToModiy.Timeslots.FirstOrDefault(x => x.Id == timeSlot.Id);
 
         if (timeSlotToModify == null)
         {
             throw new NotFoundException($"Timeslot with ${timeSlot.Id} not found.");
         }
-        
+
         // Check if there is already a timeslot here thats not the current one
         var timeSlotsOnSameDay = shiftToModiy.Timeslots
             .FirstOrDefault(x => x.DayOfWeek == timeSlot.DayOfWeek && x.Id != timeSlot.Id);
@@ -289,12 +289,12 @@ public class ShiftService : IShiftService
         timeSlotsToCheck[indexOfTimeSlotToModify].StartTime = timeSlot.StartTime;
         timeSlotsToCheck[indexOfTimeSlotToModify].EndTime = timeSlot.EndTime;
         timeSlotsToCheck[indexOfTimeSlotToModify].Breaks = timeSlot.Breaks;
-        
+
         if (!(await this.HasRequiredBreak(timeSlotsToCheck)))
         {
             throw new PolicyConflictException($"Not enough breaks added in the shifts");
         }
-        
+
         this._dbContext.Breaks.RemoveRange(timeSlotToModify.Breaks);
         await this._dbContext.SaveChangesAsync();
 
@@ -308,7 +308,7 @@ public class ShiftService : IShiftService
         }).ToHashSet();
 
         await this._dbContext.SaveChangesAsync();
-        
+
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
@@ -325,11 +325,11 @@ public class ShiftService : IShiftService
         }
 
         // Job already added as requirement
-        if (shiftToModiy.JobRequirements.FirstOrDefault(x => x.JobRoleId == jobRequirement.JobId)  != null)
+        if (shiftToModiy.JobRequirements.FirstOrDefault(x => x.JobRoleId == jobRequirement.JobId) != null)
         {
             throw new AlreadyExistsException($"Job already added to shift!");
         }
-        
+
         var jobRole = this._dbContext.JobRoles.FirstOrDefault(x => x.Id == jobRequirement.JobId);
 
         if (jobRole == null)
@@ -344,9 +344,9 @@ public class ShiftService : IShiftService
             RequiredStaffCount = jobRequirement.RequiredStaffCount,
 
         });
-        
+
         await this._dbContext.SaveChangesAsync();
-        
+
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
@@ -361,17 +361,17 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
+
         var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.Id == jobRequirementId);
 
         if (jobRequirement == null)
         {
             throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
         }
-        
+
         jobRequirement.RequiredStaffCount = requiredStaffCount;
         await this._dbContext.SaveChangesAsync();
-        
+
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
@@ -386,16 +386,16 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
+
         var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.Id == jobRequirementId);
 
         if (jobRequirement == null)
         {
             throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
         }
-        
+
         await SetSchedulesWithShiftAsInactive(shiftId);
-        
+
         shiftToModiy.JobRequirements.Remove(jobRequirement);
         await this._dbContext.SaveChangesAsync();
     }
@@ -404,7 +404,7 @@ public class ShiftService : IShiftService
     {
         var requestedJobIds = requirements.Select(r => r.JobId).ToHashSet();
         var allRequiredIds = new HashSet<int>();
-    
+
         // 1. Get all dependency links from the DB
         var allLinks = await this._dbContext.JobRoleDependencies.ToListAsync();
 
@@ -450,7 +450,7 @@ public class ShiftService : IShiftService
     {
         var shiftToDelete = this._dbContext.Shifts
             .Include(x => x.Timeslots)
-            .ThenInclude(x=> x.Breaks)
+            .ThenInclude(x => x.Breaks)
             .Include(x => x.JobRequirements)
             .FirstOrDefault(x => x.Id == shiftId);
 
@@ -458,7 +458,7 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
-        
+
         this._dbContext.Shifts.Remove(shiftToDelete);
         await SetSchedulesWithShiftAsInactive(shiftId);
         await this._dbContext.SaveChangesAsync();
@@ -496,9 +496,9 @@ public class ShiftService : IShiftService
 
         if (filter.WeekDays.Count > 0)
         {
-            query = query.Where(x => x.Timeslots.Any(y =>  filter.WeekDays.Contains(y.DayOfWeek)));
+            query = query.Where(x => x.Timeslots.Any(y => filter.WeekDays.Contains(y.DayOfWeek)));
         }
-        
+
         //TODO: Add schedule status as filter
         return query;
     }
@@ -510,7 +510,7 @@ public class ShiftService : IShiftService
             .Include(x => x.JobRequirements)
             .ThenInclude(x => x.JobRole)
             .Include(x => x.Timeslots)
-            .ThenInclude(x => x.Breaks )
+            .ThenInclude(x => x.Breaks)
             .FirstOrDefault(x => x.Id == shiftId);
 
         if (shift == null)

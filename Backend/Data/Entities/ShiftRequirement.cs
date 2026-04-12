@@ -11,7 +11,7 @@ public class ShiftRequirement
 
     public int JobRoleId { get; set; }
     public JobRole JobRole { get; set; }
-    
+
     [Required]
     public int RequiredStaffCount { get; set; }
 }

@@ -27,7 +27,7 @@ public class DtoMappingProfile : Profile
             .ForMember(dest => dest.StreetAddress, opt => opt.MapFrom(src => src.AddressDto.Street))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
         CreateMap<JobRole, JobRoleShortDto>();
-        
+
         CreateMap<Timeslot, TimeSlotDto>();
         CreateMap<Break, BreakDto>();
         CreateMap<Shift, ShiftDto>()

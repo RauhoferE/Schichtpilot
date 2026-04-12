@@ -9,5 +9,5 @@ public class GetUsersRequest
     public string[]? JobFilters { get; set; }
     public required string AccountStatus { get; set; }
     public string? Searchstring { get; set; }
-    
+
 }

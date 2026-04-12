@@ -11,7 +11,7 @@ namespace Schichtpilot.Controllers;
 public class AuthController : Controller
 {
     private readonly IAuthService authService;
-    
+
     private readonly IHostEnvironment _env;
 
     public AuthController(IAuthService authService, IHostEnvironment env)
@@ -37,7 +37,7 @@ public class AuthController : Controller
         await this.authService.LogoutAsync();
         return this.NoContent();
     }
-    
+
     private void AttachCookie(string jwtUserToken)
     {
         HttpContext.Response.Cookies.Append("SchichtpilotUser", jwtUserToken, new CookieOptions()

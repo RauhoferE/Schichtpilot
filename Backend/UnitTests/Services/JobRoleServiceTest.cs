@@ -452,7 +452,7 @@ public class JobRoleServiceTest
 
         var service = CreateService(dbContext, mapperMock, workScheduleServiceMock);
 
-        await service.RemoveUserFromJobRoleAsync(role.Id,  user.Id);
+        await service.RemoveUserFromJobRoleAsync(role.Id, user.Id);
 
         workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
         workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);

@@ -15,7 +15,7 @@ namespace Schichtpilot.Controllers;
 public class UserController : Controller
 {
     private readonly IUserService _userService;
-    
+
     private readonly IMapper _mapper;
 
     public UserController(IUserService userService, IMapper mapper)
@@ -39,7 +39,7 @@ public class UserController : Controller
     {
         return Ok(await this._userService.GetUserDataAsync(userId));
     }
-    
+
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableUserResponse), StatusCodes.Status200OK)]

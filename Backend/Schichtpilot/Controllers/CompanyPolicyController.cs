@@ -18,10 +18,10 @@ public class CompanyPolicyController : Controller
     }
 
     private readonly ICompanyPolicyService _companyService;
-    
+
     [HttpGet("holidays")]
     [Authorize]
-    [ProducesResponseType( typeof(HolidaysDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(HolidaysDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHolidayAsync()
     {
         return Ok(await _companyService.GetHolidaysAsync());
@@ -35,7 +35,7 @@ public class CompanyPolicyController : Controller
         await this._companyService.AddHolidaysAsync(holidays);
         return NoContent();
     }
-    
+
     [HttpDelete("holidays")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -44,7 +44,7 @@ public class CompanyPolicyController : Controller
         await this._companyService.RemoveHolidaysAsync(holidays);
         return NoContent();
     }
-    
+
     [HttpPut]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -53,10 +53,10 @@ public class CompanyPolicyController : Controller
         await this._companyService.SetPolicyAsync(policy);
         return NoContent();
     }
-    
+
     [HttpGet]
     [Authorize(Roles = UserRolesClass.Admin)]
-    [ProducesResponseType( typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPolicyAsync()
     {
         return Ok(await this._companyService.GetPolicyAsync());

@@ -41,10 +41,10 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrEmpty(settings.SenderAddress))
             throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
-        
+
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-        
-        _emailClient   = new EmailClient(settings.ConnectionString);
+
+        _emailClient = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
         _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
     }
@@ -209,10 +209,10 @@ public class EmailService : IEmailService
             .Where(s => s.TimeSlots != null)
             .SelectMany(s => s.TimeSlots.Select(ts => new
             {
-                Day       = ts.DayOfWeek,
+                Day = ts.DayOfWeek,
                 ShiftName = s.Name,
                 StartTime = ts.StartTime.ToString(@"HH\:mm"),
-                EndTime   = ts.EndTime.ToString(@"HH\:mm")
+                EndTime = ts.EndTime.ToString(@"HH\:mm")
             }))
             .GroupBy(ts => ts.Day)
             .ToDictionary(g => g.Key, g => g.First());

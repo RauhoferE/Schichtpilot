@@ -16,9 +16,9 @@ public class TimeSlotDtoValidator : AbstractValidator<TimeSlotDto>
             .Must(x => x.StartTime < x.EndTime)
             .Must((dto, breakDto) => breakDto.StartTime >= dto.StartTime)
             .Must((dto, breakDto) => breakDto.EndTime <= dto.EndTime);
-        
+
     }
-    
+
     private bool HaveNoOverlappingSlots(List<BreakDto> slots)
     {
         if (slots == null || slots.Count <= 1) return true;

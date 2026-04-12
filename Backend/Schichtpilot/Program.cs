@@ -145,16 +145,16 @@ public class Program
         {
             options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title   = "Schichtpilot",
+                Title = "Schichtpilot",
                 Version = "v1"
             });
 
             options.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
             {
-                Name        = authCookieName,
-                In          = ParameterLocation.Cookie,
-                Type        = SecuritySchemeType.ApiKey,
-                Scheme      = "CookieAuth",
+                Name = authCookieName,
+                In = ParameterLocation.Cookie,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "CookieAuth",
                 Description = "Cookie-based authentication"
             });
 

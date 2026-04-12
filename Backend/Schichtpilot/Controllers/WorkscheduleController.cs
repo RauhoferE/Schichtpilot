@@ -21,10 +21,10 @@ public class WorkscheduleController : Controller
     }
 
     private readonly IMapper _mapper;
-    
+
     private readonly IWorkScheduleService _workScheduleService;
 
-    
+
     [HttpPost("generate")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -33,7 +33,7 @@ public class WorkscheduleController : Controller
         await this._workScheduleService.GenerateScheduleAsync(dto);
         return Created();
     }
-    
+
     [HttpPost("generate/{scheduleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -42,7 +42,7 @@ public class WorkscheduleController : Controller
         await this._workScheduleService.ReGenerateScheduleAsync(scheduleId);
         return NoContent();
     }
-    
+
     [HttpPost("publish/{scheduleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -51,7 +51,7 @@ public class WorkscheduleController : Controller
         await this._workScheduleService.PublishScheduleAsync(scheduleId);
         return NoContent();
     }
-    
+
     [HttpDelete("{scheduleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -60,16 +60,16 @@ public class WorkscheduleController : Controller
         await this._workScheduleService.DeleteScheduleAsync(scheduleId);
         return NoContent();
     }
-    
+
     [HttpPatch("{scheduleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateScheduleAsync([FromRoute, Required] int scheduleId, [FromBody, Required] UpdateScheduleRequest dto)
     {
-        await this._workScheduleService.ChangeScheduleDateAsync(scheduleId,  dto.StartTime, dto.EndTime);
+        await this._workScheduleService.ChangeScheduleDateAsync(scheduleId, dto.StartTime, dto.EndTime);
         return NoContent();
     }
-    
+
     [HttpGet("{scheduleId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(WorkScheduleDto), StatusCodes.Status200OK)]
@@ -77,7 +77,7 @@ public class WorkscheduleController : Controller
     {
         return Ok(await this._workScheduleService.GetScheduleAsync(scheduleId));
     }
-    
+
     [HttpGet("active")]
     [Authorize(Roles = UserRolesClass.User)]
     [ProducesResponseType(typeof(WorkScheduleDto), StatusCodes.Status200OK)]
@@ -85,7 +85,7 @@ public class WorkscheduleController : Controller
     {
         return Ok(await this._workScheduleService.GetActiveScheduleForDateAsync(startDate));
     }
-    
+
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableSchedules), StatusCodes.Status200OK)]
@@ -95,7 +95,7 @@ public class WorkscheduleController : Controller
         var filterDto = this._mapper.Map<GetSchedulesRequest, ScheduleFilterDot>(request);
         return Ok(await this._workScheduleService.GetSchedulesAsync(paginationDto, filterDto));
     }
-    
+
     [HttpPatch("{scheduleId}/inactive")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -104,7 +104,7 @@ public class WorkscheduleController : Controller
         await this._workScheduleService.SetScheduleOfflineAsync(scheduleId);
         return NoContent();
     }
-    
+
     [HttpPatch("{scheduleId}/active")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

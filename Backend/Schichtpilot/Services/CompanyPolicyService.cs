@@ -10,16 +10,16 @@ namespace Schichtpilot.Services;
 public class CompanyPolicyService : ICompanyPolicyService
 {
     private readonly SchichtpilotDbContext _dbContext;
-    
+
     private readonly IMapper _mapper;
-    
+
     private readonly IWorkScheduleService _workScheduleService;
 
     public CompanyPolicyService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService workScheduleService)
     {
-        this._dbContext = dbContext ??  throw new ArgumentNullException(nameof(dbContext));
-        this._mapper = mapper ??  throw new ArgumentNullException(nameof(mapper));
-        this._workScheduleService = workScheduleService ??  throw new ArgumentNullException(nameof(workScheduleService));
+        this._dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        this._mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        this._workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
     public async Task AddHolidaysAsync(HolidaysDto holidays)
@@ -30,13 +30,13 @@ public class CompanyPolicyService : ICompanyPolicyService
 
             if (holidayEntity == null)
             {
-                this._dbContext.Holidays.Add(new  Holiday()
+                this._dbContext.Holidays.Add(new Holiday()
                 {
                     Date = holiday.Date
                 });
             }
         }
-        
+
         await _dbContext.SaveChangesAsync();
     }
 
@@ -50,7 +50,7 @@ public class CompanyPolicyService : ICompanyPolicyService
             {
                 this._dbContext.Holidays.Remove(holidayEntity);
             }
-            
+
         }
 
         await this._dbContext.SaveChangesAsync();
@@ -76,12 +76,12 @@ public class CompanyPolicyService : ICompanyPolicyService
                 MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay,
                 MinimumRestPeriodInMinutes = policyDto.MinimumRestPeriodInMinutes,
                 RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes,
-                MaximumConsecutiveWorkHoursPerWeek =  policyDto.MaximumConsecutiveWorkHoursPerWeek
+                MaximumConsecutiveWorkHoursPerWeek = policyDto.MaximumConsecutiveWorkHoursPerWeek
             });
             await this._dbContext.SaveChangesAsync();
             return;
         }
-        
+
         policy.MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay;
         policy.MinimumRestPeriodInMinutes = policyDto.MinimumRestPeriodInMinutes;
         policy.RestPeriodThresholdInMinutes = policyDto.RestPeriodThresholdInMinutes;
@@ -103,7 +103,7 @@ public class CompanyPolicyService : ICompanyPolicyService
         {
             throw new NotSetException("Policy is not set");
         }
-        
+
         return Task.FromResult(this._mapper.Map<CompanyPolicyDto>(policy));
     }
 }

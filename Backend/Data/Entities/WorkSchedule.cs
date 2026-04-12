@@ -5,14 +5,14 @@ namespace Data.Entities;
 public class WorkSchedule
 {
     public int Id { get; set; }
-    
+
     [Required, MaxLength(25)]
     public string Name { get; set; }
-    
+
     // Always from Sunday to Sunday
     [Required]
     public DateTime StartDate { get; set; }
-    
+
     [Required]
     public DateTime EndDate { get; set; }
     public HashSet<ShiftAssignment> ShiftAssignments { get; set; }
