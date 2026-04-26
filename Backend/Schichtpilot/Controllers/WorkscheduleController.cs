@@ -89,7 +89,7 @@ public class WorkscheduleController : Controller
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableSchedules), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSchedulesAsync([FromBody, Required] GetSchedulesRequest request)
+    public async Task<IActionResult> GetSchedulesAsync([FromQuery, Required] GetSchedulesRequest request)
     {
         var paginationDto = this._mapper.Map<GetSchedulesRequest, PaginationDto>(request);
         var filterDto = this._mapper.Map<GetSchedulesRequest, ScheduleFilterDot>(request);

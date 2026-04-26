@@ -12,7 +12,6 @@ public class CreateShiftDtoValidator : AbstractValidator<CreateShiftDto>
         RuleFor(x => x.ColorAsHex).NotNull().NotEmpty()
             .Matches("^#[0-9a-fA-F]{6}$");
         RuleFor(x => x.TimeSlots)
-            .Must(HaveNoOverlappingSlots)
             .Must(x => x.DistinctBy(y => y.DayOfWeek).Count() == x.Count());
         RuleForEach(x => x.TimeSlots).SetValidator(timeSlotDtoValidator);
         RuleForEach(x => x.JobRequirements).NotNull()
@@ -23,6 +22,7 @@ public class CreateShiftDtoValidator : AbstractValidator<CreateShiftDto>
                 .Count() == x.Count);
     }
 
+    // Not used since a shift can only go from 00 to 24 on the same day
     private bool HaveNoOverlappingSlots(List<TimeSlotDto> slots)
     {
         if (slots == null || slots.Count <= 1) return true;
