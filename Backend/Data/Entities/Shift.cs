@@ -9,7 +9,7 @@ public class Shift
     [Required, MaxLength(25)]
     public string Name { get; set; }
 
-    [Required, MaxLength(6)]
+    [Required, MaxLength(7)]
     public string ColorAsHex { get; set; }
 
     public HashSet<Timeslot> Timeslots { get; set; }

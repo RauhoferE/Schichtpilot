@@ -62,7 +62,7 @@ public class JobroleController : Controller
     [HttpPost("{jobRoleId}/user/{userId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> AddUsersToRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
+    public async Task<IActionResult> AddUsersToRoleAsync([FromRoute, Required] int jobRoleId, [FromRoute, Required] long userId)
     {
         await this._jobRoleService.AddUserToJobRoleAsync(jobRoleId, userId);
         return NoContent();
@@ -71,7 +71,7 @@ public class JobroleController : Controller
     [HttpDelete("{jobRoleId}/user/{userId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromQuery, Required] long userId)
+    public async Task<IActionResult> RemoveUsersFromRoleAsync([FromRoute, Required] int jobRoleId, [FromRoute, Required] long userId)
     {
         await this._jobRoleService.RemoveUserFromJobRoleAsync(jobRoleId, userId);
         return NoContent();

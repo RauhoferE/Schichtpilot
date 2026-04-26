@@ -27,7 +27,7 @@ public class ShiftController : Controller
     [HttpPost]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateShiftAsync(CreateShiftDto request)
+    public async Task<IActionResult> CreateShiftAsync([FromBody, Required] CreateShiftDto request)
     {
         await _shiftService.CreateShiftAsync(request);
         return Created();
@@ -44,7 +44,7 @@ public class ShiftController : Controller
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(QueryableShiftResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetShiftsAsync([FromBody, Required] GetShiftsRequest request)
+    public async Task<IActionResult> GetShiftsAsync([FromQuery, Required] GetShiftsRequest request)
     {
         var paginationDto = this._mapper.Map<GetShiftsRequest, PaginationDto>(request);
         var shiftFilterDto = this._mapper.Map<GetShiftsRequest, ShiftFilterDto>(request);
@@ -54,7 +54,7 @@ public class ShiftController : Controller
     [HttpPut("{shiftId}")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateShiftAsync([FromRoute, Required] int shiftId, EditShiftDto request)
+    public async Task<IActionResult> UpdateShiftAsync([FromRoute, Required] int shiftId, [FromBody, Required] EditShiftDto request)
     {
         await _shiftService.ManageShiftAsync(shiftId, request);
         return NoContent();
