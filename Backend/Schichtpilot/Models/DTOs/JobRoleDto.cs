@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a job role and all jobs it is dependent on or is a prerequisite to.
+/// </summary>
 public class JobRoleDto
 {
     public int Id { get; set; }
@@ -8,10 +11,10 @@ public class JobRoleDto
 
     public required string Description { get; set; }
 
-    // Benötigt folgende Rollen
+    // Needs the following roles
     public List<JobRoleDto> DependentOn { get; set; }
 
-    // Voraussetzung für
+    // Role is dependent on
     public List<JobRoleDto> Prerequisites { get; set; }
 
     public List<UserDto> Users { get; set; }

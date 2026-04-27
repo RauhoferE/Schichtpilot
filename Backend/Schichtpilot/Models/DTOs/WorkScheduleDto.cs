@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a work schedule.
+/// </summary>
 public class WorkScheduleDto
 {
     public int Id { get; set; }

@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a shift.
+/// </summary>
 public class ShiftDto
 {
     public int Id { get; set; }

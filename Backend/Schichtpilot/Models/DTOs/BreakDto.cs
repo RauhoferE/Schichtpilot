@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a break in a shift.
+/// </summary>
 public class BreakDto
 {
     public int Id { get; set; }

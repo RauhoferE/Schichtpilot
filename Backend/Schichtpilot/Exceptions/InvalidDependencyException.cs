@@ -1,5 +1,8 @@
 namespace Schichtpilot.Exceptions;
 
+/// <summary>
+/// Represents when a dependency is invalid.
+/// </summary>
 public class InvalidDependencyException : Exception
 {
     public InvalidDependencyException()

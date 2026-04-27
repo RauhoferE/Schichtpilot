@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a user assigned to a timeslot, used by workschedules.
+/// </summary>
 public class AssignedUserDto
 {
     public TimeSlotDto TimeSlot { get; set; }

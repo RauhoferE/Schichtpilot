@@ -6,6 +6,9 @@ using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Mapping;
 
+/// <summary>
+/// Maps entities to dtos, dtos to entities and dtos to other dtos.
+/// </summary>
 public class DtoMappingProfile : Profile
 {
     public DtoMappingProfile()

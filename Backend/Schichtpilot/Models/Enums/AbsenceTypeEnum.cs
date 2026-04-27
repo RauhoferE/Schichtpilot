@@ -1,5 +1,8 @@
 ﻿namespace Schichtpilot.Models.Enums;
 
+/// <summary>
+/// Contains the types of absences.
+/// </summary>
 public enum AbsenceTypeEnum
 {
     Vacation,

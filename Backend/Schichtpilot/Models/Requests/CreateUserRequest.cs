@@ -2,6 +2,9 @@ using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Models.Requests;
 
+/// <summary>
+/// Represents a request to register a new user.
+/// </summary>
 public class CreateUserRequest
 {
     public required string Email { get; set; }
