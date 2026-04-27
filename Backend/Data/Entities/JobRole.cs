@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of a job role in the JobRoles table.
+/// </summary>
 public class JobRole
 {
     [Key]

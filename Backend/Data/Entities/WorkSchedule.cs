@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of a work schedule in the WorkSchedule table.
+/// </summary>
 public class WorkSchedule
 {
     public int Id { get; set; }

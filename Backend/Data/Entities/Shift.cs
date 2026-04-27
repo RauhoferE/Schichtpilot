@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of a shift in the Shifts table.
+/// </summary>
 public class Shift
 {
     public int Id { get; set; }
