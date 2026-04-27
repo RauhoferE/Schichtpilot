@@ -7,6 +7,9 @@
     import { createRegisterState } from '$lib/composables/useAuth.svelte';
 
     const auth = createRegisterState();
+
+    // Show rule checklist only once user starts typing a password
+    let passwordFocused = $state(false);
 </script>
 
 <svelte:head>
@@ -31,7 +34,6 @@
 
         <Card.Content class="space-y-6">
 
-            <!-- Error alert -->
             {#if auth.errorMessage}
                 <Alert.Root variant="destructive">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -44,7 +46,6 @@
                 </Alert.Root>
             {/if}
 
-            <!-- Success alert -->
             {#if auth.successMessage}
                 <Alert.Root>
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -63,7 +64,6 @@
                     <legend class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                         Personal Information
                     </legend>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <Label for="firstName">First Name</Label>
@@ -78,7 +78,6 @@
                                    disabled={auth.isFormDisabled} bind:value={auth.lastName} />
                         </div>
                     </div>
-
                     <div class="space-y-2">
                         <Label for="birthdate">Date of Birth</Label>
                         <Input id="birthdate" type="date" autocomplete="bday" required
@@ -88,19 +87,17 @@
 
                 <div class="border-t"></div>
 
-                <!-- ── Address → AddressDto ── -->
+                <!-- ── Address ── -->
                 <fieldset class="space-y-4">
                     <legend class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                         Address
                     </legend>
-
                     <div class="space-y-2">
                         <Label for="street">Street Address</Label>
                         <Input id="street" type="text" placeholder="Mariahilfer Straße 12"
                                autocomplete="street-address" maxlength={50} required
                                disabled={auth.isFormDisabled} bind:value={auth.street} />
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <Label for="city">City</Label>
@@ -132,22 +129,79 @@
                                disabled={auth.isFormDisabled} bind:value={auth.email} />
                     </div>
 
+                    <!-- Password + strength meter -->
                     <div class="space-y-2">
                         <Label for="password">Password</Label>
-                        <Input id="password" type="password" placeholder="••••••••••"
+                        <Input id="password" type="password" placeholder="••••••••••••"
                                autocomplete="new-password" required
-                               disabled={auth.isFormDisabled} bind:value={auth.password} />
+                               disabled={auth.isFormDisabled}
+                               bind:value={auth.password}
+                               onfocus={() => (passwordFocused = true)}
+                        />
+
+                        {#if auth.password.length > 0}
+                            <!-- Strength bar -->
+                            <div class="space-y-1.5" aria-live="polite">
+                                <div class="flex gap-1 h-1.5">
+                                    {#each [1, 2, 3, 4] as step}
+                                        <div class="flex-1 rounded-full transition-colors duration-300
+                      {auth.passwordStrength.score >= step
+                        ? auth.passwordStrength.color
+                        : 'bg-muted'}">
+                                        </div>
+                                    {/each}
+                                </div>
+                                <p class="text-xs text-muted-foreground">
+                                    Strength: <span class="font-medium text-foreground">{auth.passwordStrength.label}</span>
+                                </p>
+                            </div>
+
+                            <!-- Rule checklist -->
+                            {#if passwordFocused}
+                                <ul class="space-y-1 text-xs text-muted-foreground" aria-label="Password requirements">
+                                    {#each [
+                                        [auth.passwordStrength.rules.minLength,  'At least 12 characters'],
+                                        [auth.passwordStrength.rules.hasUpper,   'Uppercase letter (A–Z)'],
+                                        [auth.passwordStrength.rules.hasLower,   'Lowercase letter (a–z)'],
+                                        [auth.passwordStrength.rules.hasDigit,   'Number (0–9)'],
+                                        [auth.passwordStrength.rules.hasSpecial, 'Special character (!@#$…)'],
+                                    ] as [passing, label]}
+                                        <li class="flex items-center gap-1.5
+                      {passing ? 'text-green-600' : 'text-muted-foreground'}">
+                                            {#if passing}
+                                                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            {:else}
+                                                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                                    <circle cx="12" cy="12" r="9"/>
+                                                </svg>
+                                            {/if}
+                                            {label}
+                                        </li>
+                                    {/each}
+                                    <li class="text-xs mt-1 {auth.passwordStrength.rules.meetsPolicy ? 'text-green-600 font-medium' : 'text-muted-foreground'}">
+                                        → Must meet at least 3 of the 4 character types
+                                    </li>
+                                </ul>
+                            {/if}
+                        {/if}
                     </div>
 
                     <div class="space-y-2">
                         <Label for="confirmPassword">Confirm Password</Label>
-                        <Input id="confirmPassword" type="password" placeholder="••••••••••"
+                        <Input id="confirmPassword" type="password" placeholder="••••••••••••"
                                autocomplete="new-password" required
                                disabled={auth.isFormDisabled} bind:value={auth.confirmPassword} />
+                        {#if auth.confirmPassword.length > 0 && auth.password !== auth.confirmPassword}
+                            <p class="text-xs text-destructive">Passwords do not match.</p>
+                        {/if}
                     </div>
                 </fieldset>
 
-                <Button type="submit" class="w-full" disabled={auth.isFormDisabled} aria-busy={auth.isLoading}>
+                <Button type="submit" class="w-full"
+                        disabled={auth.isFormDisabled || !auth.passwordStrength.rules.meetsPolicy}
+                        aria-busy={auth.isLoading}>
                     {#if auth.isLoading}
                         <span class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true"></span>
                         Creating account…
