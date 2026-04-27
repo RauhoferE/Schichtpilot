@@ -1,5 +1,8 @@
 namespace Schichtpilot.Settings;
 
+/// <summary>
+/// Contains the settings for the jwt cookie created for authentication purposes.
+/// </summary>
 public class AuthenticationSettings
 {
     public string JwtKey { get; set; }
