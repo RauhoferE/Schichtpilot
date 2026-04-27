@@ -8,6 +8,10 @@ using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Controllers;
 
+/// <summary>
+/// Provides an endpoint to get and manage the company policy.
+/// Also contains the endpoint to get, add and delete public holidays defined by the managers. 
+/// </summary>
 [Controller]
 [Route("api/[controller]")]
 public class CompanyPolicyController : Controller
@@ -19,6 +23,10 @@ public class CompanyPolicyController : Controller
 
     private readonly ICompanyPolicyService _companyService;
 
+    /// <summary>
+    /// Gets all defined holidays.
+    /// </summary>
+    /// <returns> Returns the holidays as a <see cref="HolidaysDto"/>. </returns>
     [HttpGet("holidays")]
     [Authorize]
     [ProducesResponseType(typeof(HolidaysDto), StatusCodes.Status200OK)]
@@ -27,6 +35,11 @@ public class CompanyPolicyController : Controller
         return Ok(await _companyService.GetHolidaysAsync());
     }
 
+    /// <summary>
+    /// Adds new holidays.
+    /// </summary>
+    /// <param name="holidays"> The new holidays to be added. </param>
+    /// <returns> Returns a no content response. </returns>
     [HttpPost("holidays")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -36,6 +49,11 @@ public class CompanyPolicyController : Controller
         return NoContent();
     }
 
+    /// <summary>
+    /// Removes previously defined holidays.
+    /// </summary>
+    /// <param name="holidays"> The holidays to be removed. </param>
+    /// <returns> Returns a no content response. </returns>
     [HttpDelete("holidays")]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -45,6 +63,11 @@ public class CompanyPolicyController : Controller
         return NoContent();
     }
 
+    /// <summary>
+    /// Sets the company policy used as constraints for schedules and timeslots.
+    /// </summary>
+    /// <param name="policy"> The new company policy paramters. </param>
+    /// <returns> Returns a no content response. </returns>
     [HttpPut]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -54,6 +77,10 @@ public class CompanyPolicyController : Controller
         return NoContent();
     }
 
+    /// <summary>
+    /// Gets the currently defined company policy.
+    /// </summary>
+    /// <returns> Returns the company policy as a <see cref="CompanyPolicyDto"/>. </returns>
     [HttpGet]
     [Authorize(Roles = UserRolesClass.Admin)]
     [ProducesResponseType(typeof(CompanyPolicyDto), StatusCodes.Status200OK)]
