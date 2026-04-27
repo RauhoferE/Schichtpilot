@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 using Data.Entities;
-
+/// <summary>
+/// The absence entity.
+/// </summary>
 public class Absence
 {
     public int Id { get; set; }
