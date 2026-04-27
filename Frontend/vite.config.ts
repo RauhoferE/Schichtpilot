@@ -5,6 +5,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+
+	// Required: bits-ui (used by shadcn-svelte) ships raw .svelte files.
+	// Vite must compile them instead of treating them as pre-built SSR modules.
+	ssr: {
+		noExternal: ['bits-ui', '@internationalized/date'],
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
