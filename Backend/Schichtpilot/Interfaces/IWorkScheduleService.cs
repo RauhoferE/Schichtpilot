@@ -14,7 +14,7 @@ public interface IWorkScheduleService
     /// <param name="generateScheduleDto"> The parameters of the to be generated schedule. </param>
     /// <returns></returns>
     Task GenerateScheduleAsync(GenerateScheduleDto generateScheduleDto);
-    
+
     /// <summary>
     /// Regenerates an existing schedule.
     /// Cannot be done on active schedule or deleted schedule 
@@ -22,7 +22,7 @@ public interface IWorkScheduleService
     /// <param name="scheduleId"> The schedule to be regenerated. </param>
     /// <returns></returns>
     Task ReGenerateScheduleAsync(int scheduleId);
-    
+
     /// <summary>
     /// Publishes an existing schedule.
     /// Can only be done on active schedule
@@ -30,7 +30,7 @@ public interface IWorkScheduleService
     /// <param name="scheduleId"> The schedule to be published. </param>
     /// <returns></returns>
     Task PublishScheduleAsync(int scheduleId);
-    
+
     /// <summary>
     /// Gets a list of existing schedules. 
     /// </summary>

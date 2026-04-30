@@ -11,6 +11,9 @@ using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates absence related operations, including creating, updating, deleting viewing user/all user absences.
+/// </summary>
 public class AbsenceService : IAbsenceService
 {
     private readonly SchichtpilotDbContext _dbContext;
@@ -26,6 +29,15 @@ public class AbsenceService : IAbsenceService
         _workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
+
+    /// <summary>
+    /// Creates a new absence request.
+    /// </summary>
+    /// <param name="userId"> The user that created the absence. </param>
+    /// <param name="dto"> The absence specifics. </param>
+    /// <returns></returns>
+    /// <exception cref="UserNotFoundException"> Thrown when the user id does not match a user. </exception>
+    /// <exception cref="AlreadyExistsException"> Thrown if the user already created an absence that lies in the start and end date. </exception>
     public async Task CreateAbsenceRequestAsync(long userId, CreateAbsenceDto dto)
     {
         // FR149: User exists (Identity handles lockout, controller auth)
@@ -63,6 +75,12 @@ public class AbsenceService : IAbsenceService
             await _emailService.SendNewAbsenceMailToManager(user, absenceDto));
     }
 
+    /// <summary>
+    /// Sets the work schedules with the user assigned to it as invalid.
+    /// </summary>
+    /// <param name="userId"> The user id. </param>
+    /// <param name="startDate"> The start date of the absence. </param>
+    /// <param name="endDate"> The end date of the absence. </param>
     private async Task SetWorkSchedulesWithUserAsInvalid(long userId, DateTime startDate, DateTime endDate)
     {
         var schedulesWithUser = this._dbContext.ShiftAssignments
@@ -81,6 +99,13 @@ public class AbsenceService : IAbsenceService
         }
     }
 
+    /// <summary>
+    /// Deletes an absence created by the user itself.
+    /// </summary>
+    /// <param name="id"> The absence to be deleted. </param>
+    /// <param name="userId"> The user id that created the absence. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown if the absence could not be found. </exception>
     public async Task DeleteOwnAbsenceAsync(int id, long userId)
     {
         var absence = await _dbContext.Absences
@@ -91,6 +116,13 @@ public class AbsenceService : IAbsenceService
         await _dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Returns all user created absences.
+    /// </summary>
+    /// <param name="pagination"> The pagination element. </param>
+    /// <param name="filter"> How to filter the available absences. </param>
+    /// <param name="userId"> The user that created the absences. </param>
+    /// <returns> Return the absences as <see cref="QueryableAbsenceResponse"/>. </returns>
     public async Task<QueryableAbsenceResponse> ViewUserAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId)
     {
         IQueryable<Absence> query = _dbContext.Absences
@@ -107,6 +139,12 @@ public class AbsenceService : IAbsenceService
         return new QueryableAbsenceResponse { Count = count, Absences = dtos };
     }
 
+    /// <summary>
+    /// Returns all created absences from all users.
+    /// </summary>
+    /// <param name="pagination"> The pagination element. </param>
+    /// <param name="filter"> How to filter the available absences. </param>
+    /// <returns> Return the absences as <see cref="QueryableAbsenceResponse"/>. </returns>
     public async Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
     {
         //TODO: Missing filtering after employee
@@ -123,6 +161,12 @@ public class AbsenceService : IAbsenceService
         return new QueryableAbsenceResponse { Count = count, Absences = dtos };
     }
 
+    /// <summary>
+    /// Gets more details about a specific absence.
+    /// </summary>
+    /// <param name="id"> The id of the absence. </param>
+    /// <returns> Returns the absence as a <see cref="AbsenceDto"/>. </returns>
+    /// <exception cref="NotFoundException"> Thrown when the absence could not be found. </exception>
     public async Task<AbsenceDto> GetAbsenceDetailAsync(int id)
     {
         var absence = await _dbContext.Absences.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
@@ -130,6 +174,12 @@ public class AbsenceService : IAbsenceService
         return _mapper.Map<AbsenceDto>(absence);
     }
 
+    /// <summary>
+    /// Updates a specific absence.
+    /// </summary>
+    /// <param name="id"> The id of the absence to update. </param>
+    /// <param name="dto"> The new status for the absence. </param>
+    /// <returns></returns>
     public async Task UpdateAbsenceStatusAsync(int id, StatusUpdateDto dto)
     {
         var absence = await _dbContext.Absences
@@ -166,6 +216,12 @@ public class AbsenceService : IAbsenceService
 
     }
 
+    /// <summary>
+    /// Filters the given absences.
+    /// </summary>
+    /// <param name="query"> The absences to be filtered. </param>
+    /// <param name="filter"> How the absences should be filtered. </param>
+    /// <returns> Returns the absences as <see cref="IQueryable"/>. </returns>
     private static Task<IQueryable<Absence>> FilterAbsencesAsync(IQueryable<Absence> query, AbsenceFilterDto? filter)
     {
         if (filter == null) { return Task.FromResult(query); }

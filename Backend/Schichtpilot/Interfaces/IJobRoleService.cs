@@ -47,7 +47,7 @@ public interface IJobRoleService
     /// <param name="userId"> The user that gains the specific role. </param>
     /// <returns></returns>
     Task AddUserToJobRoleAsync(int id, long userId);
-    
+
     /// <summary>
     /// Removes a user from a job role. 
     /// </summary>
@@ -62,7 +62,7 @@ public interface IJobRoleService
     /// <param name="id"> The role to be deleted. </param>
     /// <returns></returns>
     Task DeleteRoleAsync(int id);
-    
+
     /// <summary>
     /// Gets the details of a job role. 
     /// </summary>

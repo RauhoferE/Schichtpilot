@@ -78,7 +78,7 @@ public interface IShiftService
     /// <param name="shiftId"> The shift to be deleted. </param>
     /// <returns></returns>
     Task DeleteShiftAsync(int shiftId);
-    
+
     /// <summary>
     /// Gets a list of existing shifts.
     /// </summary>
@@ -86,7 +86,7 @@ public interface IShiftService
     /// <param name="filter"> How to sort and filter the shifts. </param>
     /// <returns> Returns the shifts as <see cref="QueryableShiftResponse"/>. </returns>
     Task<QueryableShiftResponse> GetShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter);
-    
+
     /// <summary>
     /// Gets the details of a shift.
     /// </summary>

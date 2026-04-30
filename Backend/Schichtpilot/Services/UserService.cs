@@ -14,6 +14,9 @@ using Schichtpilot.Models.Responses;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates user specific operations including getting and creating users.
+/// </summary>
 public class UserService : IUserService
 {
     private readonly UserManager<User> _userManager;
@@ -32,6 +35,13 @@ public class UserService : IUserService
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
     }
 
+
+    /// <summary>
+    /// Gets a specific user id.
+    /// </summary>
+    /// <param name="user"> The claimsprinciple assigned to the user. </param>
+    /// <returns> Returns the user id. </returns>
+    /// <exception cref="Exception"> Thrown when the user could not be found. </exception>
     public async Task<long> GetUserIdAsync(ClaimsPrincipal user)
     {
         var userEntity = await this._userManager.GetUserAsync(user);
@@ -44,6 +54,13 @@ public class UserService : IUserService
         return userEntity.Id;
     }
 
+    /// <summary>
+    /// Creating a new user.
+    /// </summary>
+    /// <param name="userDto"> The new user to be created. </param>
+    /// <param name="password"> The password of the new user. </param>
+    /// <returns></returns>
+    /// <exception cref="AccountCreationException"> Thrown when the user account could not be created. </exception>
     public async Task CreateUserAsync(UserDto userDto, string password)
     {
         var userToCreate = this._mapper.Map<UserDto, User>(userDto);
@@ -70,6 +87,12 @@ public class UserService : IUserService
             await _emailService.SendUserRegisterMail(userToCreate));
     }
 
+    /// <summary>
+    /// Gets user data by user id.
+    /// </summary>
+    /// <param name="userId"> The id of the user. </param>
+    /// <returns> Returns user data as <see cref="UserDto"/>. </returns>
+    /// <exception cref="UserNotFoundException"> Thrown when the user could not be found. </exception>
     public Task<UserDto> GetUserDataAsync(int userId)
     {
         //TODO: Return schedules of users
@@ -86,6 +109,13 @@ public class UserService : IUserService
         return Task.FromResult(this._mapper.Map<User, UserDto>(user));
     }
 
+    /// <summary>
+    /// Gets all available users.
+    /// </summary>
+    /// <param name="paginationDto"> The pagination element. </param>
+    /// <param name="userSortingDto"> How the returned users are sorted. </param>
+    /// <param name="userFilterDto"> How the returned users are filtered. </param>
+    /// <returns> Returns the users as a <see cref="QueryableUserResponse"/>. </returns>
     public async Task<QueryableUserResponse> GetUsersAsync(PaginationDto paginationDto, UserSortingDto userSortingDto, UserFilterDto? userFilterDto)
     {
         IQueryable<User> users = this._dbContext.Users
@@ -110,6 +140,13 @@ public class UserService : IUserService
         };
     }
 
+    /// <summary>
+    /// Sorts the given user list.
+    /// </summary>
+    /// <param name="users"> The users to be sorted. </param>
+    /// <param name="userSortingDto"> How the users should be sorted. </param>
+    /// <returns> Returns the users as <see cref="IQueryable"/>. </returns>
+    /// <exception cref="ArgumentOutOfRangeException"> Thrown when the sorting enum value could not be found. </exception>
     private Task<IQueryable<User>> SortUsersAsync(IQueryable<User> users, UserSortingDto userSortingDto)
     {
         if (userSortingDto.Ascending)
@@ -150,6 +187,13 @@ public class UserService : IUserService
         return Task.FromResult(users);
     }
 
+    /// <summary>
+    /// Filters the given user list.
+    /// </summary>
+    /// <param name="users"> The users to be filtered. </param>
+    /// <param name="userFilterDto"> How the users should be filtered. </param>
+    /// <returns> Returns the users as <see cref="IQueryable"/>. </returns>
+    /// <exception cref="ArgumentOutOfRangeException"> Thrown when the filter enum could not be found. </exception>
     private Task<IQueryable<User>> FilterUsersAsync(IQueryable<User> users, UserFilterDto userFilterDto)
     {
         if (userFilterDto.JobFilters.Length > 0)
