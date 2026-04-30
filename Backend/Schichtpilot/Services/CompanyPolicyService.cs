@@ -7,6 +7,9 @@ using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates company policy specific operations including getting, adding, removing public holidays and getting and setting the company policy.  
+/// </summary>
 public class CompanyPolicyService : ICompanyPolicyService
 {
     private readonly SchichtpilotDbContext _dbContext;
@@ -22,6 +25,11 @@ public class CompanyPolicyService : ICompanyPolicyService
         this._workScheduleService = workScheduleService ?? throw new ArgumentNullException(nameof(workScheduleService));
     }
 
+    /// <summary>
+    /// Adds a new public holiday into the system.
+    /// </summary>
+    /// <param name="holidays"> The new holidays to be added. </param>
+    /// <returns></returns>
     public async Task AddHolidaysAsync(HolidaysDto holidays)
     {
         foreach (var holiday in holidays.Holidays)
@@ -40,6 +48,11 @@ public class CompanyPolicyService : ICompanyPolicyService
         await _dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Removes saved holidays from the system.
+    /// </summary>
+    /// <param name="holidays"> The holidays to be removed. </param>
+    /// <returns></returns>
     public async Task RemoveHolidaysAsync(HolidaysDto holidays)
     {
         foreach (var holiday in holidays.Holidays)
@@ -56,6 +69,10 @@ public class CompanyPolicyService : ICompanyPolicyService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Gets all available holidays saved in the system.
+    /// </summary>
+    /// <returns> Returns the holidays as <see cref="HolidaysDto"/>. </returns>
     public Task<HolidaysDto> GetHolidaysAsync()
     {
         var holidays = this._dbContext.Holidays.ToList();
@@ -65,6 +82,11 @@ public class CompanyPolicyService : ICompanyPolicyService
         });
     }
 
+    /// <summary>
+    /// Sets the company policy.
+    /// </summary>
+    /// <param name="policyDto"> The new company policy. </param>
+    /// <returns></returns>
     public async Task SetPolicyAsync(CompanyPolicyDto policyDto)
     {
         var policy = this._dbContext.WorkPolicies.FirstOrDefault();
@@ -95,6 +117,11 @@ public class CompanyPolicyService : ICompanyPolicyService
         }
     }
 
+    /// <summary>
+    /// Gets the currently set company policy.
+    /// </summary>
+    /// <returns> Returns the company policy as <see cref="CompanyPolicyDto"/>. </returns>
+    /// <exception cref="NotSetException"> Thrown if the policy is not set. </exception>
     public Task<CompanyPolicyDto> GetPolicyAsync()
     {
         var policy = this._dbContext.WorkPolicies.FirstOrDefault();

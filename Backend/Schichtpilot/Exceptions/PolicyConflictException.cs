@@ -1,5 +1,8 @@
 namespace Schichtpilot.Exceptions;
 
+/// <summary>
+/// Represents an error that occurs when a constraint is broken.
+/// </summary>
 public class PolicyConflictException : Exception
 {
     public PolicyConflictException()

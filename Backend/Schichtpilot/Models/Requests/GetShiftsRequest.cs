@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.Requests;
 
+/// <summary>
+/// Represents a request to get work shifts.
+/// </summary>
 public class GetShiftsRequest
 {
     public int Page { get; set; }

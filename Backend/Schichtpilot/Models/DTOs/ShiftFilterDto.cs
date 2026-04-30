@@ -3,6 +3,9 @@ using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Used to filter available shifts.
+/// </summary>
 public class ShiftFilterDto
 {
     public List<DayOfWeek> WeekDays { get; set; }

@@ -13,6 +13,9 @@ using Schichtpilot.Settings;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates email related operations.
+/// </summary>
 public class EmailService : IEmailService
 {
     private readonly EmailClient _emailClient;
@@ -53,6 +56,13 @@ public class EmailService : IEmailService
     // All managers notified
     // ──────────────────────────────────────────────────────────────
 
+    // All managers notified
+    /// <summary>
+    /// Sends a notification to all managers about a newly created absence. 
+    /// </summary>
+    /// <param name="employee"> The user that created the absence. </param>
+    /// <param name="absence"> The specifics about the absence. </param>
+    /// <returns></returns>
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
         var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
@@ -80,6 +90,12 @@ public class EmailService : IEmailService
     // Specific employee
     // ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Sends a notification to the user that his absence was approved.
+    /// </summary>
+    /// <param name="employee"> The user that created the absence. </param>
+    /// <param name="absence"> The specifics about the absence. </param>
+    /// <returns></returns>
     public async Task SendApprovalMail(User employee, AbsenceDto absence)
     {
         var placeholders = new Dictionary<string, string>
@@ -97,6 +113,12 @@ public class EmailService : IEmailService
             placeholders);
     }
 
+    /// <summary>
+    /// Sends a notification to the user that his absence was rejected.
+    /// </summary>
+    /// <param name="employee"> The user that created the absence. </param>
+    /// <param name="absence"> The specifics about the absence. </param>
+    /// <returns></returns>
     public async Task SendRejectionMail(User employee, AbsenceDto absence)
     {
         var placeholders = new Dictionary<string, string>
@@ -114,6 +136,11 @@ public class EmailService : IEmailService
             placeholders);
     }
 
+    /// <summary>
+    /// Sends the notification that the given workschedule is now active to all assigned users.
+    /// </summary>
+    /// <param name="schedule"> The workschedule to be sent. </param>
+    /// <returns></returns>
     public async Task SendScheduleInActiveMail(WorkScheduleDto schedule)
     {
         var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
@@ -155,6 +182,11 @@ public class EmailService : IEmailService
         await Task.WhenAll(managerTasks);
     }
 
+    /// <summary>
+    /// Sends a notification about the account creation to the user that created the account.
+    /// </summary>
+    /// <param name="newUser"> The newly created user. </param>
+    /// <returns></returns>
     public async Task SendUserRegisterMail(User newUser)
     {
         var placeholders = new Dictionary<string, string>
@@ -170,6 +202,12 @@ public class EmailService : IEmailService
             placeholders);
     }
 
+    // All employees
+    /// <summary>
+    /// Sends the workschedule to all assigned users.
+    /// </summary>
+    /// <param name="schedule"> The workschedule to be sent. </param>
+    /// <returns></returns>
     public async Task SendScheduleMail(WorkScheduleDto schedule)
     {
         var shiftTable = BuildShiftTable(schedule);
@@ -254,6 +292,14 @@ public class EmailService : IEmailService
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Creates the email from a template and sends it.
+    /// </summary>
+    /// <param name="toEmail"> The reciver of the email. </param>
+    /// <param name="subject"> The subject of the email. </param>
+    /// <param name="templateFileName"> The filename of the template to be used. </param>
+    /// <param name="placeholders"> The placeholders and the value of the actual data. </param>
+    /// <exception cref="FileNotFoundException"> Is thrown when the template couldn't be found. </exception>
     private async Task SendTemplateAsync(
         string toEmail,
         string subject,
@@ -279,6 +325,12 @@ public class EmailService : IEmailService
     }
 
     // Communication with Azure
+    /// <summary>
+    /// Sends the email to the given subject.
+    /// </summary>
+    /// <param name="toEmail"> The receiver of the email. </param>
+    /// <param name="subject"> The subject of the mail </param>
+    /// <param name="htmlBody"> The email body as HTML. </param>
     private async Task SendAsync(string toEmail, string subject, string htmlBody)
     {
         try

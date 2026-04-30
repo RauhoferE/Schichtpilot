@@ -1,5 +1,8 @@
 ﻿namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a request to create a new absence by a user.
+/// </summary>
 public class CreateAbsenceDto
 {
     public required DateTime StartDate { get; set; }

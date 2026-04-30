@@ -4,6 +4,9 @@ using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Validation;
 
+/// <summary>
+/// Validator for <see cref="CreateUserRequest"/>.
+/// </summary>
 public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
 {
     public CreateUserRequestValidator(IValidator<AddressDto> addressDtoValidator)

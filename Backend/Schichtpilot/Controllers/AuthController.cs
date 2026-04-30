@@ -6,6 +6,9 @@ using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Controllers;
 
+/// <summary>
+/// Provides an endpoint to login and logout.
+/// </summary>
 [Controller]
 [Route("api/[controller]")]
 public class AuthController : Controller
@@ -20,6 +23,11 @@ public class AuthController : Controller
         this._env = env ?? throw new ArgumentNullException(nameof(env));
     }
 
+    /// <summary>
+    /// Authenticates the user.
+    /// </summary>
+    /// <param name="loginRequest"> The details of the user. </param>
+    /// <returns> Returns an Ok response and the authentication cookie. </returns>
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Authenticate([FromBody, Required] LoginRequest loginRequest)
@@ -29,6 +37,10 @@ public class AuthController : Controller
         return this.Ok();
     }
 
+    /// <summary>
+    /// Logs out the current user.
+    /// </summary>
+    /// <returns> Returns a no content response. </returns>
     [HttpGet("logout")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -38,6 +50,10 @@ public class AuthController : Controller
         return this.NoContent();
     }
 
+    /// <summary>
+    /// Attaches the provided jwt token as a cookie.
+    /// </summary>
+    /// <param name="jwtUserToken"> The jwt token with all user details. </param>
     private void AttachCookie(string jwtUserToken)
     {
         HttpContext.Response.Cookies.Append("SchichtpilotUser", jwtUserToken, new CookieOptions()

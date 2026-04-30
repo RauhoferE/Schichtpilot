@@ -3,6 +3,9 @@ using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Validation;
 
+/// <summary>
+/// Validator for <see cref="GetJobRolesRequest"/>.
+/// </summary>
 public class GetJobRolesRequestValidator : AbstractValidator<GetJobRolesRequest>
 {
     public GetJobRolesRequestValidator()

@@ -9,6 +9,9 @@ using Schichtpilot.Models.Responses;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates shift related operations including creating, managing, deleting shifts, timeslots for the shifts and job requirements.
+/// </summary>
 public class ShiftService : IShiftService
 {
     public ShiftService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService scheduleService)
@@ -24,6 +27,14 @@ public class ShiftService : IShiftService
 
     private readonly IWorkScheduleService _scheduleService;
 
+    /// <summary>
+    /// Creates a new shift.
+    /// </summary>
+    /// <param name="shift"> The shift to be created. </param>
+    /// <returns></returns>
+    /// <exception cref="AlreadyExistsException"> Thrown when a shift name with the exact name already exists. </exception>
+    /// <exception cref="NotFoundException"> Thrown when a required job role could not be found. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when a shift does not have enough breaks. </exception>
     public async Task CreateShiftAsync(CreateShiftDto shift)
     {
         var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x => x.Name == shift.Name);
@@ -84,6 +95,12 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Checks if each timeslot has the required amound of breaks defined in the company policy.
+    /// </summary>
+    /// <param name="shiftTimeSlots"> The timeslots of a shift. </param>
+    /// <returns> Returns true if there are enough breaks. </returns>
+    /// <exception cref="NotFoundException"> Thrown when the company policy is not yet defined. </exception>
     private async Task<bool> HasRequiredBreak(List<TimeSlotDto> shiftTimeSlots)
     {
         var companyPolicy = this._dbContext.WorkPolicies.FirstOrDefault();
@@ -129,6 +146,14 @@ public class ShiftService : IShiftService
         return true;
     }
 
+    /// <summary>
+    /// Checks if there are enough breaks and if the working hours dont exceed the break time threshold.
+    /// </summary>
+    /// <param name="start"> The start time of the time slot. </param>
+    /// <param name="end"> The end time of the timeslot. </param>
+    /// <param name="combinedBreaks"> All breaks combined of every timeslot. </param>
+    /// <param name="policy"> The current work policy. </param>
+    /// <returns> Returns true if the breaks are valid. </returns>
     private bool ValidateBlock(TimeOnly start, TimeOnly end, List<BreakDto> combinedBreaks, WorkPolicy policy)
     {
         double workDurationHours = (end - start).TotalMinutes;
@@ -145,6 +170,14 @@ public class ShiftService : IShiftService
         return hasValidBreak;
     }
 
+    /// <summary>
+    /// Updates an existing shift with a new name and color.
+    /// </summary>
+    /// <param name="shiftId"> The shift to be updated. </param>
+    /// <param name="shift"> The updated shift data. </param>
+    /// <returns></returns>
+    /// <exception cref="AlreadyExistsException"> Thrown when a shift with the same name already exists. </exception>
+    /// <exception cref="NotFoundException"> Thrown when the shift could not be found. </exception>
     public async Task ManageShiftAsync(int shiftId, EditShiftDto shift)
     {
         var shiftWithSameName = this._dbContext.Shifts.FirstOrDefault(x => x.Name == shift.Name && x.Id != shiftId);
@@ -166,6 +199,14 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Deletes a timeslot of a shift.
+    /// </summary>
+    /// <param name="shiftId"> The shift that contains the timeslot. </param>
+    /// <param name="timeSlotId"> The timeslot to be deleted. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the shift or the timeslot could not be found. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when there are not enough breaks defined after deleting a timeslot. </exception>
     public async Task DeleteTimeSlotAsync(int shiftId, int timeSlotId)
     {
         var shiftToDelete = this._dbContext.Shifts
@@ -196,6 +237,10 @@ public class ShiftService : IShiftService
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
+    /// <summary>
+    /// Sets all schedules that use a shift as invalid.
+    /// </summary>
+    /// <param name="shiftId"> The shift id. </param>
     private async Task SetSchedulesWithShiftAsInactive(int shiftId)
     {
         var schedulesWithShift = this._dbContext.WorkScheduleShifts
@@ -212,6 +257,15 @@ public class ShiftService : IShiftService
         }
     }
 
+    /// <summary>
+    /// Adds a new timeslot to the shift.
+    /// </summary>
+    /// <param name="shiftId"> The shift to be updated. </param>
+    /// <param name="timeSlot"> The new timeslot to be added. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the shift could not be found. </exception>
+    /// <exception cref="AlreadyExistsException"> Thrown when there is already a timeslot for this day. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when there are not enough breaks defined. </exception>
     public async Task AddTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
     {
         var shiftToModiy = this._dbContext.Shifts
@@ -255,6 +309,15 @@ public class ShiftService : IShiftService
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
+    /// <summary>
+    /// Updates an existing timeslot.
+    /// </summary>
+    /// <param name="shiftId"> The shift that contains the timeslot. </param>
+    /// <param name="timeSlot"> The timeslot to be updated. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the shift could not be found. </exception>
+    /// <exception cref="AlreadyExistsException"> Thrown when there is already a timeslot for this day. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when there are not enough breaks defined. </exception>
     public async Task EditTimeSlotAsync(int shiftId, TimeSlotDto timeSlot)
     {
         var shiftToModiy = this._dbContext.Shifts
@@ -312,6 +375,14 @@ public class ShiftService : IShiftService
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
+    /// <summary>
+    /// Adds new job requirements for a shift.
+    /// </summary>
+    /// <param name="shiftId"> The shift to be updated. </param>
+    /// <param name="jobRequirement"> The new job requirements. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the shift or the job role could not be found. </exception>
+    /// <exception cref="AlreadyExistsException"> Thrown if the job requirement was already added. </exception>
     public async Task AddJobRequirementAsync(int shiftId, ShiftRequirementDto jobRequirement)
     {
         var shiftToModiy = this._dbContext.Shifts
@@ -350,6 +421,14 @@ public class ShiftService : IShiftService
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
+    /// <summary>
+    /// Changes the staff amount needed to complete a shift.
+    /// </summary>
+    /// <param name="shiftId"> The shift to be updated. </param>
+    /// <param name="jobRequirementId"> The job to be updated. </param>
+    /// <param name="requiredStaffCount"> The staff needed for this particular job. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role or the shift could not be found. </exception>
     public async Task ChangeRequiredStaffAsync(int shiftId, int jobRequirementId, int requiredStaffCount)
     {
         var shiftToModiy = this._dbContext.Shifts
@@ -375,6 +454,13 @@ public class ShiftService : IShiftService
         await SetSchedulesWithShiftAsInactive(shiftId);
     }
 
+    /// <summary>
+    /// Deletes a job requirement of a shift.
+    /// </summary>
+    /// <param name="shiftId"> The shift to be updated. </param>
+    /// <param name="jobRequirementId"> The job to be removed from a shift. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role or the shift could not be found. </exception>
     public async Task DeleteJobRequirementAsync(int shiftId, int jobRequirementId)
     {
         var shiftToModiy = this._dbContext.Shifts
@@ -400,6 +486,11 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Returns all job roles, even their dependencies required for the shift. 
+    /// </summary>
+    /// <param name="requirements"> The job roles required for the shift. </param>
+    /// <returns>Returns all job roles, even their dependencies required for the shift. </returns>
     private async Task<List<string>> GetMissingPrerequisites(List<ShiftRequirementDto> requirements)
     {
         var requestedJobIds = requirements.Select(r => r.JobId).ToHashSet();
@@ -446,6 +537,12 @@ public class ShiftService : IShiftService
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Deletes an existing shift.
+    /// </summary>
+    /// <param name="shiftId"> The shift to be deleted. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the shift could not be found. </exception>
     public async Task DeleteShiftAsync(int shiftId)
     {
         var shiftToDelete = this._dbContext.Shifts
@@ -464,6 +561,12 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Gets a list of existing shifts.
+    /// </summary>
+    /// <param name="pagination"> The pagination element. </param>
+    /// <param name="filter"> How to sort and filter the shifts. </param>
+    /// <returns> Returns the shifts as <see cref="QueryableShiftResponse"/>. </returns>
     public async Task<QueryableShiftResponse> GetShiftsAsync(PaginationDto pagination, ShiftFilterDto? filter)
     {
         //TODO: Add if shift is used in a schedule.
@@ -487,6 +590,12 @@ public class ShiftService : IShiftService
         };
     }
 
+    /// <summary>
+    /// Filters the given list of shifts.
+    /// </summary>
+    /// <param name="query"> The list of shifts. </param>
+    /// <param name="filter"> How the shifts should be filtered. </param>
+    /// <returns> Returns the shifts as <see cref="IQueryable"/>. </returns>
     private async Task<IQueryable<Shift>> FilterShiftsAsync(IQueryable<Shift> query, ShiftFilterDto filter)
     {
         if (!string.IsNullOrEmpty(filter.Searchstring))
@@ -503,6 +612,12 @@ public class ShiftService : IShiftService
         return query;
     }
 
+    /// <summary>
+    /// Gets the details of a shift.
+    /// </summary>
+    /// <param name="shiftId"> The targeted shift. </param>
+    /// <returns> Returns the shift as <see cref="ShiftDto"/>. </returns>
+    /// <exception cref="NotFoundException"> Thrown when the shift could not be found. </exception>
     public async Task<ShiftDto> GetShiftAsync(int shiftId)
     {
         //TODO: Return schedules that use this shift

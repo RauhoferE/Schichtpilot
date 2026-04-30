@@ -1,5 +1,10 @@
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of user jobroles in UserJobRoles table.
+/// Linked to <see cref="User"/> via UserId.
+/// Linked to <see cref="JobRole"/> via JobRoleId.
+/// </summary>
 public class UserJobRoles
 {
     public long UserId { get; set; }

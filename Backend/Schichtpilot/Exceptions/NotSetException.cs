@@ -1,5 +1,8 @@
 namespace Schichtpilot.Exceptions;
 
+/// <summary>
+/// Represents an error when the company policy is not set.
+/// </summary>
 public class NotSetException : Exception
 {
     public NotSetException()

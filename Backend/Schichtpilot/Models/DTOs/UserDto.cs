@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a user.
+/// </summary>
 public class UserDto
 {
     public required string Email { get; set; }

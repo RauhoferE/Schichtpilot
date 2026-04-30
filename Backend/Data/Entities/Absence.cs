@@ -2,7 +2,8 @@
 
 using Data.Entities;
 /// <summary>
-/// The absence entity.
+/// Physical record of an Absence in the Absences table.
+/// Linked to <see cref="User"/> via the UserId.
 /// </summary>
 public class Absence
 {

@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data;
 
+/// <summary>
+/// Manages all tables and database entities.
+/// </summary>
 public class SchichtpilotDbContext : IdentityDbContext<
     User,
     IdentityRole<long>,
@@ -55,14 +58,16 @@ IdentityUserClaim<long>,
     public DbSet<WorkScheduleShifts> WorkScheduleShifts { get; set; }
 
 
-    // Here should be the DBSets
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.ConfigureWarnings(w =>
             w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     }
 
+    /// <summary>
+    /// Configures the entites and tables.
+    /// </summary>
+    /// <param name="modelBuilder">Defines the shape of your entities, the relationships between them, and how they map to the database.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
 

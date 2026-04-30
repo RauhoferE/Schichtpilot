@@ -1,5 +1,8 @@
 namespace Schichtpilot.Exceptions;
 
+/// <summary>
+/// Represents an error when an entity cannot be found.
+/// </summary>
 public class NotFoundException : Exception
 {
     public NotFoundException()

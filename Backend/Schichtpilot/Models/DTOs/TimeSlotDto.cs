@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a timeslot.
+/// </summary>
 public class TimeSlotDto
 {
     public int Id { get; set; }

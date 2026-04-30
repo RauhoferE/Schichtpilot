@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
-// The work policy is for all empolyees, in future maybe assign them to specific jobs or user
+
+/// <summary>
+/// Physical record of a work policy in the WorkPolicy table.
+/// </summary>
 public class WorkPolicy
 {
     public int Id { get; set; }

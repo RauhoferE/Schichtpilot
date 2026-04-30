@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of a timeslot in the Timeslots table.
+/// Linked to <see cref="Shift"/> via ShiftId.
+/// </summary>
 public class Timeslot
 {
     public int Id { get; set; }

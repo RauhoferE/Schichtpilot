@@ -8,6 +8,10 @@ using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates job role related operations including creating, updating, deleting job roles.
+/// Also includes adding, removing users from jobs and managing job dependencies on other jobs.
+/// </summary>
 public class JobRoleService : IJobRoleService
 {
     public JobRoleService(SchichtpilotDbContext dbContext, IMapper mapper, IWorkScheduleService workScheduleService, IShiftService shiftService)
@@ -24,6 +28,12 @@ public class JobRoleService : IJobRoleService
     private readonly IShiftService _shiftService;
 
 
+    /// <summary>
+    /// Creates a new job role.
+    /// </summary>
+    /// <param name="jobRole"> The new job role to be added. </param>
+    /// <returns></returns>
+    /// <exception cref="AlreadyExistsException"> Thrown when a job role with the exact name already exists. </exception>
     public async Task CreateJobRoleAsync(CreateJobRoleDto jobRole)
     {
         if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name))
@@ -61,6 +71,14 @@ public class JobRoleService : IJobRoleService
     }
 
     // This just updates the name and description
+    /// <summary>
+    /// Updates an existing job role.
+    /// </summary>
+    /// <param name="id"> The job role to be updated. </param>
+    /// <param name="jobRole"> The updated parameters of a job. </param>
+    /// <returns></returns>
+    /// <exception cref="AlreadyExistsException"> Thrown when a job role with the same name already exists. </exception>
+    /// <exception cref="NotFoundException"> Thrown when the job role that should be updated cannot be found. </exception>
     public async Task UpdateJobRoleAsync(int id, EditJobRoleDto jobRole)
     {
         if (this._dbContext.JobRoles.Any(jr => jr.Name == jobRole.Name && jr.Id != id))
@@ -81,6 +99,16 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
+
+    /// <summary>
+    /// Adds a new job dependency to an existing job. 
+    /// </summary>
+    /// <param name="jobRoleId"> The job role to be updated. </param>
+    /// <param name="dependencyId"> The id of the job role to be added as a dependency. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role or the dependency could not be found. </exception>
+    /// <exception cref="AlreadyExistsException"> Thrown when the job role already has the exact same dependency. </exception>
+    /// <exception cref="InvalidDependencyException"> Thrown when the added dependency would create a cycle. </exception>
     public async Task AddDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
@@ -150,6 +178,13 @@ public class JobRoleService : IJobRoleService
         }
     }
 
+    /// <summary>
+    /// Removes an existing job role as a dependency from a job role.
+    /// </summary>
+    /// <param name="jobRoleId"> The job role that contains the dependency. </param>
+    /// <param name="dependencyId"> The dependency to be removed. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role or the dependency could not be found. </exception>
     public async Task RemoveDependenciesToJobRoleAsync(int jobRoleId, int dependencyId)
     {
         var jobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == jobRoleId);
@@ -176,6 +211,13 @@ public class JobRoleService : IJobRoleService
         }
     }
 
+    /// <summary>
+    /// Adds an existing user to a job role.
+    /// </summary>
+    /// <param name="id"> The job role to be added to the user. </param>
+    /// <param name="userId"> The user that gains the specific role. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role or dependency could not be found. </exception>
     public async Task AddUserToJobRoleAsync(int id, long userId)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
@@ -205,6 +247,13 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Removes a user from a job role. 
+    /// </summary>
+    /// <param name="id"> The job role to be removed from the user. </param>
+    /// <param name="userId"> The user that losses the specific role. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the user could not be found. </exception>
     public async Task RemoveUserFromJobRoleAsync(int id, long userId)
     {
         var jobRoleToModify = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Id == id);
@@ -249,6 +298,13 @@ public class JobRoleService : IJobRoleService
         }
     }
 
+    /// <summary>
+    /// Deletes an existing role.
+    /// </summary>
+    /// <param name="id"> The role to be deleted. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role could not be found. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when the job role is still used in a shift. </exception>
     public async Task DeleteRoleAsync(int id)
     {
         var jobRoleToModify = await this._dbContext.JobRoles
@@ -276,6 +332,12 @@ public class JobRoleService : IJobRoleService
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Gets the details of a job role. 
+    /// </summary>
+    /// <param name="id"> The targeted jobrole. </param>
+    /// <returns> Returns the job role as <see cref="JobRoleDto"/>. </returns>
+    /// <exception cref="NotFoundException"> Thrown when the job role could not be found. </exception>
     public async Task<JobRoleDto> GetJobRoleAsync(int id)
     {
         var jobRole = await this._dbContext.JobRoles
@@ -293,6 +355,12 @@ public class JobRoleService : IJobRoleService
         return this._mapper.Map<JobRole, JobRoleDto>(jobRole);
     }
 
+    /// <summary>
+    /// Gets a list of job roles.
+    /// </summary>
+    /// <param name="paginationDto"> The pagination element. </param>
+    /// <param name="searchString"> The job role to look for. </param>
+    /// <returns> Returns the job roles as <see cref="QueryableJobRoleResponse"/>. </returns>
     public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString)
     {
         var jobRoles = this._dbContext.JobRoles
@@ -318,6 +386,12 @@ public class JobRoleService : IJobRoleService
         };
     }
 
+    /// <summary>
+    /// Checks if the job role appears anywhere in the prerequisiste job role dependency chain.
+    /// </summary>
+    /// <param name="roleId"> The dependent job role. </param>
+    /// <param name="prerequisiteId"> The prerequisite job role. </param>
+    /// <returns> Returns true if the job role would create a cycle. </returns>
     private async Task<bool> WouldCreateCycle(int roleId, int prerequisiteId)
     {
         // If you are trying to make a role dependent on itself

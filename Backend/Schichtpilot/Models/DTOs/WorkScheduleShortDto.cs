@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a workschedule with the essentials used in lists.
+/// </summary>
 public class WorkScheduleShortDto
 {
     public int Id { get; set; }

@@ -17,8 +17,16 @@ using Serilog;
 
 namespace Schichtpilot;
 
+/// <summary>
+/// The main class of the web app.
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// The main entry point of the application
+    /// Configures and builds the webapplication.
+    /// </summary>
+    /// <param name="args">Command line arguments.</param>
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);

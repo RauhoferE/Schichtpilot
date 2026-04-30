@@ -2,6 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of a shift assignment in the ShiftAssignments table.
+/// Linked to <see cref="Timeslot"/> via TimeslotId.
+/// Linked to <see cref="UserJobRoles"/>.
+/// Linked to <see cref="WorkSchedule"/> via WorkScheduleId.
+/// </summary>
 public class ShiftAssignment
 {
     public Timeslot Timeslot { get; set; }

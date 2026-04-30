@@ -2,6 +2,9 @@
 
 using Enums;
 
+/// <summary>
+/// Represents an absence created by a user. 
+/// </summary>
 public class AbsenceDto
 {
     public int Id { get; set; }

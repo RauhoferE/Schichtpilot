@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of user in the AspNetUsers table.
+/// </summary>
 public class User : IdentityUser<long>
 {
     [Required, MaxLength(20)]
