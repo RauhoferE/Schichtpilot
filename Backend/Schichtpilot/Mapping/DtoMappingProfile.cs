@@ -6,6 +6,9 @@ using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Mapping;
 
+/// <summary>
+/// Maps entities to dtos, dtos to entities and dtos to other dtos.
+/// </summary>
 public class DtoMappingProfile : Profile
 {
     public DtoMappingProfile()
@@ -27,7 +30,7 @@ public class DtoMappingProfile : Profile
             .ForMember(dest => dest.StreetAddress, opt => opt.MapFrom(src => src.AddressDto.Street))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
         CreateMap<JobRole, JobRoleShortDto>();
-        
+
         CreateMap<Timeslot, TimeSlotDto>();
         CreateMap<Break, BreakDto>();
         CreateMap<Shift, ShiftDto>()

@@ -3,6 +3,9 @@ using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Validation;
 
+/// <summary>
+/// Provides validation rules for <see cref="AddressDto"/>.
+/// </summary>
 public class AddressDtoValidator : AbstractValidator<AddressDto>
 {
     public AddressDtoValidator()

@@ -1,6 +1,10 @@
 ﻿using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Models.DTOs;
+
+/// <summary>
+/// Used to filter absences.
+/// </summary>
 public class AbsenceFilterDto
 {
     public List<AbsenceStatusEnum>? Status { get; set; }

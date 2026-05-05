@@ -4,6 +4,9 @@ using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Validation;
 
+/// <summary>
+/// Validator for <see cref="CreateUserRequest"/>.
+/// </summary>
 public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
 {
     public CreateUserRequestValidator(IValidator<AddressDto> addressDtoValidator)
@@ -21,5 +24,5 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
         RuleFor(x => x.AddressDto).NotNull().WithMessage("Address is required");
         RuleFor(x => x.AddressDto).SetValidator(addressDtoValidator);
     }
-    
+
 }

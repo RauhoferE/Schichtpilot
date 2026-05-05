@@ -2,17 +2,20 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities;
 
+/// <summary>
+/// Physical record of a work schedule in the WorkSchedule table.
+/// </summary>
 public class WorkSchedule
 {
     public int Id { get; set; }
-    
+
     [Required, MaxLength(25)]
     public string Name { get; set; }
-    
+
     // Always from Sunday to Sunday
     [Required]
     public DateTime StartDate { get; set; }
-    
+
     [Required]
     public DateTime EndDate { get; set; }
     public HashSet<ShiftAssignment> ShiftAssignments { get; set; }

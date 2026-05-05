@@ -2,12 +2,20 @@
 using Azure.Communication.Email;
 using Data.Entities;
 using Microsoft.Extensions.Options;
-using Schichtpilot.Configuration;
 using Schichtpilot.Models.DTOs;
 using System.Text;
+using Core;
+using Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Schichtpilot.Interfaces;
+using Schichtpilot.Settings;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates email related operations.
+/// </summary>
 public class EmailService : IEmailService
 {
     private readonly EmailClient _emailClient;
@@ -15,22 +23,13 @@ public class EmailService : IEmailService
     // private readonly UserManager<User> _userManager;
     private readonly string _senderAddress;
     private readonly string _templatesPath;
+    private readonly bool _sendMail;
     private readonly ILogger<EmailService> _logger;
-
-    // Tuesday–Sunday: Monday is the restaurant's weekly day off
-    private static readonly DayOfWeek[] WorkWeek =
-    {
-        DayOfWeek.Tuesday,
-        DayOfWeek.Wednesday,
-        DayOfWeek.Thursday,
-        DayOfWeek.Friday,
-        DayOfWeek.Saturday,
-        DayOfWeek.Sunday
-    };
+    private readonly UserManager<User> _userManager;
 
     public EmailService(
         IOptions<AzureEmailSettings> emailSettings,
-        // UserManager<User> userManager,
+        UserManager<User> userManager,
         ILogger<EmailService> logger)
     {
         // _userManager = userManager;
@@ -38,13 +37,17 @@ public class EmailService : IEmailService
 
         var settings = emailSettings.Value;
 
+        _sendMail = settings.SendMail;
+
         if (string.IsNullOrEmpty(settings.ConnectionString))
             throw new InvalidOperationException("AzureEmail:ConnectionString is missing.");
 
         if (string.IsNullOrEmpty(settings.SenderAddress))
             throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
 
-        _emailClient   = new EmailClient(settings.ConnectionString);
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+
+        _emailClient = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
         _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
     }
@@ -53,19 +56,22 @@ public class EmailService : IEmailService
     // All managers notified
     // ──────────────────────────────────────────────────────────────
 
+    // All managers notified
+    /// <summary>
+    /// Sends a notification to all managers about a newly created absence. 
+    /// </summary>
+    /// <param name="employee"> The user that created the absence. </param>
+    /// <param name="absence"> The specifics about the absence. </param>
+    /// <returns></returns>
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
-        var testManagers = new List<(string Email, string Name)>
-        {
-            ("manager1@gmail.com", "Manager 1"),
-            ("manager2@gmail.com", "Manager 2")
-        };
+        var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
 
-        var tasks = testManagers.Select(m =>
+        var tasks = managers.Select(m =>
         {
             var placeholders = new Dictionary<string, string>
             {
-                { "{{ManagerName}}", m.Name },
+                { "{{ManagerName}}", $"{m.FirstName} {m.LastName}"},
                 { "{{EmployeeName}}", $"{employee.FirstName} {employee.LastName}" },
                 { "{{StartDate}}", absence.StartDate.ToString("dd.MM.yyyy") },
                 { "{{EndDate}}", absence.EndDate.ToString("dd.MM.yyyy") },
@@ -84,6 +90,12 @@ public class EmailService : IEmailService
     // Specific employee
     // ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Sends a notification to the user that his absence was approved.
+    /// </summary>
+    /// <param name="employee"> The user that created the absence. </param>
+    /// <param name="absence"> The specifics about the absence. </param>
+    /// <returns></returns>
     public async Task SendApprovalMail(User employee, AbsenceDto absence)
     {
         var placeholders = new Dictionary<string, string>
@@ -101,6 +113,12 @@ public class EmailService : IEmailService
             placeholders);
     }
 
+    /// <summary>
+    /// Sends a notification to the user that his absence was rejected.
+    /// </summary>
+    /// <param name="employee"> The user that created the absence. </param>
+    /// <param name="absence"> The specifics about the absence. </param>
+    /// <returns></returns>
     public async Task SendRejectionMail(User employee, AbsenceDto absence)
     {
         var placeholders = new Dictionary<string, string>
@@ -118,30 +136,63 @@ public class EmailService : IEmailService
             placeholders);
     }
 
-    public async Task SendScheduleInActiveMail(User employee, WorkScheduleDto schedule)
+    /// <summary>
+    /// Sends the notification that the given workschedule is now active to all assigned users.
+    /// </summary>
+    /// <param name="schedule"> The workschedule to be sent. </param>
+    /// <returns></returns>
+    public async Task SendScheduleInActiveMail(WorkScheduleDto schedule)
     {
-        var placeholders = new Dictionary<string, string>
+        var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
+        var tasks = schedule.AssignedUsers.Select(e =>
         {
-            { "{{EmployeeName}}", FullName(employee) },
-            { "{{ScheduleName}}", schedule.Name },
-            { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
-            { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") }
-        };
+            var placeholders = new Dictionary<string, string>
+            {
+                { "{{EmployeeName}}", $"{e.User.FirstName} {e.User.LastName}" },
+                { "{{ScheduleName}}", schedule.Name },
+                { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
+                { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") }
+            };
 
-        await SendTemplateAsync(
-            employee.Email!,
-            "Your Schedule Has Been Deactivated",
-            "scheduleInactive.html",
-            placeholders);
+            return SendTemplateAsync(
+                e.User.Email!,
+                "Your Schedule Has Been Deactivated",
+                "scheduleInactive.html",
+                placeholders);
+        });
+
+        var managerTasks = managers.Select(e =>
+        {
+            var placeholders = new Dictionary<string, string>
+            {
+                { "{{EmployeeName}}", FullName(e) },
+                { "{{ScheduleName}}", schedule.Name },
+                { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
+                { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") }
+            };
+
+            return SendTemplateAsync(
+                e.Email!,
+                "Your Schedule Has Been Deactivated",
+                "scheduleInactiveManager.html",
+                placeholders);
+        });
+
+        await Task.WhenAll(tasks);
+        await Task.WhenAll(managerTasks);
     }
 
-    public async Task SendUserRegisterMail(User newUser, string temporaryPassword)
+    /// <summary>
+    /// Sends a notification about the account creation to the user that created the account.
+    /// </summary>
+    /// <param name="newUser"> The newly created user. </param>
+    /// <returns></returns>
+    public async Task SendUserRegisterMail(User newUser)
     {
         var placeholders = new Dictionary<string, string>
         {
             { "{{FullName}}", FullName(newUser) },
-            { "{{Email}}", newUser.Email! },
-            { "{{TemporaryPassword}}", temporaryPassword }
+            { "{{Email}}", newUser.Email! }
         };
 
         await SendTemplateAsync(
@@ -151,21 +202,21 @@ public class EmailService : IEmailService
             placeholders);
     }
 
+    // All employees
+    /// <summary>
+    /// Sends the workschedule to all assigned users.
+    /// </summary>
+    /// <param name="schedule"> The workschedule to be sent. </param>
+    /// <returns></returns>
     public async Task SendScheduleMail(WorkScheduleDto schedule)
     {
-        // 🧪 TEMP: hardcoded test recipient — replace with UserManager later
-        var testEmployees = new List<(string Email, string Name)>
-        {
-            ("your-real-email@gmail.com", "Test Employee")
-        };
-
         var shiftTable = BuildShiftTable(schedule);
 
-        var tasks = testEmployees.Select(e =>
+        var tasks = schedule.AssignedUsers.Select(e =>
         {
             var placeholders = new Dictionary<string, string>
             {
-                { "{{EmployeeName}}", e.Name },
+                { "{{EmployeeName}}", e.User.LastName },
                 { "{{ScheduleName}}", schedule.Name },
                 { "{{WeekStart}}", schedule.StartDate.ToString("dd.MM.yyyy") },
                 { "{{WeekEnd}}", schedule.EndDate.ToString("dd.MM.yyyy") },
@@ -173,7 +224,7 @@ public class EmailService : IEmailService
             };
 
             return SendTemplateAsync(
-                e.Email, $"Your Schedule for {schedule.StartDate:dd.MM.yyyy}",
+                e.User.Email, $"Your Schedule for {schedule.StartDate:dd.MM.yyyy}",
                 "schedule.html",
                 placeholders);
         });
@@ -196,10 +247,10 @@ public class EmailService : IEmailService
             .Where(s => s.TimeSlots != null)
             .SelectMany(s => s.TimeSlots.Select(ts => new
             {
-                Day       = ts.DayOfWeek,
+                Day = ts.DayOfWeek,
                 ShiftName = s.Name,
                 StartTime = ts.StartTime.ToString(@"HH\:mm"),
-                EndTime   = ts.EndTime.ToString(@"HH\:mm")
+                EndTime = ts.EndTime.ToString(@"HH\:mm")
             }))
             .GroupBy(ts => ts.Day)
             .ToDictionary(g => g.Key, g => g.First());
@@ -217,7 +268,7 @@ public class EmailService : IEmailService
               </thead>
               <tbody>");
 
-        foreach (var day in WorkWeek)
+        foreach (var day in Enum.GetValues<DayOfWeek>())
         {
             slotsByDay.TryGetValue(day, out var slot);
             var hasShift = slot is not null;
@@ -241,6 +292,14 @@ public class EmailService : IEmailService
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Creates the email from a template and sends it.
+    /// </summary>
+    /// <param name="toEmail"> The reciver of the email. </param>
+    /// <param name="subject"> The subject of the email. </param>
+    /// <param name="templateFileName"> The filename of the template to be used. </param>
+    /// <param name="placeholders"> The placeholders and the value of the actual data. </param>
+    /// <exception cref="FileNotFoundException"> Is thrown when the template couldn't be found. </exception>
     private async Task SendTemplateAsync(
         string toEmail,
         string subject,
@@ -259,10 +318,19 @@ public class EmailService : IEmailService
         foreach (var (key, value) in placeholders)
             html = html.Replace(key, value);
 
-        await SendAsync(toEmail, subject, html);
+        if (_sendMail)
+        {
+            await SendAsync(toEmail, subject, html);
+        }
     }
 
     // Communication with Azure
+    /// <summary>
+    /// Sends the email to the given subject.
+    /// </summary>
+    /// <param name="toEmail"> The receiver of the email. </param>
+    /// <param name="subject"> The subject of the mail </param>
+    /// <param name="htmlBody"> The email body as HTML. </param>
     private async Task SendAsync(string toEmail, string subject, string htmlBody)
     {
         try
@@ -290,7 +358,6 @@ public class EmailService : IEmailService
             _logger.LogError(ex,
                 "ACS failed sending to {Email} | Code: {Code} | Message: {Message}",
                 toEmail, ex.ErrorCode, ex.Message);
-            throw;
         }
     }
 

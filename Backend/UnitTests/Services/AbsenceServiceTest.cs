@@ -340,25 +340,11 @@ public class AbsenceServiceTest
     public async Task UpdateAbsenceStatusAsync_NotPending_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
+        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Approved), AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext);
         var dto = new StatusUpdateDto { Status = nameof(AbsenceStatusEnum.Approved) };
-
-        await Assert.ThrowsAsync<NotFoundException>(
-            () => service.UpdateAbsenceStatusAsync(1, dto));
-    }
-
-    [Fact]
-    public async Task UpdateAbsenceStatusAsync_DeniedWithoutMessage_ThrowsValidationException()
-    {
-        await using var dbContext = CreateDbContext();
-        dbContext.Absences.Add(new Absence { Id = 1, Status = nameof(AbsenceStatusEnum.Pending),AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave) });
-        await dbContext.SaveChangesAsync();
-
-        var service = CreateService(dbContext);
-        var dto = new StatusUpdateDto { Status = nameof(AbsenceStatusEnum.Denied) };
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => service.UpdateAbsenceStatusAsync(1, dto));

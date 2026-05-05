@@ -3,6 +3,9 @@ using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Validation;
 
+/// <summary>
+/// Validator for <see cref="EditJobRoleDto"/>.
+/// </summary>
 public class EditJobRoleDtoValidator : AbstractValidator<EditJobRoleDto>
 {
     public EditJobRoleDtoValidator()

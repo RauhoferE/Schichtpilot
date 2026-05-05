@@ -1,9 +1,11 @@
-﻿namespace Schichtpilot.Configuration;
+﻿namespace Schichtpilot.Settings;
 
+/// <summary>
+/// Contains the settings for the azure email service. 
+/// </summary>
 public class AzureEmailSettings
 {
-    public const string SectionName = "AzureEmail";
-    
-    public string ConnectionString { get; set; } = string.Empty;
-    public string SenderAddress    { get; set; } = string.Empty;
+    public string ConnectionString { get; set; }
+    public string SenderAddress { get; set; }
+    public bool SendMail { get; set; }
 }

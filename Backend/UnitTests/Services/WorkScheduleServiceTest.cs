@@ -547,7 +547,7 @@ public class WorkScheduleServiceTest
             .Include(x => x.ShiftAssignments)
             .SingleAsync(x => x.Name == "WeeklyOkWeek");
 
-        Assert.Equal(1, schedule.ShiftAssignments.Count);
+        Assert.Single(schedule.ShiftAssignments);
     }
 
     [Fact]
@@ -2082,18 +2082,139 @@ public class WorkScheduleServiceTest
     }
 
     [Fact]
-    public async Task PublishScheduleAsync_ThrowsNotImplementedException()
+    public async Task GetActiveScheduleForDateAsync_NotFound_ThrowsNotFoundException()
     {
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        await Assert.ThrowsAsync<NotImplementedException>(() => service.PublishScheduleAsync(1));
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.GetActiveScheduleForDateAsync(new DateTime(2026, 1, 5)));
     }
 
-    private static WorkScheduleService CreateService(SchichtpilotDbContext dbContext, Mock<IMapper>? mapperMock = null)
+    [Fact]
+    public async Task GetActiveScheduleForDateAsync_FindsActiveSchedule_ReturnsDto()
+    {
+        await using var dbContext = CreateDbContext();
+        var schedule = new WorkSchedule
+        {
+            Name = "Week 1",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            ShiftAssignments = new HashSet<ShiftAssignment>(),
+            Shifts = new HashSet<WorkScheduleShifts>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        var result = await service.GetActiveScheduleForDateAsync(new DateTime(2026, 1, 5));
+
+        Assert.NotNull(result);
+        Assert.Equal(schedule.Id, result.Id);
+        Assert.Equal(schedule.Name, result.Name);
+    }
+
+    [Fact]
+    public async Task PublishScheduleAsync_NotFound_ThrowsNotFoundException()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.PublishScheduleAsync(999));
+    }
+
+    [Fact]
+    public async Task PublishScheduleAsync_InvalidSchedule_ThrowsPolicyConflictException()
+    {
+        await using var dbContext = CreateDbContext();
+        var schedule = new WorkSchedule
+        {
+            Name = "Week 1",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = false,
+            ShiftAssignments = new HashSet<ShiftAssignment>(),
+            Shifts = new HashSet<WorkScheduleShifts>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.PublishScheduleAsync(schedule.Id));
+    }
+
+    [Fact]
+    public async Task PublishScheduleAsync_InactiveSchedule_ThrowsPolicyConflictException()
+    {
+        await using var dbContext = CreateDbContext();
+        var schedule = new WorkSchedule
+        {
+            Name = "Week 1",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = false,
+            IsValid = true,
+            ShiftAssignments = new HashSet<ShiftAssignment>(),
+            Shifts = new HashSet<WorkScheduleShifts>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext);
+
+        await Assert.ThrowsAsync<PolicyConflictException>(() => service.PublishScheduleAsync(schedule.Id));
+    }
+
+    [Fact]
+    public async Task PublishScheduleAsync_ValidActiveSchedule_SendsScheduleMail()
+    {
+        await using var dbContext = CreateDbContext();
+        var schedule = new WorkSchedule
+        {
+            Name = "Week 1",
+            StartDate = new DateTime(2026, 1, 5),
+            EndDate = new DateTime(2026, 1, 11),
+            IsActive = true,
+            IsValid = true,
+            ShiftAssignments = new HashSet<ShiftAssignment>(),
+            Shifts = new HashSet<WorkScheduleShifts>()
+        };
+
+        dbContext.WorkSchedules.Add(schedule);
+        await dbContext.SaveChangesAsync();
+
+        var emailServiceMock = new Mock<IEmailService>();
+        var tcs = new TaskCompletionSource<bool>();
+
+        emailServiceMock
+            .Setup(service => service.SendScheduleMail(It.IsAny<WorkScheduleDto>()))
+            .Callback<WorkScheduleDto>(_ => tcs.TrySetResult(true))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(dbContext, emailServiceMock: emailServiceMock);
+
+        await service.PublishScheduleAsync(schedule.Id);
+
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(1000));
+        Assert.Same(tcs.Task, completed);
+    }
+
+    private static WorkScheduleService CreateService(
+        SchichtpilotDbContext dbContext,
+        Mock<IMapper>? mapperMock = null,
+        Mock<IEmailService>? emailServiceMock = null)
     {
         var mock = mapperMock ?? CreateMapperMock();
-        return new WorkScheduleService(dbContext, mock.Object);
+        var emailMock = emailServiceMock ?? new Mock<IEmailService>();
+        return new WorkScheduleService(dbContext, mock.Object, emailMock.Object);
     }
 
     private static Mock<IMapper> CreateMapperMock()

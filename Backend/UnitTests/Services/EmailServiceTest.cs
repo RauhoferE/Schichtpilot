@@ -1,15 +1,16 @@
 ﻿using Data.Entities;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Schichtpilot.Models.DTOs;
+using Schichtpilot.Services;
 
 
-namespace Schichtpilot.Tests.Services;
+namespace UnitTests.Services;
 
 // ══════════════════════════════════════════════════════════════════
 // 1. BuildShiftTable — mirrors the private static method in EmailService
 //    Tests the Tues–Sun logic, day-off rendering, slot lookup
 // ══════════════════════════════════════════════════════════════════
-
 public class BuildShiftTableTests
 {
     private static readonly DayOfWeek[] WorkWeek =
@@ -25,10 +26,10 @@ public class BuildShiftTableTests
             .Where(s => s.TimeSlots != null)
             .SelectMany(s => s.TimeSlots.Select(ts => new
             {
-                Day       = ts.DayOfWeek,
+                Day = ts.DayOfWeek,
                 ShiftName = s.Name,
                 StartTime = ts.StartTime.ToString(@"HH\:mm"),
-                EndTime   = ts.EndTime.ToString(@"HH\:mm")
+                EndTime = ts.EndTime.ToString(@"HH\:mm")
             }))
             .GroupBy(ts => ts.Day)
             .ToDictionary(g => g.Key, g => g.First());
@@ -126,7 +127,7 @@ public class BuildShiftTableTests
     public void Build_RendersAllDaysAsOff_WhenNoShifts()
     {
         var schedule = MakeSchedule(Array.Empty<(DayOfWeek, string, TimeOnly, TimeOnly)>());
-        var result   = BuildShiftTable(schedule);
+        var result = BuildShiftTable(schedule);
 
         foreach (var day in WorkWeek)
             result.Should().Contain($"DAYOFF:{day}");
@@ -154,10 +155,13 @@ public class BuildShiftTableTests
     {
         var schedule = new WorkScheduleDto
         {
-            Id = 1, Name = "Test", IsActive = true, IsValid = true,
+            Id = 1,
+            Name = "Test",
+            IsActive = true,
+            IsValid = true,
             StartDate = new DateTime(2026, 4, 7),
-            EndDate   = new DateTime(2026, 4, 13),
-            Shifts    = new List<ShiftDto>
+            EndDate = new DateTime(2026, 4, 13),
+            Shifts = new List<ShiftDto>
             {
                 new() { Id = 1, Name = "Null Slots", ColorAsHex = "#000", TimeSlots = null! }
             }
@@ -172,10 +176,13 @@ public class BuildShiftTableTests
     {
         var schedule = new WorkScheduleDto
         {
-            Id = 1, Name = "Empty", IsActive = true, IsValid = true,
+            Id = 1,
+            Name = "Empty",
+            IsActive = true,
+            IsValid = true,
             StartDate = new DateTime(2026, 4, 7),
-            EndDate   = new DateTime(2026, 4, 13),
-            Shifts    = new List<ShiftDto>()
+            EndDate = new DateTime(2026, 4, 13),
+            Shifts = new List<ShiftDto>()
         };
 
         var act = () => BuildShiftTable(schedule);
@@ -188,10 +195,13 @@ public class BuildShiftTableTests
         // Two shifts both on Tuesday — only the first should appear
         var schedule = new WorkScheduleDto
         {
-            Id = 1, Name = "Test", IsActive = true, IsValid = true,
+            Id = 1,
+            Name = "Test",
+            IsActive = true,
+            IsValid = true,
             StartDate = new DateTime(2026, 4, 7),
-            EndDate   = new DateTime(2026, 4, 13),
-            Shifts    = new List<ShiftDto>
+            EndDate = new DateTime(2026, 4, 13),
+            Shifts = new List<ShiftDto>
             {
                 new()
                 {
@@ -226,30 +236,33 @@ public class BuildShiftTableTests
     private static WorkScheduleDto MakeSchedule(
         IEnumerable<(DayOfWeek Day, string ShiftName, TimeOnly Start, TimeOnly End)> slots)
     {
-        var list   = slots.ToList();
+        var list = slots.ToList();
         var shifts = list
             .GroupBy(s => s.ShiftName)
             .Select((g, idx) => new ShiftDto
             {
-                Id         = idx + 1,
-                Name       = g.Key,
+                Id = idx + 1,
+                Name = g.Key,
                 ColorAsHex = "#000000",
-                TimeSlots  = g.Select((s, i) => new TimeSlotDto
+                TimeSlots = g.Select((s, i) => new TimeSlotDto
                 {
-                    Id        = i + 1,
+                    Id = i + 1,
                     DayOfWeek = s.Day,
                     StartTime = s.Start,
-                    EndTime   = s.End,
-                    Breaks    = new List<BreakDto>()
+                    EndTime = s.End,
+                    Breaks = new List<BreakDto>()
                 }).ToList()
             }).ToList();
 
         return new WorkScheduleDto
         {
-            Id = 1, Name = "Test Week", IsActive = true, IsValid = true,
+            Id = 1,
+            Name = "Test Week",
+            IsActive = true,
+            IsValid = true,
             StartDate = new DateTime(2026, 4, 7),
-            EndDate   = new DateTime(2026, 4, 13),
-            Shifts    = shifts
+            EndDate = new DateTime(2026, 4, 13),
+            Shifts = shifts
         };
     }
 }
@@ -257,7 +270,6 @@ public class BuildShiftTableTests
 // ══════════════════════════════════════════════════════════════════
 // 2. Placeholder replacement — the core template engine logic
 // ══════════════════════════════════════════════════════════════════
-
 public class PlaceholderReplacementTests
 {
     // Mirrors SendTemplateAsync's replacement loop
@@ -392,7 +404,6 @@ public class PlaceholderReplacementTests
 // ══════════════════════════════════════════════════════════════════
 // 3. FullName helper
 // ══════════════════════════════════════════════════════════════════
-
 public class FullNameTests
 {
     private static string FullName(User user) =>
@@ -430,7 +441,6 @@ public class FullNameTests
 // ══════════════════════════════════════════════════════════════════
 // 4. Date formatting — dd.MM.yyyy used in all placeholders
 // ══════════════════════════════════════════════════════════════════
-
 public class DateFormattingTests
 {
     [Fact]
@@ -465,7 +475,6 @@ public class DateFormattingTests
 // ══════════════════════════════════════════════════════════════════
 // 5. Template file existence check
 // ══════════════════════════════════════════════════════════════════
-
 public class TemplateFileTests : IDisposable
 {
     private readonly string _tempDir;
@@ -511,7 +520,7 @@ public class TemplateFileTests : IDisposable
 
         var html = await File.ReadAllTextAsync(filePath);
         html = html.Replace("{{EmployeeName}}", "Anna Schmidt");
-        html = html.Replace("{{StartDate}}",    "01.04.2026");
+        html = html.Replace("{{StartDate}}", "01.04.2026");
 
         html.Should().NotContain("{{");
         html.Should().NotContain("}}");

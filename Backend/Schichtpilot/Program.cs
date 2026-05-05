@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi;
-using Schichtpilot.Configuration;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Mapping;
 using Schichtpilot.Middleware;
@@ -18,8 +17,16 @@ using Serilog;
 
 namespace Schichtpilot;
 
+/// <summary>
+/// The main class of the web app.
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// The main entry point of the application
+    /// Configures and builds the webapplication.
+    /// </summary>
+    /// <param name="args">Command line arguments.</param>
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -87,7 +94,7 @@ public class Program
 
         //  AzureEmail settings
         builder.Services.Configure<AzureEmailSettings>(
-            config.GetSection(AzureEmailSettings.SectionName));
+            config.GetSection("AzureEmail"));
 
         // Add services to the container
         builder.Services.AddTransient<IEmailService, EmailService>();
@@ -146,16 +153,16 @@ public class Program
         {
             options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title   = "Schichtpilot",
+                Title = "Schichtpilot",
                 Version = "v1"
             });
 
             options.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
             {
-                Name        = authCookieName,
-                In          = ParameterLocation.Cookie,
-                Type        = SecuritySchemeType.ApiKey,
-                Scheme      = "CookieAuth",
+                Name = authCookieName,
+                In = ParameterLocation.Cookie,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "CookieAuth",
                 Description = "Cookie-based authentication"
             });
 
@@ -172,7 +179,6 @@ public class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI();
-            app.MapOpenApi();
         }
 
         app.UseSerilogRequestLogging();

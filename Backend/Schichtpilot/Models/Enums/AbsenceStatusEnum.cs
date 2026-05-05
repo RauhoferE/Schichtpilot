@@ -1,6 +1,11 @@
 ﻿namespace Schichtpilot.Models.Enums;
-public enum AbsenceStatusEnum {
-    Pending=0,
-    Approved=1,
-    Denied=2
+
+/// <summary>
+/// Contains the stages of an absence.
+/// </summary>
+public enum AbsenceStatusEnum
+{
+    Pending = 0,
+    Approved = 1,
+    Denied = 2
 }
