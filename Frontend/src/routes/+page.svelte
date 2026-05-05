@@ -8,6 +8,7 @@
     import { Button }  from '$lib/components/ui/button/index.js';
     import { Input }   from '$lib/components/ui/input/index.js';
     import { Label }   from '$lib/components/ui/label/index.js';
+    import { CalendarClock  } from 'lucide-svelte';
     import { createRegisterState } from '$lib/composables/useAuth.svelte';
 
     const auth = createRegisterState();
@@ -21,15 +22,11 @@
     <Card.Root class="w-full max-w-lg">
 
         <Card.Header class="text-center space-y-1">
-            <div class="flex items-center justify-center gap-2 mb-2">
-                <svg class="w-8 h-8 text-primary" viewBox="0 0 40 40" fill="none" aria-label="Schichtpilot logo" role="img">
-                    <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
-                    <path d="M8 22l6-4 4 2 10-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="28" cy="12" r="2.5" fill="currentColor"/>
-                    <path d="M14 26h12M16 29h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                <Card.Title class="text-2xl font-bold">Schichtpilot</Card.Title>
-            </div>
+                <!-- Schichtpilot calendar-clock/pilot icon -->
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <CalendarClock  class="w-8 h-8 text-primary" />
+                    <Card.Title class="text-2xl font-bold">Schichtpilot</Card.Title>
+                </div>
             <Card.Description>Create your account</Card.Description>
         </Card.Header>
 

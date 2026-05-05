@@ -1,42 +1,143 @@
-# sv
+## Svelte Frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## Navigate to Frontend
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
+```bash
+cd Frontend
 ```
 
-To recreate this project with the same configuration:
+## Install Dependencies
 
-```sh
-# recreate this project
-npx sv@0.13.1 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" tailwindcss="plugins:typography,forms" --install npm .
+```bash
+npm install
 ```
 
-## Developing
+## Start Dev Server
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+## Start Dev Server (exposed on local network)
 
-To create a production version of your app:
+```bash
+npm run dev -- --host
+```
 
-```sh
+## Production Build
+
+```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+## Preview Production Build
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```bash
+npm run preview
+```
+
+---
+
+## Shadcn-Svelte Setup
+
+### 1. Add Tailwind CSS
+
+```bash
+npx svelte-add@latest tailwindcss
+```
+
+### 2. Initialize Shadcn-Svelte
+
+```bash
+npx shadcn-svelte@latest init
+```
+
+### 3. Add Base Components
+
+```bash
+npx shadcn-svelte@latest add button input label card form
+```
+
+---
+
+## Add Extra Shadcn Components
+
+### Table (absence management / user list)
+
+```bash
+npx shadcn-svelte@latest add table
+```
+
+### Badge (status: pending / approved / denied)
+
+```bash
+npx shadcn-svelte@latest add badge
+```
+
+### Dialog / Modal
+
+```bash
+npx shadcn-svelte@latest add dialog
+```
+
+### Select Dropdown (filters)
+
+```bash
+npx shadcn-svelte@latest add select
+```
+
+### Toast Notifications
+
+```bash
+npx shadcn-svelte@latest add toast
+```
+
+---
+
+## Git Workflow
+
+### Check status
+
+```bash
+git status
+```
+
+### Stage all changes
+
+```bash
+git add .
+```
+
+### Commit
+
+```bash
+git commit -m "feat: add role-based dashboard"
+```
+
+### Push to branch
+
+```bash
+git push origin your-branch-name
+```
+
+---
+
+## Docker
+
+### Build frontend image
+
+```bash
+docker build -t schichtpilot-frontend .
+```
+
+### Run container on port 5173
+
+```bash
+docker run -p 5173:5173 schichtpilot-frontend
+```
+
+### Run full stack with docker-compose
+
+```bash
+docker-compose up --build
+```

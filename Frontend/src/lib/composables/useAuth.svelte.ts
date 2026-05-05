@@ -1,6 +1,4 @@
 ﻿/**
- * useAuth.ts
- *
  * Composable encapsulating all authentication logic.
  * Pages import createLoginState() or createRegisterState() — never raw fetch().
  */
