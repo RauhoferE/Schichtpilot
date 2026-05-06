@@ -1,4 +1,4 @@
-<!-- src/routes/manager/dashboard/+page.svelte -->
+﻿
 <script>
     import { goto } from '$app/navigation';
 
@@ -9,5 +9,5 @@
     }
 </script>
 
-<h1>Main Dashboard</h1>
+<h1>WELCOME TO Manager's Dashboard</h1>
 <button onclick={logout}>Logout</button>
