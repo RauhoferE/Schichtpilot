@@ -2,7 +2,6 @@
  * Composable encapsulating all authentication logic.
  * Pages import createLoginState() or createRegisterState() — never raw fetch().
  */
-
 import { goto } from '$app/navigation';
 
 const MAX_ATTEMPTS     = 5;
@@ -83,7 +82,7 @@ export function createLoginState() {
     let lockoutTimer: ReturnType<typeof setInterval> | null = null;
 
     let isFormDisabled = $derived(isLoading || isLockedOut);
-
+    
     function triggerLockout() {
         isLockedOut    = true;
         lockoutSeconds = LOCKOUT_DURATION;
@@ -112,9 +111,11 @@ export function createLoginState() {
             });
             const data = await response.json();
             if (response.ok) {
-                if (data.token) sessionStorage.setItem('sp_token', data.token);
+                if (data.token)
+                    sessionStorage.setItem('sp_token', data.token);
                 failedAttempts = 0;
-                goto('/dashboard');
+                goto(data.role === 'Admin' ? 'route/manager/dashboard' : 'route/employee/schedule'); // replace it with below after testing
+                // goto('/dashboard');
             } else {
                 failedAttempts += 1;
                 if (failedAttempts >= MAX_ATTEMPTS) {

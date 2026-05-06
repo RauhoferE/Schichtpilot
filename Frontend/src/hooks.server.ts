@@ -11,7 +11,10 @@ const PROTECTED_ROUTES = [
     '/settings',
     '/profile',
     '/users',
-    '/absences'
+    '/absences',
+    '/employee',
+    '/manager',
+    
 ];
 
 // Routes that should redirect authenticated users away (e.g., login page)

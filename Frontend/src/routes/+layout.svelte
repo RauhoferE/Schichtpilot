@@ -1,8 +1,3 @@
-<!--
-  +layout.svelte — Root layout
-  This is the only place app.css is imported.
-  Every page in the app inherits this layout automatically.
--->
 <script lang="ts">
     import './layout.css';
     import '../lib/styles/app.css';
@@ -16,5 +11,5 @@
     let { children }: Props = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head><link rel="/favicon.svg" href={favicon} /></svelte:head>
 {@render children()}

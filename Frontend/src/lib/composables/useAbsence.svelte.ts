@@ -1,7 +1,7 @@
 ﻿import { goto } from '$app/navigation';
 import type { AbsenceDto, AbsenceStatus, AbsenceType, CreateAbsenceDto } from '$lib/types/absence';
 
-// ── Mock data — generated lazily to avoid SSR/client date mismatch ────────────
+// ── Mock data ────────────
 function getMockAbsences(): AbsenceDto[] {
     const today = new Date();
     const y = today.getFullYear();
