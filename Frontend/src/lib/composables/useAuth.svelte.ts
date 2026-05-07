@@ -118,7 +118,9 @@ export function createLoginState() {
 
                 if (mockUser && email === mockUser.email && password === mockUser.password) {
                     failedAttempts = 0;
-                    goto(mockUser.role === 'Admin' ? '/manager/dashboard' : '/employee/schedule');
+                    document.cookie = `sp_session=mock-session; path=/`;
+                    document.cookie = `sp_role=${mockUser.role}; path=/`;
+                    goto(mockUser.role === 'Admin' ? '/manager/dashboard' : '/employee/absence');
                     return;
                 }
 

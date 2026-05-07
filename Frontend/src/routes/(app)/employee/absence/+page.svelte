@@ -8,9 +8,11 @@
     import {
         createAbsenceState,
         ABSENCE_TYPE_LABELS,
+        ABSENCE_TYPES,
         STATUS_STYLES,
         CALENDAR_DOT,
         fmtDate,
+        todayIso,
     } from '$lib/composables/useAbsence.svelte';
 
     const MONTH_NAMES = [
@@ -18,7 +20,6 @@
         'July','August','September','October','November','December'
     ];
     const DAY_HEADERS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-    const ABSENCE_TYPES = ['Vacation','SickLeave','CompensationTime','Other'] as const;
 
     const s = createAbsenceState();
 
@@ -50,7 +51,7 @@
     <!-- Page header -->
     <div class="flex items-center justify-between">
         <h1 class="text-xl font-semibold">My Absence</h1>
-        <Button href="/employee/absence/new">+ Add new absence</Button>
+        <Button onclick={() => s.openDialog()}>+ Add new absence</Button>
     </div>
 
     <!-- Main layout: calendar (left) + table (right) -->
@@ -66,8 +67,8 @@
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
                 <span class="text-sm font-semibold">
-          {MONTH_NAMES[s.calendarMonth]} {s.calendarYear}
-        </span>
+                    {MONTH_NAMES[s.calendarMonth]} {s.calendarYear}
+                </span>
                 <button onclick={s.nextMonth} aria-label="Next month"
                         class="p-1 rounded hover:bg-muted transition-colors">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
@@ -92,8 +93,8 @@
                         <button
                                 onclick={() => cell.dateStr && s.selectDay(cell.dateStr)}
                                 class="relative mx-auto w-8 h-8 rounded-full text-xs flex items-center justify-center transition-colors
-                {selected ? 'bg-primary text-primary-foreground font-semibold' : 'hover:bg-muted'}
-                {status && !selected ? 'font-medium' : ''}"
+                                {selected ? 'bg-primary text-primary-foreground font-semibold' : 'hover:bg-muted'}
+                                {status && !selected ? 'font-medium' : ''}"
                                 aria-label={cell.dateStr ?? ''}
                         >
                             {cell.day}
@@ -133,7 +134,7 @@
                         <Table.Row
                                 onclick={() => s.selectAbsence(absence.id)}
                                 class="cursor-pointer transition-colors
-                {isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/50'}"
+                                {isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/50'}"
                                 aria-selected={isSelected}
                         >
                             <Table.Cell class="font-medium">
@@ -146,10 +147,10 @@
                                 {/if}
                             </Table.Cell>
                             <Table.Cell>
-                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold
-                  {STATUS_STYLES[absence.status]}">
-                  {absence.status}
-                </span>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold
+                                    {STATUS_STYLES[absence.status]}">
+                                    {absence.status}
+                                </span>
                             </Table.Cell>
                             <Table.Cell class="hidden md:table-cell text-sm text-muted-foreground max-w-[200px] truncate">
                                 {absence.managerMessage || '—'}
@@ -205,15 +206,15 @@
                 </select>
             </div>
 
-            <!-- Dates -->
+            <!-- Dates  //date starts with today, past is not possible to book todayiso=min -->
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                     <Label for="startDate">Start Date</Label>
-                    <Input id="startDate" type="date" bind:value={s.form.startDate} />
+                    <Input id="startDate" type="date" min={todayIso()} bind:value={s.form.startDate} /> 
                 </div>
                 <div class="space-y-2">
                     <Label for="endDate">End Date</Label>
-                    <Input id="endDate" type="date" bind:value={s.form.endDate} />
+                    <Input id="endDate" type="date" min={todayIso()} bind:value={s.form.endDate} />
                 </div>
             </div>
 
