@@ -5,11 +5,15 @@
     interface Props { children: Snippet; }
     let { children }: Props = $props();
 
+    // ── Manager navigation tabs ───────────────────────────────────────────────
+    // Order matches the mockup: Overview first, then the rest
     const tabs = [
-        { label: 'Dashboard',     href: '/manager/dashboard' },
-        { label: 'Work schedule', href: '/manager/schedule'  },
-        { label: 'Absence',       href: '/manager/absence'   },
-        { label: 'Employees',     href: '/manager/employees' },
+        { label: 'Overview',           href: '/manager/overview'    },
+        { label: 'Teams',              href: '/manager/teams'       },
+        { label: 'New Employee',       href: '/manager/employee/new'},
+        { label: 'Time Management',    href: '/manager/time'        },
+        { label: 'Absence Management', href: '/manager/absence'     },
+        { label: 'Company Policy',     href: '/manager/policy'      },
     ];
 </script>
 

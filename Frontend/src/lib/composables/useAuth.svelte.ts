@@ -120,7 +120,7 @@ export function createLoginState() {
                     failedAttempts = 0;
                     document.cookie = `sp_session=mock-session; path=/`;
                     document.cookie = `sp_role=${mockUser.role}; path=/`;
-                    goto(mockUser.role === 'Admin' ? '/manager/dashboard' : '/employee/absence');
+                    goto(mockUser.role === 'Admin' ? '/manager/overview' : '/employee/schedule');
                     return;
                 }
 

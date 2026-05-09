@@ -20,9 +20,14 @@
     // When backend is connected, replace with a real API call:
     // await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     function handleLogout() {
-        sessionStorage.removeItem('sp_session');
-        sessionStorage.removeItem('sp_role');
-        window.location.href = '/login';
+            // Clear sessionStorage
+            sessionStorage.removeItem('sp_session');
+            sessionStorage.removeItem('sp_role');
+            // Clear cookies so hooks.server.ts stops redirecting away from /login
+            document.cookie = 'sp_session=; path=/; max-age=0';
+            document.cookie = 'sp_role=; path=/; max-age=0';
+            document.cookie = 'user=; path=/; max-age=0';
+            window.location.href = '/login';
     }
 </script>
 
