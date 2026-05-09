@@ -24,8 +24,8 @@
         <Card.Header class="text-center space-y-1">
             <!-- Schichtpilot calendar-clock/pilot icon -->
             <div class="flex items-center justify-center gap-2 mb-2">
-                <CalendarClock  class="w-8 h-8 text-primary" />
-                <Card.Title class="text-2xl font-bold">Schichtpilot</Card.Title>
+                <CalendarClock  class="w-8 h-8 text-black" />
+                <Card.Title class="text-2xl font-bold" style="color: #F59E0B;" >Schichtpilot</Card.Title>
             </div>
             <Card.Description>Create your account</Card.Description>
         </Card.Header>

@@ -30,24 +30,43 @@
 
 :root {
 	--radius: 0.625rem;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
+
+	/* Slate-50 — soft off-white, easier on older eyes */
+	--background: oklch(0.984 0.003 247.858);
+	/* Slate-800 — warm dark, not harsh black */
+	--foreground: oklch(0.279 0.041 260.031);
+
+	/* Card: pure white so it lifts off the background */
 	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
+	--card-foreground: oklch(0.279 0.041 260.031);
+
 	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
+	--popover-foreground: oklch(0.279 0.041 260.031);
+
+	/* Primary: blue-600 #2563EB — trustworthy, high contrast */
+	--primary: oklch(0.546 0.245 262.881);
+	--primary-foreground: oklch(1 0 0);
+
+	/* Secondary: slate-100 */
+	--secondary: oklch(0.968 0.007 247.896);
+	--secondary-foreground: oklch(0.279 0.041 260.031);
+
+	/* Muted: slate-100 */
+	--muted: oklch(0.968 0.007 247.896);
+	--muted-foreground: oklch(0.554 0.046 257.417);
+
+	/* Accent: amber-400 #F59E0B — warm, friendly */
+	--accent: oklch(0.828 0.189 84.429);
+	--accent-foreground: oklch(0.279 0.041 260.031);
+
 	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
+
+	/* Border: slate-200 */
+	--border: oklch(0.929 0.013 255.508);
+	--input: oklch(0.929 0.013 255.508);
+
+	/* Ring: blue-400 for focus rings — accessible */
+	--ring: oklch(0.707 0.165 254.624);
 }
 
 .dark {

@@ -16,11 +16,14 @@
 
 <main class="min-h-dvh grid place-items-center bg-muted/40 px-4 py-10">
     <Card.Root class="w-full max-w-md">
-        <!-- Schichtpilot calendar-clock/pilot icon -->
+
+        <!-- Logo + title -->
         <Card.Header class="text-center space-y-1">
             <div class="flex items-center justify-center gap-2 mb-2">
-                <CalendarClock  class="w-8 h-8 text-primary" />  
-                <Card.Title class="text-2xl font-bold">Schichtpilot</Card.Title>
+                <!-- Icon: amber to match brand color -->
+                <CalendarClock class="w-8 h-8 text-black"/>
+                <!-- Title: amber to match brand color -->
+                <Card.Title class="text-2xl font-bold" style="color: #F59E0B;">Schichtpilot</Card.Title>
             </div>
             <Card.Description>Sign in to your workspace</Card.Description>
         </Card.Header>

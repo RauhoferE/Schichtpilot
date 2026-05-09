@@ -6,12 +6,14 @@
     let { children }: Props = $props();
 
     const tabs = [
-        { label: 'Work schedule', href: '/employee/schedule' },
-        { label: 'Absence',       href: '/employee/absence'  },
+        { label: 'Dashboard',     href: '/manager/dashboard' },
+        { label: 'Work schedule', href: '/manager/schedule'  },
+        { label: 'Absence',       href: '/manager/absence'   },
+        { label: 'Employees',     href: '/manager/employees' },
     ];
 </script>
 
-<Navbar {tabs}/>
+<Navbar {tabs} />
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
     {@render children()}
