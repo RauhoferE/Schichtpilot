@@ -3,7 +3,7 @@
     import { goto } from '$app/navigation';
     import favicon from '$lib/assets/favicon.svg';
 
-    // ── Types ─────────────────────────────────────────────────────────────────
+    // Types 
     interface Tab {
         label: string;
         href: string;
@@ -15,7 +15,7 @@
 
     let { tabs }: Props = $props();
 
-    // ── Logout ────────────────────────────────────────────────────────────────
+    // Logout
     // MOCK ONLY: clears session from sessionStorage and redirects to login.
     // When backend is connected, replace with a real API call:
     // await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
@@ -32,18 +32,9 @@
 </script>
 
 <!--
-    ── Navbar ────────────────────────────────────────────────────────────────────
+    Navbar 
     Shared navigation bar used by both employee and manager layouts.
     Tabs are passed in as props so each layout controls its own navigation items.
-    Active tab is highlighted using the current URL pathname.
-
-    Employee tabs:  Work schedule | Absence
-    Manager tabs:   Dashboard | Work schedule | Absence | Employees
-
-    Design decisions:
-    - Logo text is amber to make the brand warm and distinct from UI elements
-    - Tabs are styled as pill buttons for clarity with older/non-technical users
-    ─────────────────────────────────────────────────────────────────────────────
 -->
 <header class="bg-white border-b border-border shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
@@ -90,13 +81,7 @@
             </div>
         </div>
 
-        <!-- ── Tab row ────────────────────────────────────────────────────────
-             Pill-style buttons instead of anchor tabs to avoid Svelte parser
-             issues with dynamic href inside each blocks.
-
-             Active tab:   filled blue pill, white text
-             Inactive tab: light grey pill, dark text, blue on hover
-        ─────────────────────────────────────────────────────────────────────-->
+        <!-- Tab row  -->
         <div class="flex gap-2 pb-3">
             {#each tabs as tab}
                 <button

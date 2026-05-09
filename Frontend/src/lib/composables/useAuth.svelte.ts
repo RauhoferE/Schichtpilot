@@ -114,55 +114,71 @@ export function createLoginState() {
 
         try {
             if (MOCK_MODE) {
-                const mockUser = loadMockUser();
-
-                if (mockUser && email === mockUser.email && password === mockUser.password) {
-                    failedAttempts = 0;
-                    document.cookie = `sp_session=mock-session; path=/`;
-                    document.cookie = `sp_role=${mockUser.role}; path=/`;
-                    goto(mockUser.role === 'Admin' ? '/manager/overview' : '/employee/schedule');
-                    return;
-                }
-
-                failedAttempts += 1;
-                if (failedAttempts >= MAX_ATTEMPTS) {
-                    triggerLockout();
-                } else {
-                    const remaining = MAX_ATTEMPTS - failedAttempts;
-                    errorMessage = `Invalid email or password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`;
-                }
+                await handleMockLogin();
                 return;
             }
 
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                if (data.token) sessionStorage.setItem('sp_token', data.token);
-                failedAttempts = 0;
-                goto(data.role === 'Admin' ? '/manager/dashboard' : '/employee/schedule');
-            } else {
-                failedAttempts += 1;
-                if (failedAttempts >= MAX_ATTEMPTS) {
-                    triggerLockout();
-                } else {
-                    const remaining = MAX_ATTEMPTS - failedAttempts;
-                    errorMessage =
-                        data.message ??
-                        `Invalid email or password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`;
-                }
-            }
+            await handleRealLogin();
         } catch {
             errorMessage = 'Connection error. Please check your network and try again.';
         } finally {
             isLoading = false;
         }
+    }
+
+    function handleFailedLogin(message?: string) {
+        failedAttempts += 1;
+
+        if (failedAttempts >= MAX_ATTEMPTS) {
+            triggerLockout();
+            return;
+        }
+
+        const remaining = MAX_ATTEMPTS - failedAttempts;
+        errorMessage =
+            message ??
+            `Invalid email or password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`;
+    }
+
+    function redirectByRole(role: 'Admin' | 'User') {
+        goto(role === 'Admin' ? '/manager/overview' : '/employee/schedule');
+    }
+
+    async function handleMockLogin() {
+        const mockUser = loadMockUser();
+
+        if (mockUser && email === mockUser.email && password === mockUser.password) {
+            failedAttempts = 0;
+            document.cookie = 'sp_session=mock-session; path=/';
+            document.cookie = `sp_role=${mockUser.role}; path=/`;
+            redirectByRole(mockUser.role);
+            return;
+        }
+
+        handleFailedLogin();
+    }
+
+    async function handleRealLogin() {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            handleFailedLogin(data.message);
+            return;
+        }
+
+        if (data.token) {
+            sessionStorage.setItem('sp_token', data.token);
+        }
+
+        failedAttempts = 0;
+        redirectByRole(data.role);
     }
 
     return {
@@ -244,7 +260,7 @@ export function createRegisterState() {
         if (lastName.length > 20) return 'Last name must be 20 characters or fewer.';
         if (street.length > 50) return 'Street address must be 50 characters or fewer.';
         if (city.length > 20) return 'City must be 20 characters or fewer.';
-        if (isNaN(Number(postalCode)) || Number(postalCode) <= 0) {
+        if ((Number.isNaN(postalCode)) || Number(postalCode) <= 0) {
             return 'Please enter a valid postal code.';
         }
         return null;
@@ -280,7 +296,7 @@ export function createRegisterState() {
 
         try {
             if (MOCK_MODE) {
-                const role: 'Admin' | 'User' = 'User';
+                const role: 'Admin' | 'User' = 'Admin';
                 saveMockUser({ email, password, role });
                 successMessage = 'Account created! Redirecting to login…';
                 setTimeout(() => goto('/login'), 2000);
