@@ -53,7 +53,17 @@
         <h1 class="text-xl font-semibold">My Absence</h1>
         <Button onclick={() => s.openDialog()}>+ Add new absence</Button>
     </div>
-
+    
+    <!-- Success toast: shown for 3s after a request is submitted -->
+    {#if s.successMessage}
+        <Alert.Root class="border-green-500 bg-green-50 text-green-800">
+            <svg class="h-4 w-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <Alert.Description class="text-green-800">{s.successMessage}</Alert.Description>
+        </Alert.Root>
+    {/if}
+    
     <!-- Main layout: calendar (left) + table (right) -->
     <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 items-start">
 

@@ -78,10 +78,11 @@ export function createAbsenceState() {
     const now = new Date();
 
     // ── Data ──
-    let absences     = $state<AbsenceDto[]>(getMockAbsences());
-    let selectedId   = $state<number | null>(null);
-    let isLoading    = $state(false);
-    let errorMessage = $state('');
+    let absences       = $state<AbsenceDto[]>(getMockAbsences());
+    let selectedId     = $state<number | null>(null);
+    let isLoading      = $state(false);
+    let errorMessage   = $state('');
+    let successMessage = $state('');
 
     // ── Calendar ──
     let calendarYear  = $state(now.getFullYear());
@@ -145,8 +146,9 @@ export function createAbsenceState() {
     // ── Dialog actions ──
     function openDialog() {
         form = { absenceType: 'Vacation', startDate: '', endDate: '', message: '' };
-        errorMessage = '';
-        dialogOpen = true;
+        errorMessage   = '';
+        successMessage = '';
+        dialogOpen     = true;
     }
 
     async function submitAbsence() {
@@ -200,8 +202,14 @@ export function createAbsenceState() {
             };
 
             absences = [newAbsence, ...absences];
+            // Close dialog first, then show success message on the page
             dialogOpen = false;
             form = { absenceType: 'Vacation', startDate: '', endDate: '', message: '' };
+            successMessage = 'Your absence request has been submitted successfully!';
+
+            // Hide success message after 3 seconds
+            setTimeout(() => { successMessage = ''; }, 3000);
+
         } catch (e: unknown) {
             errorMessage = e instanceof Error ? e.message : 'Failed to submit. Please try again.';
         } finally {
@@ -215,11 +223,12 @@ export function createAbsenceState() {
 
     return {
         // data
-        get absences()        { return absences; },
-        get selectedId()      { return selectedId; },
-        get selectedAbsence() { return selectedAbsence; },
-        get isLoading()       { return isLoading; },
-        get errorMessage()    { return errorMessage; },
+        get absences()         { return absences; },
+        get selectedId()       { return selectedId; },
+        get selectedAbsence()  { return selectedAbsence; },
+        get isLoading()        { return isLoading; },
+        get errorMessage()     { return errorMessage; },
+        get successMessage()   { return successMessage; },
 
         // calendar
         get calendarYear()    { return calendarYear; },
