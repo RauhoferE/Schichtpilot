@@ -60,7 +60,7 @@
 
                 <!-- Profile icon: no action yet, will link to profile page when built -->
                 <button
-                        class="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+                        class="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-amber-400"
                         aria-label="Profile"
                 >
                     <svg class="w8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -98,8 +98,8 @@
                         onclick={() => goto(tab.href)}
                         class="px-5 py-2 rounded-full text-sm font-semibold transition-colors border
                         {page.url.pathname === tab.href
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-muted text-foreground border-border hover:bg-primary/10 hover:text-primary hover:border-primary'}"
+                            ? 'bg-amber-400 text-amber-900 border-amber-400'
+                            : 'bg-muted text-foreground border-border hover:bg-amber-50 hover:text-amber-800 hover:border-amber-400'}"
                 >
                     {tab.label}
                 </button>
