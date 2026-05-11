@@ -260,7 +260,7 @@ export function createRegisterState() {
         if (lastName.length > 20) return 'Last name must be 20 characters or fewer.';
         if (street.length > 50) return 'Street address must be 50 characters or fewer.';
         if (city.length > 20) return 'City must be 20 characters or fewer.';
-        if ((Number.isNaN(postalCode)) || Number(postalCode) <= 0) {
+        if (!/^\d+$/.test(postalCode) || Number(postalCode) <= 0) {
             return 'Please enter a valid postal code.';
         }
         return null;
