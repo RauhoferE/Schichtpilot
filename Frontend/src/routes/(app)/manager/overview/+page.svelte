@@ -5,15 +5,58 @@
         SHIFT_META,
         DAY_HEADERS,
     } from '$lib/composables/useSchedule.svelte';
-  
+
     const s = createScheduleState();
 
-    // PDF download: uses print stylesheet
-    function downloadPdf() {
-        window.print();
+    let exportOpen = $state(false);
+
+    function toggleExport() {
+        exportOpen = !exportOpen;
     }
 
-    // Print schedule
+    function closeExport() {
+        exportOpen = false;
+    }
+
+    import jsPDF from 'jspdf';
+    import autoTable from 'jspdf-autotable';
+
+    function exportPdf() {
+        closeExport();
+        const doc = new jsPDF();
+
+        autoTable(doc, {
+            head: [['Staff', ...DAY_HEADERS]],
+            body: s.week.staff.map(member => [
+                member.name,
+                ...member.days.map(d => d.shift ?? '—')
+            ]),
+            headStyles: { fillColor: [30, 30, 30] },
+        });
+
+        doc.save(`schedule-${s.week.label}.pdf`);
+    }
+    
+
+    function exportExcel() {
+        closeExport();
+        const rows = [
+            ['Staff', ...DAY_HEADERS],
+            ...s.week.staff.map(member => [
+                member.name,
+                ...member.days.map(d => d.shift ?? '—')
+            ])
+        ];
+        const csvContent = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `schedule-${s.week.label}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
     function printSchedule() {
         window.print();
     }
@@ -21,7 +64,6 @@
 
 <svelte:head>
     <title>Overview — SchichtPilot</title>
-    <!-- Print styles: hide everything except the schedule grid -->
     <style>
         @media print {
             body * { visibility: hidden; }
@@ -36,24 +78,67 @@
     <!-- ── Page header ── -->
     <div class="flex items-center justify-between">
         <h1 class="text-xl font-semibold">Overview</h1>
-        <!-- Manager gets two buttons: Download PDF + Print Schedule -->
         <div class="flex gap-2">
-            <Button variant="outline" onclick={printSchedule}>
+
+            <!-- Export dropdown -->
+            <div class="relative">
+                <Button variant="outline" onclick={toggleExport}>
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export
+                    <svg class="w-3 h-3 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </Button>
+
+                {#if exportOpen}
+                    <!-- Backdrop to close on outside click -->
+                    <button
+                            class="fixed inset-0 z-10"
+                            onclick={closeExport}
+                            aria-label="Close menu"
+                    ></button>
+
+                    <div class="absolute right-0 mt-1 w-48 rounded-md border bg-card shadow-md z-20">
+                        <button
+                                onclick={exportPdf}
+                                class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors rounded-t-md"
+                        >
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            Export as PDF
+                        </button>
+                        <button
+                                onclick={exportExcel}
+                                class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors rounded-b-md"
+                        >
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="8" y1="13" x2="16" y2="13"/>
+                                <line x1="8" y1="17" x2="16" y2="17"/>
+                            </svg>
+                            Export as Excel (.csv)
+                        </button>
+                    </div>
+                {/if}
+            </div>
+
+            <!-- Print button -->
+            <Button onclick={printSchedule}>
                 <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 6 2 18 2 18 9"/>
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                     <rect x="6" y="14" width="12" height="8"/>
                 </svg>
-                Print Schedule
+                Print
             </Button>
-            <Button onclick={downloadPdf}>
-                <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Download PDF
-            </Button>
+
         </div>
     </div>
 
@@ -69,7 +154,6 @@
                 </span>
             </div>
         {/each}
-        <!-- Empty cell legend -->
         <div class="flex items-center gap-2 text-sm">
             <span class="w-6 h-6 rounded border border-border bg-white flex items-center justify-center text-xs text-muted-foreground">
                 —
@@ -120,9 +204,7 @@
                 <tbody>
                 {#each s.week.staff as member}
                     <tr class="border-b last:border-0 hover:bg-muted/20 transition-colors">
-                        <!-- Staff name -->
                         <td class="px-4 py-2 font-medium">{member.name}</td>
-                        <!-- Shift cells -->
                         {#each member.days as day}
                             <td class="px-2 py-2 text-center">
                                 {#if day.shift}

@@ -55,6 +55,8 @@
 		"vitest-browser-svelte": "^2.0.2"
 	},
 	"dependencies": {
+		"jspdf": "^4.2.1",
+		"jspdf-autotable": "^5.0.7",
 		"lucide-svelte": "^1.0.1"
 	}
 }
