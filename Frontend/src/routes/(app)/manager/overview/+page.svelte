@@ -155,7 +155,7 @@
             </div>
         {/each}
         <div class="flex items-center gap-2 text-sm">
-            <span class="w-6 h-6 rounded border border-border bg-white flex items-center justify-center text-xs text-muted-foreground">
+            <span class="w-7 h-7 rounded border border-border bg-white flex items-center justify-center text-xs text-muted-foreground">
                 —
             </span>
             <span class="text-muted-foreground">Not assigned</span>
@@ -172,19 +172,19 @@
                     class="p-1.5 rounded hover:bg-muted transition-colors"
                     aria-label="Previous week"
             >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="m15 18-6-6 6-6"/>
                 </svg>
             </button>
-
-            <span class="text-sm font-semibold">{s.week.label}</span>
+            <!-- Week date in the center 11.05.2026 - 17.05.2026 -->
+            <span class="text-lg font-semibold">{s.week.label}</span>
 
             <button
                     onclick={s.nextWeek}
                     class="p-1.5 rounded hover:bg-muted transition-colors"
                     aria-label="Next week"
             >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="m9 18 6-6-6-6"/>
                 </svg>
             </button>
@@ -194,7 +194,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                <tr class="border-b bg-muted/20">
+                <tr class="border-b bg-muted">
                     <th class="text-left px-4 py-2 font-semibold w-28">Staff</th>
                     {#each DAY_HEADERS as day}
                         <th class="text-center px-2 py-2 font-semibold">{day}</th>
@@ -208,7 +208,7 @@
                         {#each member.days as day}
                             <td class="px-2 py-2 text-center">
                                 {#if day.shift}
-                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded text-xs font-bold
+                                        <span class="inline-flex items-center justify-center w-10 h-10 rounded text-xs font-bold
                                             {SHIFT_META[day.shift].bg} {SHIFT_META[day.shift].text}">
                                             {day.shift}
                                         </span>
