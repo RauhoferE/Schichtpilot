@@ -24,43 +24,44 @@ export async function get<T>(url: string): Promise<T> {
   return response.json() as Promise<T>; // This is the "mapping"
 }
 
-export async function del<T>(url: string): Promise<T> {
+export async function del<T>(url: string, bodyContent: any|undefined): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
-    method: 'DELETE'
+    method: 'DELETE',
+    body: bodyContent ? JSON.stringify(bodyContent) : ''
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
 
-export async function post<T>(url: string, bodyContent: any): Promise<T>{
+export async function post<T>(url: string, bodyContent: any | undefined): Promise<T>{
   const response = await fetch(url, {
     credentials: "include",
     method: 'POST',
-    body: JSON.stringify(bodyContent)
+    body: bodyContent ? JSON.stringify(bodyContent) : ''
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
 
-export async function patch<T>(url: string, bodyContent: any): Promise<T>{
+export async function patch<T>(url: string, bodyContent: any|undefined): Promise<T>{
   const response = await fetch(url, {
     credentials: "include",
     method: 'PATCH',
-    body: JSON.stringify(bodyContent)
+    body: bodyContent ? JSON.stringify(bodyContent) : ''
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
 
-export async function put<T>(url: string, bodyContent: any): Promise<T>{
+export async function put<T>(url: string, bodyContent: any|undefined): Promise<T>{
   const response = await fetch(url, {
     credentials: "include",
     method: 'PUT',
-    body: JSON.stringify(bodyContent)
+    body: bodyContent ? JSON.stringify(bodyContent) : ''
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
