@@ -17,7 +17,7 @@ export function getJobRoleAsync(id: number): Promise<JobRoleDto>{
 }
 
 export function addJobRoleDependency(id: number, dependencyId: number): Promise<void>{
-    return get<void>(`${controllerURL}/${id}/dependency/${dependencyId}`);
+    return post<void>(`${controllerURL}/${id}/dependency/${dependencyId}`, null);
 }
 
 export function removeJobRoleDependency(id: number, dependencyId: number): Promise<void>{
@@ -25,7 +25,7 @@ export function removeJobRoleDependency(id: number, dependencyId: number): Promi
 }
 
 export function addUserToRole(jobRoleId: number, userId: number): Promise<void>{
-    return get<void>(`${controllerURL}/${jobRoleId}/user/${userId}`);
+    return post<void>(`${controllerURL}/${jobRoleId}/user/${userId}`, null);
 }
 
 export function removeUserToRole(jobRoleId: number, userId: number): Promise<void>{
