@@ -40,3 +40,12 @@ export interface QueryableJobRoleResponse{
     count: number,
     users: UserDto[]
 }
+
+export interface FrontendUser {
+    name: string;
+    family_name: string;
+    sub: string;
+    email: string;
+    role: string[];
+    exp: number;
+}

@@ -27,6 +27,7 @@
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.18",
+		"@types/js-cookie": "^3.0.6",
 		"@types/node": "^24",
 		"@vitest/browser-playwright": "^4.1.0",
 		"bits-ui": "^2.18.0",
@@ -55,8 +56,10 @@
 		"vitest-browser-svelte": "^2.0.2"
 	},
 	"dependencies": {
+		"js-cookie": "^3.0.5",
 		"jspdf": "^4.2.1",
 		"jspdf-autotable": "^5.0.7",
+		"jwt-decode": "^4.0.0",
 		"lucide-svelte": "^1.0.1"
 	}
 }
