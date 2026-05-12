@@ -1,5 +1,9 @@
 ﻿// ── Schedule types ────────────────────────────────────────────────────────────
 
+import type { JobRoleShortDto } from "./jobRole.types";
+import type { ShiftDto, TimeSlotDto } from "./shift.types";
+import type { UserDto } from "./user.types";
+
 // Shift codes used in the schedule grid
 // L = Lunch, E = Evening, M = Mixed, V = Day off/Vacation, null = not assigned
 export type ShiftCode = 'L' | 'E' | 'M' | 'V' | 'X' | null;
@@ -29,4 +33,60 @@ export interface ShiftMeta {
     hours: string;  // e.g. "10:00–17:00"
     bg: string;     // tailwind bg class
     text: string;   // tailwind text class
+}
+
+export interface GenerateScheduleDto{
+    name: string,
+    startDate: Date,
+    endDate: Date,
+    shiftIds: number[]
+}
+
+export interface UpdateScheduleRequest{
+    startTime: Date,
+    endTime: Date
+}
+
+export interface GetSchedulesRequest{
+    page: number,
+    pageSize: number,
+    startDate: Date,
+    endDate: Date,
+    searchstring: string,
+    shiftIds: number[],
+    status: string
+}
+
+export interface WorkScheduleDto{
+    id: number,
+    name: string,
+    startDate: Date,
+    endDate: Date,
+    isActive: boolean,
+    isValid: boolean,
+    assignedUsers: AssignedUserDto[],
+    shifts: ShiftDto[]
+}
+
+export interface AssignedUserDto{
+    timeSlot: TimeSlotDto,
+    user: UserDto,
+    jobRole: JobRoleShortDto,
+    startTime: Date,
+    endTime: Date
+}
+
+export interface QueryableSchedules{
+    count: number,
+    workSchedules: WorkScheduleShortDto[]
+}
+
+export interface WorkScheduleShortDto{
+    id: number,
+    name: string,
+    startDate: Date,
+    endDate: Date,
+    isActive: boolean,
+    isValid: boolean,
+    shiftCount: number
 }
