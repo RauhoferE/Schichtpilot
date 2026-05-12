@@ -1,5 +1,5 @@
 import { del, get, post, put } from "$lib/api";
-import type { CreateJobRoleDto, EditJobRoleDto, GetJobRoleRequest, JobRoleDto, QueryableJobRoleResponse } from "$lib/types/jobRole";
+import type { CreateJobRoleDto, EditJobRoleDto, GetJobRoleRequest, JobRoleDto, QueryableJobRoleResponse } from "$lib/types/jobRole.types";
 import { PUBLIC_BASE_URL } from '$env/static/public';
 
 const controllerURL: string = PUBLIC_BASE_URL + '/api/jobrole';

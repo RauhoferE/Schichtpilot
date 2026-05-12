@@ -1,4 +1,4 @@
-import { CreateJobRoleDto, EditJobRoleDto, GetJobRoleRequest, type JobRoleDto, type QueryableJobRoleResponse } from "$lib/types/jobRole";
+import { CreateJobRoleDto, EditJobRoleDto, GetJobRoleRequest, type JobRoleDto, type QueryableJobRoleResponse } from "$lib/types/jobRole.types";
 
 
 // ── Mock data ─────────────────────────────────────────────────────────────────

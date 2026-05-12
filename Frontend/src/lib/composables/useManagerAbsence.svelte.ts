@@ -1,4 +1,4 @@
-﻿import type { AbsenceStatus, AbsenceType } from '$lib/types/absence';
+﻿import type { AbsenceStatus, AbsenceType } from '$lib/types/absence.types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type { AbsenceStatus, AbsenceType };

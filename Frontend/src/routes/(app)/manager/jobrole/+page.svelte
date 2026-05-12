@@ -5,7 +5,7 @@
     import { Button } from '$lib/components/ui/button/index.js';
     import { Input } from '$lib/components/ui/input/index.js';
     import { getJobRoles } from '$lib/services/jobRole.service';
-    import type { JobRoleShortDto } from '$lib/types/jobRole';
+    import type { JobRoleShortDto } from '$lib/types/jobRole.types';
 
     let jobRoles: JobRoleShortDto[] = [];
     let totalCount = 0;

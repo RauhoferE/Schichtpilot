@@ -1,4 +1,4 @@
-import type { UserDto } from "./user"
+import type { UserDto } from "./user.types"
 
 export interface CreateJobRoleDto {
     name: string,
