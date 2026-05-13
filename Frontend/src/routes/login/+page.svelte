@@ -7,7 +7,9 @@
     import { CalendarClock  } from 'lucide-svelte';
     import { authenticate } from '$lib/services/auth.service';
     import * as EmailValidator from 'email-validator';
-	import { base } from '$app/paths';
+	import { isAdmin } from '$lib/services/jwt.service';
+	import { redirect } from '@sveltejs/kit';
+	import { goto } from '$app/navigation';
 
     let email = $state('');
     let password = $state('');
@@ -33,11 +35,12 @@
         isLoading = true;
         try {
             await authenticate({ email, password });
-        } catch (error) {
-            errorMessage = 'Login failed.';
-        } finally {
             isLoading = false;
+            goto(isAdmin() ? '/manager/overview' : '/employee/schedule');
+        } catch (error) { 
+            errorMessage = 'Login failed.';
         }
+        isLoading = false;
     }
 </script>
 

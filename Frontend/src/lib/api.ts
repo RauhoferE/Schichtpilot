@@ -19,7 +19,14 @@ export async function get<T>(url: string): Promise<T> {
     credentials: "include",
     method: 'GET'
   });
-  const json = await response.json();
+  const cloned = response.clone();
+  const text = await response.text();
+
+  if (!text || text.length == 0) {
+    return Promise.resolve(undefined as T);
+  }
+
+  const json = await cloned.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
@@ -33,7 +40,13 @@ export async function del<T>(url: string, bodyContent: any|undefined): Promise<T
       'Content-Type':'application/json'
     }
   });
-  const json = await response.json();
+  const cloned = response.clone();
+  const text = await response.text();
+
+  if (!text || text.length == 0) {
+    return Promise.resolve(undefined as T);
+  }
+  const json = await cloned.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
@@ -47,7 +60,13 @@ export async function post<T>(url: string, bodyContent: any | undefined): Promis
       'Content-Type':'application/json'
     }
   });
-  const json = await response.json();
+  const cloned = response.clone();
+  const text = await response.text();
+
+  if (!text || text.length == 0) {
+    return Promise.resolve(undefined as T);
+  }
+  const json = await cloned.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
@@ -61,7 +80,13 @@ export async function patch<T>(url: string, bodyContent: any|undefined): Promise
       'Content-Type':'application/json'
     }
   });
-  const json = await response.json();
+  const cloned = response.clone();
+  const text = await response.text();
+
+  if (!text || text.length == 0) {
+    return Promise.resolve(undefined as T);
+  }
+  const json = await cloned.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }
@@ -75,7 +100,13 @@ export async function put<T>(url: string, bodyContent: any|undefined): Promise<T
       'Content-Type':'application/json'
     }
   });
-  const json = await response.json();
+  const cloned = response.clone();
+  const text = await response.text();
+
+  if (!text || text.length == 0) {
+    return Promise.resolve(undefined as T);
+  }
+  const json = await cloned.json();
   checkResponseForErrors(response, json);
   return response.json() as Promise<T>; // This is the "mapping"
 }

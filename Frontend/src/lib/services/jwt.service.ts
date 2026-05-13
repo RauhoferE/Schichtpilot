@@ -76,3 +76,7 @@ export function isAdmin(): boolean{
 
     return false;
 }
+
+export function removeCookie(): void{
+    Cookies.remove('SchichtpilotUser');
+}
