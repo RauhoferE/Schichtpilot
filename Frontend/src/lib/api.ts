@@ -28,7 +28,10 @@ export async function del<T>(url: string, bodyContent: any|undefined): Promise<T
   const response = await fetch(url, {
     credentials: "include",
     method: 'DELETE',
-    body: bodyContent ? JSON.stringify(bodyContent) : ''
+    body: bodyContent ? JSON.stringify(bodyContent) : '',
+        headers:{
+      'Content-Type':'application/json'
+    }
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
@@ -39,7 +42,10 @@ export async function post<T>(url: string, bodyContent: any | undefined): Promis
   const response = await fetch(url, {
     credentials: "include",
     method: 'POST',
-    body: bodyContent ? JSON.stringify(bodyContent) : ''
+    body: bodyContent ? JSON.stringify(bodyContent) : '',
+    headers:{
+      'Content-Type':'application/json'
+    }
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
@@ -50,7 +56,10 @@ export async function patch<T>(url: string, bodyContent: any|undefined): Promise
   const response = await fetch(url, {
     credentials: "include",
     method: 'PATCH',
-    body: bodyContent ? JSON.stringify(bodyContent) : ''
+    body: bodyContent ? JSON.stringify(bodyContent) : '',
+        headers:{
+      'Content-Type':'application/json'
+    }
   });
   const json = await response.json();
   checkResponseForErrors(response, json);
@@ -61,7 +70,10 @@ export async function put<T>(url: string, bodyContent: any|undefined): Promise<T
   const response = await fetch(url, {
     credentials: "include",
     method: 'PUT',
-    body: bodyContent ? JSON.stringify(bodyContent) : ''
+    body: bodyContent ? JSON.stringify(bodyContent) : '',
+        headers:{
+      'Content-Type':'application/json'
+    }
   });
   const json = await response.json();
   checkResponseForErrors(response, json);

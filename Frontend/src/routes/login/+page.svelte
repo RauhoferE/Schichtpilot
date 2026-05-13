@@ -5,9 +5,40 @@
     import { Input }  from '$lib/components/ui/input/index.js';
     import { Label }  from '$lib/components/ui/label/index.js';
     import { CalendarClock  } from 'lucide-svelte';
-    import { createLoginState } from '$lib/composables/useAuth.svelte';
+    import { authenticate } from '$lib/services/auth.service';
+    import * as EmailValidator from 'email-validator';
+	import { base } from '$app/paths';
 
-    const auth = createLoginState();
+    let email = $state('');
+    let password = $state('');
+    let isLoading = $state(false);
+    let errorMessage = $state('');
+
+    let emailFieldValid = $derived(email != '' && EmailValidator.validate(email));
+    let passwordFieldValid = $derived(password != '');
+    let formValid = $derived(emailFieldValid && passwordFieldValid);
+
+    let emailFieldTouched = $state(false);
+    let passwordFieldTouched = $state(false);
+
+    async function handleLogin(event: SubmitEvent) {
+        event.preventDefault();
+        if (!formValid) {
+            emailFieldTouched = true;
+            passwordFieldTouched = true;
+            return;
+        }
+
+        errorMessage = '';
+        isLoading = true;
+        try {
+            await authenticate({ email, password });
+        } catch (error) {
+            errorMessage = 'Login failed.';
+        } finally {
+            isLoading = false;
+        }
+    }
 </script>
 
 <svelte:head>
@@ -30,22 +61,8 @@
 
         <Card.Content class="space-y-4">
 
-            <!-- Lockout alert -->
-            {#if auth.isLockedOut}
-                <Alert.Root variant="destructive">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <rect x="3" y="11" width="18" height="11" rx="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    <Alert.Title>Account temporarily locked</Alert.Title>
-                    <Alert.Description>
-                        Too many failed attempts. Try again in {auth.lockoutSeconds}s.
-                    </Alert.Description>
-                </Alert.Root>
-            {/if}
-
             <!-- Error alert -->
-            {#if auth.errorMessage && !auth.isLockedOut}
+            {#if errorMessage}
                 <Alert.Root variant="destructive">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
@@ -53,12 +70,12 @@
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <Alert.Title>Login failed</Alert.Title>
-                    <Alert.Description>{auth.errorMessage}</Alert.Description>
+                    <Alert.Description>{errorMessage}</Alert.Description>
                 </Alert.Root>
             {/if}
 
             <!-- Form -->
-            <form class="space-y-4" onsubmit={auth.handleLogin} novalidate>
+            <form class="space-y-4" onsubmit={handleLogin} novalidate>
                 <div class="space-y-2">
                     <Label for="email">Email</Label>
                     <Input
@@ -67,9 +84,16 @@
                             placeholder="hannah@companymail.at"
                             autocomplete="email"
                             required
-                            disabled={auth.isFormDisabled}
-                            bind:value={auth.email}
+                            onblur={()=>emailFieldTouched = true}
+                            disabled={isLoading}
+                            bind:value={email}
                     />
+                    {#if !emailFieldValid && emailFieldTouched}
+                    <span class="error">
+                        Email is required
+                    </span>
+                    {/if}
+
                 </div>
 
                 <div class="space-y-2">
@@ -80,17 +104,21 @@
                             placeholder="••••••••••"
                             autocomplete="current-password"
                             required
-                            disabled={auth.isFormDisabled}
-                            bind:value={auth.password}
+                            onblur={()=>passwordFieldTouched = true}
+                            disabled={isLoading}
+                            bind:value={password}
                     />
+                    {#if !passwordFieldValid && passwordFieldTouched}
+                    <span class="error">
+                        Password is required
+                    </span>
+                    {/if}
                 </div>
 
-                <Button type="submit" class="w-full" disabled={auth.isFormDisabled} aria-busy={auth.isLoading}>
-                    {#if auth.isLoading}
+                <Button type="submit" class="w-full" disabled={isLoading || !formValid} aria-busy={isLoading}>
+                    {#if isLoading}
                         <span class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true"></span>
                         Signing in…
-                    {:else if auth.isLockedOut}
-                        Locked ({auth.lockoutSeconds}s)
                     {:else}
                         Login
                     {/if}

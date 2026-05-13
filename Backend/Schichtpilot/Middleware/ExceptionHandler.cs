@@ -83,7 +83,10 @@ public class ExceptionFilter : IExceptionFilter
                     stackTrace = exception.StackTrace,
                     exceptionType = exception.GetType().Name
 #endif
-                })
+                }),
+            StatusCode = statusCode,
+            ContentType = "application/json"
+            
 
         };
     }

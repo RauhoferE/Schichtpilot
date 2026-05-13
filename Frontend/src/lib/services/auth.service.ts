@@ -5,7 +5,8 @@ import type { LoginRequest } from "$lib/types/auth.types";
 const controllerURL: string = PUBLIC_BASE_URL + '/api/auth';
 
 export function authenticate(dto: LoginRequest): Promise<void>{
-    return post<void>(`${controllerURL}/login`, dto);
+    return post<void>(`${controllerURL}/login`, dto
+    );
 }
 
 export function logout(): Promise<void>{
