@@ -4,7 +4,7 @@
     import { Button } from '$lib/components/ui/button/index.js';
     import { Input } from '$lib/components/ui/input/index.js';
     import { Label } from '$lib/components/ui/label/index.js';
-    import { CalendarClock } from 'lucide-svelte';
+    import { CalendarClock, Regex } from 'lucide-svelte';
     import * as EmailValidator from 'email-validator';
 	import { HttpError, ValidationError } from '$lib/customErrors';
 	import { createUser } from '$lib/services/user.service';
@@ -41,6 +41,10 @@
     let passwordError = $derived.by(()=>{
         if (password == '') {
             return 'A password is required';
+        }
+
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{12,}$/.test(password)) {
+            return 'Password needs to be atleast 12 characters long and contain 1 uppercase, 1 lowercase, 1 number and 1 special character';
         }
 
         if (confirmPassword == '') {
