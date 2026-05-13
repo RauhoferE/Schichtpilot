@@ -12,6 +12,26 @@ function decodeFrontendToken(token: string): FrontendUser  | null{
     
 }
 
+export function hasJwtToken(): boolean{
+    const token = Cookies.get('SchichtpilotUser');
+
+    if (token) {
+        return true;
+    }
+
+    return false;
+}
+
+export function isJwtExpired(): boolean{
+    const token = Cookies.get('SchichtpilotUser');
+
+    if (!token) {
+        return true;
+    }
+
+    return decodeFrontendToken(token)!.exp * 1000 < Date.now()
+}
+
 export function getUserEmail(): string {
     const token = Cookies.get('SchichtpilotUser');
 
@@ -45,4 +65,14 @@ export function getUserRole(): string {
     }
 
     throw Error;
+}
+
+export function isAdmin(): boolean{
+    const role = getUserRole();
+
+    if (role == 'Admin') {
+        return true;
+    }
+
+    return false;
 }

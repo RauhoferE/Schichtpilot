@@ -1,6 +1,9 @@
 ﻿<script lang="ts">
-    import type { Snippet } from 'svelte';
+    import { onMount, type Snippet } from 'svelte';
     import Navbar from '$lib/components/layout/Navbar.svelte';
+	import { authGuard } from '../../common-guards.ts/user.guard';
+	import { page } from '$app/stores';
+	import { adminGuard } from '../../common-guards.ts/manager.guard';
 
     interface Props { children: Snippet; }
     let { children }: Props = $props();
@@ -15,6 +18,10 @@
         { label: 'Absence Management', href: '/manager/absence'     },
         { label: 'Company Policy',     href: '/manager/policy'      },
     ];
+
+    onMount(() => {
+        adminGuard($page.url);
+    });
 </script>
 
 <Navbar {tabs} />
