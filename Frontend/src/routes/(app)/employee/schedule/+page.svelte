@@ -5,7 +5,7 @@
         SHIFT_META,
         DAY_HEADERS,
     } from '$lib/composables/useSchedule.svelte';
-    import type { ShiftCode } from '$lib/types/schedule';
+    import type { ShiftCode } from '$lib/types/schedule.types';
 
     const s = createScheduleState();
 </script>

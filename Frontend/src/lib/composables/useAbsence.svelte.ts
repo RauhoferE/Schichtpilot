@@ -1,5 +1,5 @@
 ﻿import { goto } from '$app/navigation';
-import type { AbsenceDto, AbsenceStatus, AbsenceType } from '$lib/types/absence';
+import type { AbsenceDto, AbsenceStatus, AbsenceType } from '$lib/types/absence.types';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 function getMockAbsences(): AbsenceDto[] {

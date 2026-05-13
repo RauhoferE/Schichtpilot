@@ -1,6 +1,8 @@
 ﻿<script lang="ts">
-    import type { Snippet } from 'svelte';
+    import { onMount, type Snippet } from 'svelte';
     import Navbar from '$lib/components/layout/Navbar.svelte';
+	import { authGuard } from '../../common-guards.ts/user.guard';
+	import { page } from '$app/stores';
 
     interface Props { children: Snippet; }
     let { children }: Props = $props();
@@ -9,6 +11,11 @@
         { label: 'Work schedule', href: '/employee/schedule' },
         { label: 'Absence',       href: '/employee/absence'  },
     ];
+
+        
+    onMount(() => {
+        authGuard($page.url);
+    });
 </script>
 
 <Navbar {tabs}/>

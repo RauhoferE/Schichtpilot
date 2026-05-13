@@ -2,6 +2,8 @@
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import favicon from '$lib/assets/favicon.svg';
+	import { logout } from '$lib/services/auth.service';
+	import { removeCookie } from '$lib/services/jwt.service';
 
     // Types 
     interface Tab {
@@ -19,7 +21,10 @@
     // MOCK ONLY: clears session from sessionStorage and redirects to login.
     // When backend is connected, replace with a real API call:
     // await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    function handleLogout() {
+    async function handleLogout() {
+            await logout();
+            removeCookie();
+            
             // Clear sessionStorage
             sessionStorage.removeItem('sp_session');
             sessionStorage.removeItem('sp_role');
@@ -27,7 +32,7 @@
             document.cookie = 'sp_session=; path=/; max-age=0';
             document.cookie = 'sp_role=; path=/; max-age=0';
             document.cookie = 'user=; path=/; max-age=0';
-            window.location.href = '/login';
+            goto('/login');
     }
 </script>
 

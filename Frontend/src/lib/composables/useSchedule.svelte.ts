@@ -1,4 +1,4 @@
-﻿import type { ShiftCode, StaffSchedule, Week } from '$lib/types/schedule';
+﻿import type { ShiftCode, StaffSchedule, Week } from '$lib/types/schedule.types';
 
 
 export const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
