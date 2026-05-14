@@ -4,8 +4,9 @@
     import * as Alert from '$lib/components/ui/alert/index.js';
     import { Button } from '$lib/components/ui/button/index.js';
     import { Input } from '$lib/components/ui/input/index.js';
-    import { getJobRoles } from '$lib/services/jobRole.service';
+    import { deleteRole, getJobRoles } from '$lib/services/jobRole.service';
     import type { JobRoleShortDto } from '$lib/types/jobRole.types';
+	import { HttpError } from '$lib/customErrors';
 
     let jobRoles: JobRoleShortDto[] = $state([]);
     let totalCount = $state(0);
@@ -58,6 +59,26 @@
         loadJobRoles();
     }
 
+    async function confirmAndDelete(role: JobRoleShortDto) {
+        const confirmed = window.confirm(`Delete job role "${role.name}"? This cannot be undone.`);
+        if (!confirmed) return;
+
+        isLoading = true;
+        errorMessage = '';
+        try {
+            await deleteRole(role.id);
+            await loadJobRoles();
+        } catch (error) {
+            errorMessage = 'Failed to delete job role. Please try again.';
+
+            if (error instanceof(HttpError)) {
+                errorMessage = error.Error.message;
+            }
+        } finally {
+            isLoading = false;
+        }
+    }
+
     onMount(async () => {
         initialized = true;
         await loadJobRoles();
@@ -80,6 +101,9 @@
             <p class="text-sm text-muted-foreground">View and assign job roles to users.</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button variant="outline" disabled={isLoading}>
+                Add job role
+            </Button>
             <div class="relative">
                 <Input
                     placeholder="Search job roles..."
@@ -110,12 +134,13 @@
                     <Table.Head class="w-[100px]">ID</Table.Head>
                     <Table.Head>Name</Table.Head>
                     <Table.Head>Description</Table.Head>
+                    <Table.Head class="w-[180px] text-right">Actions</Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
                 {#if isLoading}
                     <Table.Row>
-                        <Table.Cell colspan={3} class="py-10 text-center text-muted-foreground">
+                        <Table.Cell colspan={4} class="py-10 text-center text-muted-foreground">
                             Loading job roles...
                         </Table.Cell>
                     </Table.Row>
@@ -125,12 +150,27 @@
                             <Table.Cell class="font-medium">{role.id}</Table.Cell>
                             <Table.Cell class="font-medium">{role.name}</Table.Cell>
                             <Table.Cell class="text-sm text-muted-foreground">{role.description || '—'}</Table.Cell>
+                            <Table.Cell class="text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onclick={() => confirmAndDelete(role)}
+                                        disabled={isLoading}
+                                    >
+                                        Delete
+                                    </Button>
+                                </div>
+                            </Table.Cell>
                         </Table.Row>
                     {/each}
 
                     {#if jobRoles.length === 0}
                         <Table.Row>
-                            <Table.Cell colspan={3} class="py-10 text-center text-muted-foreground">
+                            <Table.Cell colspan={4} class="py-10 text-center text-muted-foreground">
                                 No job roles found.
                             </Table.Cell>
                         </Table.Row>
