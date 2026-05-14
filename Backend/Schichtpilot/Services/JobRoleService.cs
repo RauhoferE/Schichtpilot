@@ -60,8 +60,6 @@ public class JobRoleService : IJobRoleService
                 this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
                 {
                     DependencyJobRoleId = dependentJobRole.Id,
-                    Dependency = dependentJobRole,
-                    JobRole = createdJobRole,
                     JobRoleId = createdJobRole.Id
                 });
             }
@@ -140,7 +138,6 @@ public class JobRoleService : IJobRoleService
 
         this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
         {
-            
             DependencyJobRoleId = dependencyJobRole.Id,
             //Dependency = dependencyJobRole,
             //JobRole = jobRole,
@@ -238,7 +235,6 @@ public class JobRoleService : IJobRoleService
         {
             user.JobRoles.Add(new UserJobRoles()
             {
-                JobRole = jobRoleToModify,
                 JobRoleId = jobRoleToModify.Id,
                 User = user,
                 UserId = (int)user.Id

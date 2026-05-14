@@ -55,7 +55,6 @@ public class ShiftService : IShiftService
 
             jobRoleRequirementsForShift.Add(new ShiftRequirement()
             {
-                JobRole = jobRole,
                 JobRoleId = jobRole.Id,
                 RequiredStaffCount = shiftJobRequirement.RequiredStaffCount,
             });
@@ -410,7 +409,6 @@ public class ShiftService : IShiftService
 
         shiftToModiy.JobRequirements.Add(new ShiftRequirement()
         {
-            JobRole = jobRole,
             JobRoleId = jobRequirement.JobId,
             RequiredStaffCount = jobRequirement.RequiredStaffCount,
 
