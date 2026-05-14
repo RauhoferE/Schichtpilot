@@ -4,6 +4,7 @@
     import * as Alert from '$lib/components/ui/alert/index.js';
     import { Button } from '$lib/components/ui/button/index.js';
     import { Input } from '$lib/components/ui/input/index.js';
+    import AddJobRoleDialog from '$lib/components/jobrole/AddJobRoleDialog.svelte';
     import { deleteRole, getJobRoles } from '$lib/services/jobRole.service';
     import type { JobRoleShortDto } from '$lib/types/jobRole.types';
 	import { HttpError } from '$lib/customErrors';
@@ -16,6 +17,8 @@
     let isLoading = $state(false);
     let errorMessage = $state('');
     let initialized = $state(false);
+
+    let isAddDialogOpen = $state(false);
 
     const pageSizes = [5, 10, 20, 50];
 
@@ -59,6 +62,8 @@
         loadJobRoles();
     }
 
+
+
     async function confirmAndDelete(role: JobRoleShortDto) {
         const confirmed = window.confirm(`Delete job role "${role.name}"? This cannot be undone.`);
         if (!confirmed) return;
@@ -101,9 +106,9 @@
             <p class="text-sm text-muted-foreground">View and assign job roles to users.</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button variant="outline" disabled={isLoading}>
-                Add job role
-            </Button>
+                <Button variant="outline" disabled={isLoading} onclick={() => (isAddDialogOpen = true)}>
+                    Add job role
+                </Button>
             <div class="relative">
                 <Input
                     placeholder="Search job roles..."
@@ -126,6 +131,8 @@
             <Alert.Description>{errorMessage}</Alert.Description>
         </Alert.Root>
     {/if}
+
+    <AddJobRoleDialog bind:open={isAddDialogOpen} onCreated={loadJobRoles} />
 
     <div class="rounded-lg border bg-card overflow-hidden">
         <Table.Root>
@@ -196,7 +203,7 @@
             <select
                 class="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 bind:value={pageSize}
-                on:change={(event) => changePageSize(Number((event.currentTarget as HTMLSelectElement).value))}
+                onchange={(event) => changePageSize(Number((event.currentTarget as HTMLSelectElement).value))}
             >
                 {#each pageSizes as size}
                     <option value={size}>{size}</option>
