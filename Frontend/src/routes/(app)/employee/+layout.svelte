@@ -11,11 +11,9 @@
         { label: 'Work schedule', href: '/employee/schedule' },
         { label: 'Absence',       href: '/employee/absence'  },
     ];
-
-        
-    onMount(() => {
-        authGuard($page.url);
-    });
+    $effect(() => {
+		authGuard($page.url);
+	});
 </script>
 
 <Navbar {tabs}/>

@@ -1,20 +1,23 @@
+import { goto } from "$app/navigation";
 import { hasJwtToken, isJwtExpired } from "$lib/services/jwt.service";
 import { redirect } from "@sveltejs/kit";
 
 export function authGuard(url: URL) {
     // If no token, redirect to login
+    console.log("hit")
     if (!hasJwtToken()) {
-        throw redirect(307, `/login?returnTo=${url.pathname}`);
+        goto(`/login?returnTo=${url.pathname}`);
+        return;
     }
 
     try {
         
         if (isJwtExpired()) {
-            throw redirect(307, '/login');
+            goto('/login');
         }
 
         return; // Return user data if valid
     } catch {
-        throw redirect(307, '/login');
+        goto('/login');
     }
 }

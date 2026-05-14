@@ -46,6 +46,6 @@ export interface FrontendUser {
     family_name: string;
     sub: string;
     email: string;
-    role: string[];
+    role: string;
     exp: number;
 }

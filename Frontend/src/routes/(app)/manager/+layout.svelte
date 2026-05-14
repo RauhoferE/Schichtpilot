@@ -4,6 +4,7 @@
 	import { authGuard } from '../../common-guards.ts/user.guard';
 	import { page } from '$app/stores';
 	import { adminGuard } from '../../common-guards.ts/manager.guard';
+	import type { LayoutLoad } from '../../$types';
 
     interface Props { children: Snippet; }
     let { children }: Props = $props();
@@ -14,14 +15,15 @@
         { label: 'Overview',           href: '/manager/overview'    },
         { label: 'Teams',              href: '/manager/teams'       },
         { label: 'New Employee',       href: '/manager/employee'},
+        { label: 'Job Role Management',     href: '/manager/jobrole'      },
         { label: 'Time Management',    href: '/manager/time'        },
         { label: 'Absence Management', href: '/manager/absence'     },
         { label: 'Company Policy',     href: '/manager/policy'      },
     ];
 
-    onMount(() => {
-        adminGuard($page.url);
-    });
+    $effect(() => {
+		adminGuard($page.url);
+	});
 </script>
 
 <Navbar {tabs} />

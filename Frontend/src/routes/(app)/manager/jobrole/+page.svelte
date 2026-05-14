@@ -7,18 +7,20 @@
     import { getJobRoles } from '$lib/services/jobRole.service';
     import type { JobRoleShortDto } from '$lib/types/jobRole.types';
 
-    let jobRoles: JobRoleShortDto[] = [];
-    let totalCount = 0;
-    let page = 1;
-    let pageSize = 10;
-    let searchstring = '';
-    let isLoading = false;
-    let errorMessage = '';
-    let initialized = false;
+    let jobRoles: JobRoleShortDto[] = $state([]);
+    let totalCount = $state(0);
+    let page = $state(1);
+    let pageSize = $state(10);
+    let searchstring = $state('');
+    let isLoading = $state(false);
+    let errorMessage = $state('');
+    let initialized = $state(false);
 
     const pageSizes = [5, 10, 20, 50];
 
-    const totalPages = () => Math.max(1, Math.ceil(totalCount / pageSize));
+    const totalPages = $derived(()=>{
+        return Math.max(1, Math.ceil(totalCount / pageSize))
+    });
 
     async function loadJobRoles() {
         isLoading = true;
@@ -60,10 +62,16 @@
         await loadJobRoles();
     });
 
-    $: if (initialized) {
-        const maxPage = totalPages();
-        if (page > maxPage) page = maxPage;
-    }
+    let maxPage = $derived(()=>{
+        if (initialized) {
+                const maxPageTemp = totalPages();
+                if (page > maxPageTemp) page = maxPageTemp;
+            }
+    })
+
+    $effect(()=>{
+
+    }) 
 </script>
 
 <svelte:head><title>Job Roles — SchichtPilot</title></svelte:head>
