@@ -79,10 +79,10 @@
                 <Input
                     placeholder="Search job roles..."
                     bind:value={searchstring}
-                    on:keydown={(event) => event.key === 'Enter' && applySearch()}
+                    onkeydown={(event) => event.key === 'Enter' && applySearch()}
                 />
             </div>
-            <Button on:click={applySearch} disabled={isLoading} aria-busy={isLoading}>
+            <Button onclick={applySearch} disabled={isLoading} aria-busy={isLoading}>
                 Search
             </Button>
         </div>
@@ -160,7 +160,7 @@
 
             <Button
                 variant="outline"
-                on:click={() => changePage(page - 1)}
+                onclick={() => changePage(page - 1)}
                 disabled={page <= 1 || isLoading}
             >
                 Previous
@@ -168,7 +168,7 @@
             <div class="text-sm text-muted-foreground">Page {page} of {totalPages()}</div>
             <Button
                 variant="outline"
-                on:click={() => changePage(page + 1)}
+                onclick={() => changePage(page + 1)}
                 disabled={page >= totalPages() || isLoading}
             >
                 Next
