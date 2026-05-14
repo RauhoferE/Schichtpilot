@@ -21,7 +21,7 @@ export function addJobRoleDependency(id: number, dependencyId: number): Promise<
 }
 
 export function removeJobRoleDependency(id: number, dependencyId: number): Promise<void>{
-    return del<void>(`${controllerURL}/${id}/dependency/${dependencyId}`);
+    return del<void>(`${controllerURL}/${id}/dependency/${dependencyId}`, undefined);
 }
 
 export function addUserToRole(jobRoleId: number, userId: number): Promise<void>{
@@ -29,13 +29,13 @@ export function addUserToRole(jobRoleId: number, userId: number): Promise<void>{
 }
 
 export function removeUserToRole(jobRoleId: number, userId: number): Promise<void>{
-    return del<void>(`${controllerURL}/${jobRoleId}/user/${userId}`);
+    return del<void>(`${controllerURL}/${jobRoleId}/user/${userId}`, undefined);
 }
 
 export function deleteRole(jobRoleId: number): Promise<void>{
-    return del<void>(`${controllerURL}/${jobRoleId}`);
+    return del<void>(`${controllerURL}/${jobRoleId}`, undefined);
 }
 
 export function getJobRoles(params: GetJobRoleRequest): Promise<QueryableJobRoleResponse>{
-    return get<QueryableJobRoleResponse>(`${controllerURL}/delete${new URLSearchParams(params as any).toString()}`);
+    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`);
 }

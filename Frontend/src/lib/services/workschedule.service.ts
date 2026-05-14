@@ -33,7 +33,7 @@ export function getactiveSchedule(startDate: Date): Promise<WorkScheduleDto>{
 }
 
 export function getSchedulesRequest(params: GetSchedulesRequest): Promise<QueryableSchedules>{
-    return get<QueryableSchedules>(`${controllerURL}/all${new URLSearchParams(params as any).toString()}`);
+    return get<QueryableSchedules>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`);
 }
 
 export function setScheduleAsInactive(scheduleId: number): Promise<void>{

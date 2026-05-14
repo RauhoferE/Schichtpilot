@@ -13,5 +13,5 @@ export function getUserData(userId: number): Promise<UserDto>{
 }
 
 export function getUsers(params: GetUsersRequest): Promise<QueryableJobRoleResponse>{
-    return get<QueryableJobRoleResponse>(`${controllerURL}/all${new URLSearchParams(params as any).toString()}`)
+    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`)
 }

@@ -23,12 +23,13 @@ export async function get<T>(url: string): Promise<T> {
   const text = await response.text();
 
   if (!text || text.length == 0) {
+    console.log("undef")
     return Promise.resolve(undefined as T);
   }
 
   const json = await cloned.json();
   checkResponseForErrors(response, json);
-  return response.json() as Promise<T>; // This is the "mapping"
+  return json; // This is the "mapping"
 }
 
 export async function del<T>(url: string, bodyContent: any|undefined): Promise<T> {
@@ -48,7 +49,7 @@ export async function del<T>(url: string, bodyContent: any|undefined): Promise<T
   }
   const json = await cloned.json();
   checkResponseForErrors(response, json);
-  return response.json() as Promise<T>; // This is the "mapping"
+  return json; // This is the "mapping"
 }
 
 export async function post<T>(url: string, bodyContent: any | undefined): Promise<T>{
@@ -68,7 +69,7 @@ export async function post<T>(url: string, bodyContent: any | undefined): Promis
   }
   const json = await cloned.json();
   checkResponseForErrors(response, json);
-  return response.json() as Promise<T>; // This is the "mapping"
+  return json; // This is the "mapping"
 }
 
 export async function patch<T>(url: string, bodyContent: any|undefined): Promise<T>{
@@ -88,7 +89,7 @@ export async function patch<T>(url: string, bodyContent: any|undefined): Promise
   }
   const json = await cloned.json();
   checkResponseForErrors(response, json);
-  return response.json() as Promise<T>; // This is the "mapping"
+  return json; // This is the "mapping"
 }
 
 export async function put<T>(url: string, bodyContent: any|undefined): Promise<T>{
@@ -108,6 +109,6 @@ export async function put<T>(url: string, bodyContent: any|undefined): Promise<T
   }
   const json = await cloned.json();
   checkResponseForErrors(response, json);
-  return response.json() as Promise<T>; // This is the "mapping"
+  return json; // This is the "mapping"
 }
 

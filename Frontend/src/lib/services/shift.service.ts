@@ -13,7 +13,7 @@ export function getShift(shiftId: number): Promise<ShiftDto>{
 }
 
 export function getShifts(params: GetShiftsRequest): Promise<QueryableShiftResponse>{
-    return get<QueryableShiftResponse>(`${controllerURL}/all${new URLSearchParams(params as any).toString()}`);
+    return get<QueryableShiftResponse>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`);
 }
 
 export function updateShift(shiftId: number, dto: EditShiftDto): Promise<void>{

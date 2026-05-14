@@ -27,6 +27,7 @@
         errorMessage = '';
         try {
             const response = await getJobRoles({ page, pageSize, searchstring });
+            console.log(response)
             jobRoles = response.jobRoles;
             totalCount = response.count;
             const maxPage = totalPages();
@@ -68,10 +69,6 @@
                 if (page > maxPageTemp) page = maxPageTemp;
             }
     })
-
-    $effect(()=>{
-
-    }) 
 </script>
 
 <svelte:head><title>Job Roles — SchichtPilot</title></svelte:head>

@@ -4,7 +4,6 @@ import { redirect } from "@sveltejs/kit";
 
 export function authGuard(url: URL) {
     // If no token, redirect to login
-    console.log("hit")
     if (!hasJwtToken()) {
         goto(`/login?returnTo=${url.pathname}`);
         return;

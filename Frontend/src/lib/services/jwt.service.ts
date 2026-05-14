@@ -58,7 +58,7 @@ export function getUserRole(): string {
 
     if (token) {
         const user = decodeFrontendToken(token);
-        console.log(user)
+        
         if (user?.role == '') {
             throw Error;
         }
@@ -70,7 +70,7 @@ export function getUserRole(): string {
 
 export function isAdmin(): boolean{
     const role = getUserRole();
-    console.log(role)
+
     if (role == 'Admin') {
         return true;
     }
