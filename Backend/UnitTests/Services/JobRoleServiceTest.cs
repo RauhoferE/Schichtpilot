@@ -543,8 +543,8 @@ public class JobRoleServiceTest
             Id = role.Id,
             Name = role.Name,
             Description = role.Description,
-            DependentOn = new List<JobRoleDto>(),
-            Prerequisites = new List<JobRoleDto>(),
+            DependentOn = new List<JobRoleShortDto>(),
+            Prerequisites = new List<JobRoleShortDto>(),
             Users = new List<UserDto>()
         };
 

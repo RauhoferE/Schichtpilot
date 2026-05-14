@@ -16,7 +16,7 @@ public class DtoMappingProfile : Profile
         CreateMap<WorkPolicy, CompanyPolicyDto>();
         CreateMap<Absence, AbsenceDto>();
         CreateMap<JobRole, JobRoleDto>()
-            .ForMember(dest => dest.DependentOn, opt => opt.MapFrom(src => src.Dependencies.Select(x => x.JobRole).ToList()))
+            .ForMember(dest => dest.DependentOn, opt => opt.MapFrom(src => src.Dependencies.Select(x => x.Dependency).ToList()))
             .ForMember(dest => dest.Prerequisites, opt => opt.MapFrom(src => src.Prerequisites.Select(x => x.JobRole).ToList()))
             .ForMember(dest => dest.Users, opt => opt.MapFrom(src => src.UsersWithRole.Select(x => x.User)));
         CreateMap<User, UserDto>(MemberList.Destination)
