@@ -140,6 +140,7 @@ public class JobRoleService : IJobRoleService
 
         this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
         {
+            
             DependencyJobRoleId = dependencyJobRole.Id,
             //Dependency = dependencyJobRole,
             //JobRole = jobRole,

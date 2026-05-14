@@ -26,6 +26,7 @@
     let description = $state('');
     let selectedDependencies = $state<JobRoleShortDto[]>([]);
     let initialDependencies = $state<number[]>([]);
+    let prerequisites = $state<JobRoleShortDto[]>([]);
     let isLoading = $state(false);
     let errorMessage = $state('');
 
@@ -94,12 +95,17 @@
             const role: JobRoleDto = await getJobRoleAsync(id);
             name = role.name;
             description = role.description;
-            selectedDependencies = role.prerequisites.map(dep => ({
+            selectedDependencies = role.dependentOn.map(dep => ({
                 id: dep.id,
                 name: dep.name,
                 description: dep.description,
             }));
-            initialDependencies = role.prerequisites.map(dep => dep.id);
+            initialDependencies = role.dependentOn.map(dep => dep.id);
+            prerequisites = role.prerequisites.map(dep => ({
+                id: dep.id,
+                name: dep.name,
+                description: dep.description,
+            }));
         } catch (error) {
             errorMessage = 'Failed to load job role.';
             if (error instanceof (HttpError)) {
@@ -314,7 +320,20 @@
                 <p class="text-xs text-muted-foreground">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</p>
             </div>
 
-
+            <div class="space-y-2">
+                <Label>Prerequisites</Label>
+                {#if prerequisites.length === 0}
+                    <p class="text-sm text-muted-foreground">No prerequisites.</p>
+                {:else}
+                    <div class="flex flex-wrap gap-2">
+                        {#each prerequisites as role}
+                            <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs">
+                                {role.name}
+                            </span>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
 
             <Dialog.Footer>
                 <Dialog.Close asChild>
