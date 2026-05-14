@@ -12,10 +12,10 @@ public class JobRoleDto
     public required string Description { get; set; }
 
     // Needs the following roles
-    public List<JobRoleDto> DependentOn { get; set; }
+    public List<JobRoleShortDto> DependentOn { get; set; }
 
     // Role is dependent on
-    public List<JobRoleDto> Prerequisites { get; set; }
+    public List<JobRoleShortDto> Prerequisites { get; set; }
 
     public List<UserDto> Users { get; set; }
 }

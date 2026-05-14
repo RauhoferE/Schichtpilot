@@ -141,8 +141,8 @@ public class JobRoleService : IJobRoleService
         this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
         {
             DependencyJobRoleId = dependencyJobRole.Id,
-            Dependency = dependencyJobRole,
-            JobRole = jobRole,
+            //Dependency = dependencyJobRole,
+            //JobRole = jobRole,
             JobRoleId = jobRole.Id
         });
 
@@ -342,7 +342,9 @@ public class JobRoleService : IJobRoleService
     {
         var jobRole = await this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
+            .ThenInclude(x => x.JobRole)
             .Include(x => x.Dependencies)
+            .ThenInclude(x => x.Dependency)
             .Include(x => x.UsersWithRole)
             .ThenInclude(x => x.User)
             .FirstOrDefaultAsync(jr => jr.Id == id);
@@ -352,7 +354,8 @@ public class JobRoleService : IJobRoleService
             throw new NotFoundException("Jobrole not found!");
         }
 
-        return this._mapper.Map<JobRole, JobRoleDto>(jobRole);
+        var mapped = this._mapper.Map<JobRole, JobRoleDto>(jobRole);
+        return mapped;
     }
 
     /// <summary>

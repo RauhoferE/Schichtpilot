@@ -5,6 +5,7 @@
     import { Button } from '$lib/components/ui/button/index.js';
     import { Input } from '$lib/components/ui/input/index.js';
     import AddJobRoleDialog from '$lib/components/jobrole/AddJobRoleDialog.svelte';
+    import EditJobRoleDialog from '$lib/components/jobrole/EditJobRoleDialog.svelte';
     import { deleteRole, getJobRoles } from '$lib/services/jobRole.service';
     import type { JobRoleShortDto } from '$lib/types/jobRole.types';
 	import { HttpError } from '$lib/customErrors';
@@ -19,6 +20,8 @@
     let initialized = $state(false);
 
     let isAddDialogOpen = $state(false);
+    let isEditDialogOpen = $state(false);
+    let editRoleId = $state<number | null>(null);
 
     const pageSizes = [5, 10, 20, 50];
 
@@ -133,6 +136,7 @@
     {/if}
 
     <AddJobRoleDialog bind:open={isAddDialogOpen} onCreated={loadJobRoles} />
+    <EditJobRoleDialog bind:open={isEditDialogOpen} roleId={editRoleId} onSaved={loadJobRoles} />
 
     <div class="rounded-lg border bg-card overflow-hidden">
         <Table.Root>
@@ -159,7 +163,14 @@
                             <Table.Cell class="text-sm text-muted-foreground">{role.description || '—'}</Table.Cell>
                             <Table.Cell class="text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <Button variant="outline" size="sm">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onclick={() => {
+                                            editRoleId = role.id;
+                                            isEditDialogOpen = true;
+                                        }}
+                                    >
                                         Edit
                                     </Button>
                                     <Button
