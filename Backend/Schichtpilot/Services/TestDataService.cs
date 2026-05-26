@@ -32,6 +32,11 @@ public class TestDataService : ITestDataService
 
     public async Task CreateUsersAsync(int employees, int managers)
     {
+        if (this._dbContext.Users.FirstOrDefault(x => x.Email == "user0@company.com") != null)
+        {
+            return;
+        }
+        
         for (int i = 0; i < employees; i++)
         {
             await this._userService.CreateUserAsync(new UserDto()
@@ -78,6 +83,12 @@ public class TestDataService : ITestDataService
 
     public async Task CreateRolesAsync()
     {
+        
+        if (this._dbContext.JobRoles.FirstOrDefault(x => x.Name == "Waiter") != null)
+        {
+            return;
+        }
+        
         await this._jobRoleService.CreateJobRoleAsync(new CreateJobRoleDto()
         {
             Name = "Waiter",
@@ -109,6 +120,11 @@ public class TestDataService : ITestDataService
 
     public async Task CreateWorkPolicyAsync()
     {
+        if (this._dbContext.WorkPolicies.FirstOrDefault() != null)
+        {
+            return;
+        }
+        
         await this._companyPolicyService.SetPolicyAsync(new CompanyPolicyDto()
         {
             RestPeriodThresholdInMinutes = 30,
