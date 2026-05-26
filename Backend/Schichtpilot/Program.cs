@@ -179,10 +179,14 @@ public class Program
         
         if (createTestData)
         {
-            var testDataService = app.Services.GetRequiredService<ITestDataService>();
-            await testDataService.CreateUsersAsync(3,1);
-            await testDataService.CreateRolesAsync();
-            await testDataService.CreateWorkPolicyAsync();
+            using (var scope = app.Services.CreateScope())
+            {
+                var testDataService = scope.ServiceProvider.GetRequiredService<ITestDataService>();
+                await testDataService.CreateUsersAsync(3,1);
+                await testDataService.CreateRolesAsync();
+                await testDataService.CreateWorkPolicyAsync();
+            }
+
         }
 
         // Configure the HTTP request pipeline
