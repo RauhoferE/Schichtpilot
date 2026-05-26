@@ -76,6 +76,7 @@ public class TestDataService : ITestDataService
             if (addedUser != null)
             {
                 await this._userManager.AddToRoleAsync(addedUser, "ADMIN");
+                await this._userManager.RemoveFromRoleAsync(addedUser, "USER");
             }
             
         }
