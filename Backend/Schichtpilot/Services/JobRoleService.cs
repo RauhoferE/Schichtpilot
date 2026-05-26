@@ -324,6 +324,13 @@ public class JobRoleService : IJobRoleService
         {
             throw new PolicyConflictException("Jobrole still active in shift!");
         }
+        
+        var relationships = this._dbContext.JobRoleDependencies.Where(x => x.JobRoleId == jobRoleToModify.Id || x.DependencyJobRoleId == jobRoleToModify.Id);
+
+        foreach (var relationship in relationships)
+        {
+            this._dbContext.JobRoleDependencies.Remove(relationship);
+        }
 
         this._dbContext.JobRoles.Remove(jobRoleToModify);
         await this._dbContext.SaveChangesAsync();
