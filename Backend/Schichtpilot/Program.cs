@@ -84,7 +84,7 @@ public class Program
             options.Cookie.Name = authCookieName;
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = builder.Environment.IsDevelopment()
-                ? SameSiteMode.Lax
+                ? SameSiteMode.None
                 : SameSiteMode.Strict;
         });
 

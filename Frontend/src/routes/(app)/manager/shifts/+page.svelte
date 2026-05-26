@@ -5,6 +5,7 @@
     import { Label } from '$lib/components/ui/label/index.js';
     import * as Table from '$lib/components/ui/table/index.js';
     import { getShifts } from '$lib/services/shift.service';
+    import { goto } from '$app/navigation';
     import type { QueryableShiftResponse, ShortShiftDto } from '$lib/types/shift.types';
     import CreateShiftDialog from '$lib/components/shifts/CreateShiftDialog/CreateShiftDialog.svelte';
 
@@ -225,7 +226,10 @@
                     </Table.Row>
                 {:else}
                     {#each response.shift as shift (shift.id)}
-                        <Table.Row>
+                        <Table.Row
+                            class="cursor-pointer"
+                            onclick={() => goto(`/manager/shift/${shift.id}`)}
+                        >
                             <Table.Cell>{formatShiftId(shift)}</Table.Cell>
                             <Table.Cell class="font-medium">{shift.name}</Table.Cell>
                             <Table.Cell>
