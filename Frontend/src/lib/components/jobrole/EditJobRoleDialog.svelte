@@ -321,7 +321,7 @@
             </div>
 
             <div class="space-y-2">
-                <Label>Prerequisites</Label>
+                <Label>Is Prerequiste of</Label>
                 {#if prerequisites.length === 0}
                     <p class="text-sm text-muted-foreground">No prerequisites.</p>
                 {:else}

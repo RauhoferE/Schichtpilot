@@ -507,8 +507,8 @@ public class ShiftService : IShiftService
 
             // Find what the current job depends on
             var prerequisites = allLinks
-                .Where(l => l.DependencyJobRoleId == currentJobId)
-                .Select(l => l.JobRoleId);
+                .Where(l => l.JobRoleId == currentJobId)
+                .Select(l => l.DependencyJobRoleId);
 
             foreach (var prereqId in prerequisites)
             {
