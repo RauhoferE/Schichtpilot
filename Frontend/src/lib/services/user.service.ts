@@ -1,6 +1,7 @@
 import { PUBLIC_BASE_URL } from "$env/static/public";
 import { get, post } from "$lib/api";
 import type { CreateUserRequest, GetUsersRequest, QueryableJobRoleResponse, UserDto } from "$lib/types/user.types";
+import qs from "qs";
 
 const controllerURL: string = PUBLIC_BASE_URL + '/api/user';
 
@@ -13,5 +14,5 @@ export function getUserData(userId: number): Promise<UserDto>{
 }
 
 export function getUsers(params: GetUsersRequest): Promise<QueryableJobRoleResponse>{
-    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`)
+    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${qs.stringify(params)}`)
 }

@@ -29,6 +29,7 @@
 		"@tailwindcss/vite": "^4.1.18",
 		"@types/js-cookie": "^3.0.6",
 		"@types/node": "^24",
+		"@types/qs": "^6.15.1",
 		"@vitest/browser-playwright": "^4.1.0",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
@@ -61,6 +62,7 @@
 		"jspdf": "^4.2.1",
 		"jspdf-autotable": "^5.0.7",
 		"jwt-decode": "^4.0.0",
-		"lucide-svelte": "^1.0.1"
+		"lucide-svelte": "^1.0.1",
+		"qs": "^6.15.2"
 	}
 }

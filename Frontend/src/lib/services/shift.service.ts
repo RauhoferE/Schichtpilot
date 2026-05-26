@@ -1,6 +1,7 @@
 import { PUBLIC_BASE_URL } from "$env/static/public";
 import { del, get, patch, post, put } from "$lib/api";
 import type { CreateShiftDto, EditShiftDto, GetShiftsRequest, QueryableShiftResponse, ShiftDto, ShiftRequirementDto, TimeSlotDto } from "$lib/types/shift.types";
+import qs from 'qs';
 
 const controllerURL: string = PUBLIC_BASE_URL + '/api/shift';
 
@@ -13,7 +14,7 @@ export function getShift(shiftId: number): Promise<ShiftDto>{
 }
 
 export function getShifts(params: GetShiftsRequest): Promise<QueryableShiftResponse>{
-    return get<QueryableShiftResponse>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`);
+    return get<QueryableShiftResponse>(`${controllerURL}/all?${qs.stringify(params)}`);
 }
 
 export function updateShift(shiftId: number, dto: EditShiftDto): Promise<void>{

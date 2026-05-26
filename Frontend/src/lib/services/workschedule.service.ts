@@ -1,6 +1,7 @@
 import { PUBLIC_BASE_URL } from "$env/static/public";
 import { del, get, patch, post } from "$lib/api";
 import type { GenerateScheduleDto, GetSchedulesRequest, QueryableSchedules, UpdateScheduleRequest, WorkScheduleDto } from "$lib/types/schedule.types";
+import qs from "qs";
 
 const controllerURL: string = PUBLIC_BASE_URL + '/api/workschedule';
 
@@ -33,7 +34,7 @@ export function getactiveSchedule(startDate: Date): Promise<WorkScheduleDto>{
 }
 
 export function getSchedulesRequest(params: GetSchedulesRequest): Promise<QueryableSchedules>{
-    return get<QueryableSchedules>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`);
+    return get<QueryableSchedules>(`${controllerURL}/all?${qs.stringify(params)}`);
 }
 
 export function setScheduleAsInactive(scheduleId: number): Promise<void>{
