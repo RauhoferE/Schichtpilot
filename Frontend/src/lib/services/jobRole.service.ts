@@ -1,6 +1,7 @@
 import { del, get, post, put } from "$lib/api";
 import type { CreateJobRoleDto, EditJobRoleDto, GetJobRoleRequest, JobRoleDto, QueryableJobRoleResponse } from "$lib/types/jobRole.types";
 import { PUBLIC_BASE_URL } from '$env/static/public';
+import qs from "qs";
 
 const controllerURL: string = PUBLIC_BASE_URL + '/api/jobrole';
 
@@ -37,5 +38,5 @@ export function deleteRole(jobRoleId: number): Promise<void>{
 }
 
 export function getJobRoles(params: GetJobRoleRequest): Promise<QueryableJobRoleResponse>{
-    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${new URLSearchParams(params as any).toString()}`);
+    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${qs.stringify(params)}`);
 }
