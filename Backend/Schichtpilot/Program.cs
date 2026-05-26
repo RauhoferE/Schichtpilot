@@ -27,7 +27,7 @@ public class Program
     /// Configures and builds the webapplication.
     /// </summary>
     /// <param name="args">Command line arguments.</param>
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         var configuration = new ConfigurationBuilder()
@@ -105,6 +105,7 @@ public class Program
         builder.Services.AddTransient<IAuthService, AuthService>();
         builder.Services.AddTransient<IShiftService, ShiftService>();
         builder.Services.AddTransient<IJobRoleService, JobRoleService>();
+        builder.Services.AddTransient<ITestDataService, TestDataService>();
 
         // Validation
         builder.Services.AddMvc(options =>
@@ -171,8 +172,18 @@ public class Program
                 [new OpenApiSecuritySchemeReference("CookieAuth", document)] = []
             });
         });
+        
+        var createTestData = config.GetSection("CreateTestData").Get<bool>();
 
         var app = builder.Build();
+        
+        if (createTestData)
+        {
+            var testDataService = app.Services.GetRequiredService<ITestDataService>();
+            await testDataService.CreateUsersAsync(3,1);
+            await testDataService.CreateRolesAsync();
+            await testDataService.CreateWorkPolicyAsync();
+        }
 
         // Configure the HTTP request pipeline
         if (app.Environment.IsDevelopment())

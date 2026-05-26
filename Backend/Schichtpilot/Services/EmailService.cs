@@ -47,7 +47,7 @@ public class EmailService : IEmailService
 
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
 
-        _emailClient = new EmailClient(settings.ConnectionString);
+        //_emailClient = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
         _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
     }
