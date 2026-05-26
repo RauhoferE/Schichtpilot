@@ -128,7 +128,7 @@ public class TestDataService : ITestDataService
         
         await this._companyPolicyService.SetPolicyAsync(new CompanyPolicyDto()
         {
-            RestPeriodThresholdInMinutes = 30,
+            RestPeriodThresholdInMinutes = 480,
             MinimumRestPeriodInMinutes = 60,
             MaximumConsecutiveWorkHoursPerDay = 8,
             MaximumConsecutiveWorkHoursPerWeek = 40
