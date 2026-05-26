@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="16.0.0" />
+        <PackageReference Include="AutoMapper" Version="16.1.1" />
         <PackageReference Include="Azure.Communication.Email" Version="1.1.0" />
         <PackageReference Include="FluentAssertions" Version="8.9.0" />
         <PackageReference Include="FluentValidation" Version="12.1.1" />
