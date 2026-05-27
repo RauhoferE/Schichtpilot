@@ -269,6 +269,7 @@ public class ShiftService : IShiftService
     {
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.Timeslots)
+            .ThenInclude(x => x.Breaks)
             .FirstOrDefault(x => x.Id == shiftId);
 
         if (shiftToModiy == null)

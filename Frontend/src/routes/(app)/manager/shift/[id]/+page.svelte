@@ -6,14 +6,18 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import {
 		addJobRequirement,
+		addTimeslot,
 		changeJobRequirementCount,
+		deleteTimeslot,
 		getShift,
 		removeJobRequirement,
-		updateShift
+		updateShift,
+		updateTimeslot
 	} from '$lib/services/shift.service';
 	import { getJobRoles } from '$lib/services/jobRole.service';
 	import type { ShiftDto, TimeSlotDto } from '$lib/types/shift.types';
 	import type { JobRoleShortDto } from '$lib/types/jobRole.types';
+	import TimeSlotDialog from '$lib/components/shifts/TimeSlotDialog.svelte';
 	import { page } from '$app/stores';
 	import { adminGuard } from '../../../../common-guards.ts/manager.guard';
 	import { goto } from '$app/navigation';
@@ -193,11 +197,11 @@
 			selectedJobIds = [];
 			newRequirementCount = 1;
 			requirementSuccess = 'Job requirement(s) added.';
-		} catch (error){
+		} catch (error) {
 			requirementError = 'Failed to add job requirement.';
-            if (error instanceof HttpError) {
-                requirementError = error.Error.message;
-            }
+			if (error instanceof HttpError) {
+				requirementError = error.Error.message;
+			}
 		}
 	}
 
@@ -282,16 +286,295 @@
 				jobRequirements: shift.jobRequirements.filter((req) => req.jobId !== confirmRemoveJobId)
 			};
 			requirementSuccess = 'Job requirement removed.';
-			
-		} catch(error) {
+		} catch (error) {
 			requirementError = 'Failed to remove job requirement.';
 
-            if (error instanceof HttpError) {
-                requirementError = error.Error.message;
-            }
+			if (error instanceof HttpError) {
+				requirementError = error.Error.message;
+			}
 		}
 
-        closeRemoveRequirementDialog();
+		closeRemoveRequirementDialog();
+	}
+
+	let timeSlotDialogOpen = $state(false);
+	let timeSlotMode = $state<'add' | 'edit'>('add');
+	let timeSlotDraft = $state<TimeSlotDto | null>(null);
+	let timeSlotError = $state('');
+	let timeSlotSubmitted = $state(false);
+	let isTimeSlotSaving = $state(false);
+	let confirmDeleteTimeslotOpen = $state(false);
+	let confirmDeleteTimeslotId = $state<number | null>(null);
+
+	let nextBreakId = -1;
+
+	$effect(() => {
+		if (!timeSlotDialogOpen) {
+			timeSlotDraft = null;
+			timeSlotError = '';
+			timeSlotSubmitted = false;
+		}
+	});
+
+	const availableTimeSlotDays = $derived.by(() => {
+		if (!shift || !timeSlotDraft) {
+			return weekDayOptions;
+		}
+
+		const usedDays = shift.timeSlots
+			.filter((slot) => (timeSlotMode === 'edit' ? slot.id !== timeSlotDraft.id : true))
+			.map((slot) => slot.dayOfWeek);
+
+		return weekDayOptions.filter(
+			(day) => day.value === timeSlotDraft.dayOfWeek || !usedDays.includes(day.value)
+		);
+	});
+
+	function openAddTimeslot(dayOfWeek: number) {
+		if (!shift) {
+			return;
+		}
+
+		if (shift.timeSlots.some((slot) => slot.dayOfWeek === dayOfWeek)) {
+			return;
+		}
+
+		timeSlotMode = 'add';
+		timeSlotDraft = {
+			id: 0,
+			dayOfWeek,
+			startTime: '09:00',
+			endTime: '17:00',
+			breaks: []
+		};
+		timeSlotError = '';
+		timeSlotSubmitted = false;
+		timeSlotDialogOpen = true;
+	}
+
+	function openEditTimeslot(slot: TimeSlotDto) {
+		timeSlotMode = 'edit';
+		timeSlotDraft = {
+			...slot,
+			breaks: slot.breaks.map((breakItem) => ({ ...breakItem }))
+		};
+		timeSlotError = '';
+		timeSlotSubmitted = false;
+		timeSlotDialogOpen = true;
+	}
+
+	function closeTimeSlotDialog() {
+		timeSlotDialogOpen = false;
+		timeSlotDraft = null;
+		timeSlotError = '';
+		timeSlotSubmitted = false;
+	}
+
+	function timeToMinutesNullable(value: string): number | null {
+		if (!value) {
+			return null;
+		}
+		const [hours, minutes] = value.split(':').map(Number);
+		if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+			return null;
+		}
+		return hours * 60 + minutes;
+	}
+
+	function minutesToTime(minutes: number): string {
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		const paddedHours = hours.toString().padStart(2, '0');
+		const paddedMinutes = mins.toString().padStart(2, '0');
+		return `${paddedHours}:${paddedMinutes}`;
+	}
+
+	function getTimeSlotError(slot: TimeSlotDto): string {
+		const start = timeToMinutesNullable(slot.startTime);
+		const end = timeToMinutesNullable(slot.endTime);
+
+		if (start === null || end === null) {
+			return 'Start and end time are required.';
+		}
+
+		if (start >= end) {
+			return 'Start time must be before end time.';
+		}
+
+		return '';
+	}
+
+	function getBreakError(slot: TimeSlotDto, breakItem: TimeSlotDto['breaks'][number]): string {
+		const slotStart = timeToMinutesNullable(slot.startTime);
+		const slotEnd = timeToMinutesNullable(slot.endTime);
+		const breakStart = timeToMinutesNullable(breakItem.startTime);
+		const breakEnd = timeToMinutesNullable(breakItem.endTime);
+
+		if (breakStart === null || breakEnd === null) {
+			return 'Break start and end time are required.';
+		}
+
+		if (breakStart >= breakEnd) {
+			return 'Break start must be before end time.';
+		}
+
+		if (slotStart !== null && breakStart < slotStart) {
+			return 'Break must start within the timeslot.';
+		}
+
+		if (slotEnd !== null && breakEnd > slotEnd) {
+			return 'Break must end within the timeslot.';
+		}
+
+		return '';
+	}
+
+	function updateDraftTimeSlot(updates: Partial<TimeSlotDto>) {
+		if (!timeSlotDraft) {
+			return;
+		}
+
+		timeSlotDraft = { ...timeSlotDraft, ...updates };
+	}
+
+	function addDraftBreak() {
+		if (!timeSlotDraft) {
+			return;
+		}
+
+		const slotStart = timeToMinutesNullable(timeSlotDraft.startTime);
+		const slotEnd = timeToMinutesNullable(timeSlotDraft.endTime);
+		let startTime = timeSlotDraft.startTime;
+		let endTime = timeSlotDraft.endTime;
+
+		if (slotStart !== null && slotEnd !== null && slotEnd - slotStart >= 30) {
+			startTime = minutesToTime(slotStart + 5);
+			endTime = minutesToTime(Math.min(slotStart + 30, slotEnd));
+		}
+
+		const nextBreak = {
+			id: nextBreakId--,
+			startTime,
+			endTime
+		};
+
+		timeSlotDraft = {
+			...timeSlotDraft,
+			breaks: [...timeSlotDraft.breaks, nextBreak]
+		};
+	}
+
+	function updateDraftBreak(breakId: number, updates: Partial<TimeSlotDto['breaks'][number]>) {
+		if (!timeSlotDraft) {
+			return;
+		}
+
+		const breaks = timeSlotDraft.breaks.map((breakItem) =>
+			breakItem.id === breakId ? { ...breakItem, ...updates } : breakItem
+		);
+
+		timeSlotDraft = { ...timeSlotDraft, breaks };
+	}
+
+	function removeDraftBreak(breakId: number) {
+		if (!timeSlotDraft) {
+			return;
+		}
+
+		timeSlotDraft = {
+			...timeSlotDraft,
+			breaks: timeSlotDraft.breaks.filter((breakItem) => breakItem.id !== breakId)
+		};
+	}
+
+	async function handleSaveTimeSlot(event: SubmitEvent) {
+		event.preventDefault();
+		if (!shift || !timeSlotDraft) {
+			return;
+		}
+
+		timeSlotSubmitted = true;
+		timeSlotError = '';
+
+		const timeSlotErrorMessage = getTimeSlotError(timeSlotDraft);
+		const hasBreakErrors = timeSlotDraft.breaks.some(
+			(breakItem) => getBreakError(timeSlotDraft, breakItem) !== ''
+		);
+
+		if (timeSlotErrorMessage !== '' || hasBreakErrors) {
+			return;
+		}
+
+		isTimeSlotSaving = true;
+		try {
+			if (timeSlotMode === 'add') {
+				await addTimeslot(shiftId, timeSlotDraft);
+				await loadShift();
+			} else {
+				await updateTimeslot(shiftId, timeSlotDraft.id, timeSlotDraft);
+				shift = {
+					...shift,
+					timeSlots: shift.timeSlots.map((slot) =>
+						slot.id === timeSlotDraft.id ? { ...timeSlotDraft } : slot
+					)
+				};
+			}
+
+			closeTimeSlotDialog();
+		} catch (error) {
+			timeSlotError = 'Failed to save timeslot.';
+			if (error instanceof HttpError) {
+				timeSlotError = error.Error.message;
+			}
+		} finally {
+			isTimeSlotSaving = false;
+		}
+	}
+
+	function openDeleteTimeslotDialog() {
+		if (!shift || !timeSlotDraft) {
+			return;
+		}
+
+		if (shift.timeSlots.length <= 1) {
+			timeSlotError = 'At least one timeslot is required.';
+			return;
+		}
+
+		confirmDeleteTimeslotId = timeSlotDraft.id;
+		confirmDeleteTimeslotOpen = true;
+	}
+
+	function closeDeleteTimeslotDialog() {
+		confirmDeleteTimeslotOpen = false;
+		confirmDeleteTimeslotId = null;
+	}
+
+	async function confirmDeleteTimeslot() {
+		if (!shift || confirmDeleteTimeslotId === null) {
+			return;
+		}
+
+		if (shift.timeSlots.length <= 1) {
+			timeSlotError = 'At least one timeslot is required.';
+			closeDeleteTimeslotDialog();
+			return;
+		}
+
+		try {
+			await deleteTimeslot(shiftId, confirmDeleteTimeslotId);
+			shift = {
+				...shift,
+				timeSlots: shift.timeSlots.filter((slot) => slot.id !== confirmDeleteTimeslotId)
+			};
+			closeDeleteTimeslotDialog();
+			closeTimeSlotDialog();
+		} catch (error) {
+			timeSlotError = 'Failed to delete timeslot.';
+			if (error instanceof HttpError) {
+				timeSlotError = error.Error.message;
+			}
+		}
 	}
 
 	function getSlotsForDay(day: number): TimeSlotDto[] {
@@ -504,13 +787,24 @@
 							<div
 								class="border-border bg-muted/10 relative h-[960px] rounded-md border border-dashed"
 							>
+								{#if getSlotsForDay(day.value).length === 0}
+									<button
+										type="button"
+										class="border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 absolute top-2 right-2 left-2 rounded-md border border-dashed px-2 py-1 text-xs transition"
+										onclick={() => openAddTimeslot(day.value)}
+									>
+										Add timeslot
+									</button>
+								{/if}
+
 								{#each getSlotsForDay(day.value) as slot (slot.id)}
 									{#each getSlotSegments(slot) as segment (segment.start)}
 										{@const top = minutesToPercent(segment.start)}
 										{@const height = Math.max(minutesToPercent(segment.end - segment.start), 1)}
 										<div
-											class="absolute right-2 left-2 rounded-md shadow-sm"
+											class="absolute right-2 left-2 cursor-pointer rounded-md shadow-sm"
 											style={`top: ${top}%; height: ${height}%; background-color: ${shift.colorAsHex}`}
+											onclick={() => openEditTimeslot(slot)}
 										></div>
 									{/each}
 
@@ -520,8 +814,9 @@
 										{@const breakTop = minutesToPercent(breakStart)}
 										{@const breakHeight = Math.max(minutesToPercent(breakEnd - breakStart), 1)}
 										<div
-											class="text-muted-foreground absolute right-4 left-4 flex items-center justify-center rounded border text-[10px] font-semibold shadow-sm"
+											class="text-muted-foreground absolute right-4 left-4 flex cursor-pointer items-center justify-center rounded border text-[10px] font-semibold shadow-sm"
 											style={`top: ${breakTop}%; height: ${breakHeight}%; background-color: rgba(15,23,42,0.15); border-color: ${shift.colorAsHex}`}
+											onclick={() => openEditTimeslot(slot)}
 										>
 											Break
 										</div>
@@ -664,6 +959,27 @@
 		</div>
 	{/if}
 </div>
+
+<TimeSlotDialog
+	bind:open={timeSlotDialogOpen}
+	mode={timeSlotMode}
+	draft={timeSlotDraft}
+	error={timeSlotError}
+	submitted={timeSlotSubmitted}
+	isSaving={isTimeSlotSaving}
+	availableDays={availableTimeSlotDays}
+	onSave={handleSaveTimeSlot}
+	onRequestDelete={openDeleteTimeslotDialog}
+	onUpdateSlot={updateDraftTimeSlot}
+	onAddBreak={addDraftBreak}
+	onUpdateBreak={updateDraftBreak}
+	onRemoveBreak={removeDraftBreak}
+	{getTimeSlotError}
+	{getBreakError}
+	deleteConfirmOpen={confirmDeleteTimeslotOpen}
+	onConfirmDelete={confirmDeleteTimeslot}
+	onCancelDelete={closeDeleteTimeslotDialog}
+/>
 
 <Dialog.Root bind:open={confirmRemoveOpen}>
 	<Dialog.Content class="sm:max-w-sm">
