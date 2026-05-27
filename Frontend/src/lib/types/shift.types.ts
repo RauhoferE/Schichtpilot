@@ -55,5 +55,6 @@ export interface GetShiftsRequest {
 
 export interface EditShiftDto {
 	name: string;
+	description: string;
 	colorAsHex: string;
 }

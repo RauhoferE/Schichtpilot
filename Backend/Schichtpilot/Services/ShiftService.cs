@@ -63,7 +63,7 @@ public class ShiftService : IShiftService
         var missingPrerequisiteJobs = await this.GetMissingPrerequisites(shift.JobRequirements);
         if (missingPrerequisiteJobs.Any())
         {
-            throw new NotFoundException($"The following Job roles are missing: {string.Join(", ", missingPrerequisiteJobs)}");
+            throw new NotFoundException(this.GenerateMissingPrerequisiteErrorMessage(missingPrerequisiteJobs));
         }
 
         if (!(await this.HasRequiredBreak(shift.TimeSlots)))
@@ -269,6 +269,7 @@ public class ShiftService : IShiftService
     {
         var shiftToModiy = this._dbContext.Shifts
             .Include(x => x.Timeslots)
+            .ThenInclude(x => x.Breaks)
             .FirstOrDefault(x => x.Id == shiftId);
 
         if (shiftToModiy == null)
@@ -407,6 +408,15 @@ public class ShiftService : IShiftService
             throw new NotFoundException($"Job role with id {jobRequirement.JobId} does not exist");
         }
 
+        var jobsToCheck = shiftToModiy.JobRequirements.Select(x => this._mapper.Map<ShiftRequirement, ShiftRequirementDto>(x)).ToList();
+        jobsToCheck.Add(jobRequirement);
+        var missingPrerequisiteJobs = await this.GetMissingPrerequisites(jobsToCheck);
+        
+        if (missingPrerequisiteJobs.Any())
+        {
+            throw new NotFoundException(this.GenerateMissingPrerequisiteErrorMessage(missingPrerequisiteJobs));
+        }
+
         shiftToModiy.JobRequirements.Add(new ShiftRequirement()
         {
             JobRoleId = jobRequirement.JobId,
@@ -417,6 +427,18 @@ public class ShiftService : IShiftService
         await this._dbContext.SaveChangesAsync();
 
         await SetSchedulesWithShiftAsInactive(shiftId);
+    }
+
+    private string GenerateMissingPrerequisiteErrorMessage(List<(string, string)> missingPrerequisiteJobs)
+    {
+        var errorText = "";
+        foreach (var missingPrerequisiteJob in missingPrerequisiteJobs)
+        {
+            errorText = errorText + 
+                        $"{missingPrerequisiteJob.Item2} requires {missingPrerequisiteJob.Item1}\n";
+        }
+        
+        return errorText;
     }
 
     /// <summary>
@@ -439,7 +461,7 @@ public class ShiftService : IShiftService
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
 
-        var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.Id == jobRequirementId);
+        var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.JobRoleId == jobRequirementId);
 
         if (jobRequirement == null)
         {
@@ -471,11 +493,20 @@ public class ShiftService : IShiftService
             throw new NotFoundException($"Shift with id {shiftId} does not exist");
         }
 
-        var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.Id == jobRequirementId);
+        var jobRequirement = shiftToModiy.JobRequirements.FirstOrDefault(x => x.JobRoleId == jobRequirementId);
 
         if (jobRequirement == null)
         {
             throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
+        }
+        
+        var jobsToCheck = shiftToModiy.JobRequirements.Select(x => this._mapper.Map<ShiftRequirement, ShiftRequirementDto>(x)).ToList();
+        jobsToCheck = jobsToCheck.Where(x => x.JobId != jobRequirementId).ToList();
+        var missingPrerequisiteJobs = await this.GetMissingPrerequisites(jobsToCheck);
+        
+        if (missingPrerequisiteJobs.Any())
+        {
+            throw new NotFoundException(this.GenerateMissingPrerequisiteErrorMessage(missingPrerequisiteJobs));
         }
 
         await SetSchedulesWithShiftAsInactive(shiftId);
@@ -489,10 +520,11 @@ public class ShiftService : IShiftService
     /// </summary>
     /// <param name="requirements"> The job roles required for the shift. </param>
     /// <returns>Returns all job roles, even their dependencies required for the shift. </returns>
-    private async Task<List<string>> GetMissingPrerequisites(List<ShiftRequirementDto> requirements)
+    private async Task<List<(string, string)>> GetMissingPrerequisites(List<ShiftRequirementDto> requirements)
     {
         var requestedJobIds = requirements.Select(r => r.JobId).ToHashSet();
-        var allRequiredIds = new HashSet<int>();
+        // Dependency and which role depends on it
+        var allRequiredIds = new HashSet<Tuple<int, int>>();
 
         // 1. Get all dependency links from the DB
         var allLinks = await this._dbContext.JobRoleDependencies.ToListAsync();
@@ -513,7 +545,7 @@ public class ShiftService : IShiftService
             foreach (var prereqId in prerequisites)
             {
                 // Only add to queue if we haven't processed this requirement yet
-                if (allRequiredIds.Add(prereqId))
+                if (allRequiredIds.Add(new Tuple<int, int>(prereqId, currentJobId)))
                 {
                     processingQueue.Enqueue(prereqId);
                 }
@@ -521,18 +553,34 @@ public class ShiftService : IShiftService
         }
 
         // 4. Identify IDs that are required but missing from the original request
-        var missingIds = allRequiredIds.Except(requestedJobIds).ToList();
+        //var missingIds = allRequiredIds.Except(requestedJobIds).ToList();
+        var missingIds = allRequiredIds.Where(x => !requestedJobIds.Contains(x.Item1)).ToList();
 
         if (!missingIds.Any())
         {
             return [];
         }
+        
+        var missingRole = new List<(string, string)>();
+        foreach (var missingIdsTuple in missingIds)
+        {
+            var dependency = this._dbContext.JobRoles.FirstOrDefault(x => x.Id == missingIdsTuple.Item1);
+            var dependents = this._dbContext.JobRoles.FirstOrDefault(x => x.Id == missingIdsTuple.Item2);
+
+            if (dependency != null && dependents != null)
+            {
+                missingRole.Add((dependency.Name, dependents.Name));
+            }
+            
+        }
+
+        return missingRole;
 
         // 5. Fetch names for the missing roles
-        return await this._dbContext.JobRoles
-            .Where(r => missingIds.Contains(r.Id))
-            .Select(r => r.Name)
-            .ToListAsync();
+        //return await this._dbContext.JobRoles
+        //    .Where(r => missingIds.Contains(r.Id))
+        //    .Select(r => r.Name)
+        //    .ToListAsync();
     }
 
     /// <summary>
