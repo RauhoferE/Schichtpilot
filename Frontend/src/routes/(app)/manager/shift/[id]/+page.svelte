@@ -40,6 +40,13 @@
         void loadShift();
     });
 
+    let nameError = $derived.by(() => {
+        if (name.trim() === '') {
+            return 'Shift name is required';
+        }
+        return '';
+    });
+
     async function loadShift() {
         const id = shiftId;
         if (!Number.isFinite(id)) {
@@ -126,21 +133,25 @@
             return;
         }
 
+        if (nameError !== '') {
+            return;
+        }
+
         saveError = '';
         saveSuccess = '';
         isSaving = true;
 
         try {
             await updateShift(shiftId, {
-                name: name.trim(),
-                description: description.trim(),
-                colorAsHex
+                name: name?.trim(),
+                description: description?.trim(),
+                colorAsHex  
             });
-
+            
             shift = {
                 ...shift,
-                name: name.trim(),
-                description: description.trim(),
+                name: name?.trim(),
+                description: description?.trim(),
                 colorAsHex
             };
 
@@ -187,6 +198,9 @@
                 <div class="space-y-2">
                     <Label for="shiftName">Name</Label>
                     <Input id="shiftName" type="text" bind:value={name} disabled={isSaving} />
+                    {#if nameError !== ''}
+                        <span class="error">{nameError}</span>
+                    {/if}
                 </div>
                 <div class="space-y-2 lg:col-span-2">
                     <Label for="shiftDescription">Description</Label>
