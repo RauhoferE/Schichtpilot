@@ -63,7 +63,7 @@
 </script>
 
 <svelte:head>
-    <title>Overview — SchichtPilot</title>
+    <title>Overview - SchichtPilot</title>
     <style>
         @media print {
             body * { visibility: hidden; }

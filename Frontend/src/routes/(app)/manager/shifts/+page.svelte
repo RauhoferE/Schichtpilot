@@ -125,6 +125,9 @@
         await loadShifts();
     }
 </script>
+<svelte:head>
+    <title>Shift Management - Schichtpilot</title>
+</svelte:head>
 
 <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-6">

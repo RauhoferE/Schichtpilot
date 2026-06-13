@@ -41,7 +41,7 @@
     }
 </script>
 
-<svelte:head><title>Absence Management — SchichtPilot</title></svelte:head>
+<svelte:head><title>Absence Management - SchichtPilot</title></svelte:head>
 
 <div class="space-y-4">
 
