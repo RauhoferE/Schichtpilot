@@ -1,12 +1,16 @@
 using System.Reflection;
+using System.Security.Claims;
+using System.Text;
 using AutoMapper;
 using Data;
 using Data.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Mapping;
@@ -52,6 +56,9 @@ public class Program
         var authCookieName = config["AuthCookieName"]
             ?? throw new Exception("AuthCookieName configuration is missing.");
 
+        var jwtKey = config["AuthenticationSettings:JwtKey"]
+            ?? throw new Exception("JwtKey configuration is missing.");
+
         builder.Services.AddIdentity<User, IdentityRole<long>>(opt =>
             {
                 opt.Password.RequireDigit = true;
@@ -63,11 +70,49 @@ public class Program
                 opt.Lockout.MaxFailedAccessAttempts = 5;
                 opt.User.RequireUniqueEmail = true;
             })
-            .AddEntityFrameworkStores<SchichtpilotDbContext>();
+            .AddEntityFrameworkStores<SchichtpilotDbContext>()
+            .AddDefaultTokenProviders();
+
+        // JWT als Default-Auth-Schema überschreiben
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtKey)),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    RoleClaimType = ClaimTypes.Role
+                };
+
+                // Token aus Cookie lesen statt Authorization-Header
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies["SchichtpilotUser"];
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            // Stop the cookie from redirecting to a Login Page
+            options.Cookie.Name = authCookieName;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = builder.Environment.IsDevelopment()
+                ? SameSiteMode.None
+                : SameSiteMode.Strict;
+
+            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                ? CookieSecurePolicy.SameAsRequest
+                : CookieSecurePolicy.Always;
+
             options.Events.OnRedirectToLogin = context =>
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -80,12 +125,6 @@ public class Program
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return Task.CompletedTask;
             };
-
-            options.Cookie.Name = authCookieName;
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = builder.Environment.IsDevelopment()
-                ? SameSiteMode.None
-                : SameSiteMode.Strict;
         });
 
         // Add settings
@@ -112,6 +151,7 @@ public class Program
         {
             options.Filters.Add<ValidationFilter>();
         });
+
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         builder.Services.AddFluentValidationAutoValidation();
 
@@ -127,9 +167,13 @@ public class Program
         builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddControllers(options =>
-        {
-            options.Filters.Add<ExceptionFilter>();
-        });
+            {
+                options.Filters.Add<ExceptionFilter>();
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            });
 
         // CORS
         var cors = config.GetSection("AllowedCors").Get<string[]>()
@@ -139,12 +183,12 @@ public class Program
         {
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("DevCors", builder =>
+                options.AddPolicy("DevCors", policy =>
                 {
-                    builder.WithOrigins(cors);
-                    builder.AllowAnyHeader();
-                    builder.AllowAnyMethod();
-                    builder.AllowCredentials();
+                    policy.WithOrigins(cors)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
         }
@@ -197,7 +241,12 @@ public class Program
         }
 
         app.UseSerilogRequestLogging();
-        app.UseHttpsRedirection();
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
+
         app.UseRouting();
 
         if (app.Environment.IsDevelopment())
