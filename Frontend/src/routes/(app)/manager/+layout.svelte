@@ -13,8 +13,6 @@
     // Order matches the mockup: Overview first, then the rest
     const tabs = [
         { label: 'Overview',           href: '/manager/overview'    },
-        { label: 'Teams',              href: '/manager/teams'       },
-        { label: 'New Employee',       href: '/manager/employee'},
         { label: 'Shift Management',     href: '/manager/shifts'      },
         { label: 'Job Role Management',     href: '/manager/jobrole'      },
         { label: 'Time Management',    href: '/manager/time'        },
