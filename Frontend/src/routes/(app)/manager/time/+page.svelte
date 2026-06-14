@@ -4,11 +4,11 @@
     import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
     import * as Alert from '$lib/components/ui/alert';
     import * as Table from '$lib/components/ui/table/index.js';
-    import { getSchedulesRequest, getSchedule, generateSchedule, deleteSchedule, publishSchedule } from '$lib/services/workschedule.service';
+    import { getSchedulesRequest, getSchedule, generateSchedule, deleteSchedule, publishSchedule, setScheduleAsActive, setScheduleAsInactive } from '$lib/services/workschedule.service';
     import { getShifts } from '$lib/services/shift.service';
     import type { WorkScheduleShortDto, WorkScheduleDto } from '$lib/types/schedule.types';
     import type { ShortShiftDto } from '$lib/types/shift.types';
-
+    
     //State
     let schedules: WorkScheduleShortDto[] = $state([]);
     let selectedSchedule = $state<WorkScheduleDto | null>(null);
@@ -46,21 +46,29 @@
     function toDateString(year: number, month: number, day: number): string {
         return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
-
+    
     function getScheduleForDate(dateStr: string): WorkScheduleShortDto | undefined {
         return schedules.find(s => {
-            const start = new Date(s.startDate);
-            const end = new Date(s.endDate);
-            const d = new Date(dateStr);
+            const start = new Date(new Date(s.startDate).toDateString());
+            const end = new Date(new Date(s.endDate).toDateString());
+            const d = new Date(new Date(dateStr).toDateString());
             return d >= start && d <= end;
         });
     }
 
+    /*
     function isSelectedDate(dateStr: string): boolean {
         if (!selectedSchedule) return false;
         const start = new Date(selectedSchedule.startDate);
         const end = new Date(selectedSchedule.endDate);
         const d = new Date(dateStr);
+        return d >= start && d <= end;
+    }*/
+    function isSelectedDate(dateStr: string): boolean {
+        if (!selectedSchedule) return false;
+        const start = new Date(new Date(selectedSchedule.startDate).toDateString());
+        const end = new Date(new Date(selectedSchedule.endDate).toDateString());
+        const d = new Date(new Date(dateStr).toDateString());
         return d >= start && d <= end;
     }
 
@@ -139,10 +147,11 @@
         try {
             await generateSchedule({
                 name: newScheduleName,
-                startDate: new Date(newStartDate),
-                endDate: new Date(newEndDate),
+                startDate: new Date(newStartDate + 'T12:00:00'),  // Mittag statt Mitternacht
+                endDate: new Date(newEndDate + 'T12:00:00'),
                 shiftIds: selectedShiftIds
             });
+            
             successMessage = 'Work schedule created successfully.';
             showCreateDialog = false;
             newScheduleName = '';
@@ -288,6 +297,49 @@
                                     {formatDate(selectedSchedule.startDate)} – {formatDate(selectedSchedule.endDate)}
                                     · {selectedSchedule.isActive ? '✅ Active' : '⏸ Inactive'}
                                 </CardDescription>
+                            </div>
+                            <div class="flex gap-2">
+                                {#if !selectedSchedule.isActive}
+                                    <Button size="sm" onclick={async () => {
+                                try {
+                                    await setScheduleAsActive(selectedSchedule!.id);
+                                    selectedSchedule = await getSchedule(selectedSchedule!.id);
+                                    await loadSchedules();
+                                    successMessage = 'Schedule activated.';
+                                } catch {
+                                    errorMessage = 'Failed to activate schedule.';
+                                }
+                            }}>
+                                        Activate
+                                    </Button>
+                                {:else}
+                                    <Button size="sm" variant="outline" onclick={async () => {
+                                try {
+                                    await setScheduleAsInactive(selectedSchedule!.id);
+                                    selectedSchedule = await getSchedule(selectedSchedule!.id);
+                                    await loadSchedules();
+                                    successMessage = 'Schedule deactivated.';
+                                } catch {
+                                    errorMessage = 'Failed to deactivate schedule.';
+                                }
+                            }}>
+                                        Deactivate
+                                    </Button>
+                                {/if}
+                                <Button size="sm" variant="destructive" onclick={async () => {
+                            const confirmed = window.confirm(`Delete schedule "${selectedSchedule!.name}"? This cannot be undone.`);
+                            if (!confirmed) return;
+                            try {
+                                await deleteSchedule(selectedSchedule!.id);
+                                selectedSchedule = null;
+                                await loadSchedules();
+                                successMessage = 'Schedule deleted.';
+                            } catch {
+                                errorMessage = 'Failed to delete schedule.';
+                            }
+                        }}>
+                                    Delete
+                                </Button>
                             </div>
                         </div>
                     </CardHeader>
