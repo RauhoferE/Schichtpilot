@@ -99,7 +99,7 @@
                 page,
                 pageSize,
                 weekDays: selectedWeekDays,
-                shiftStatusEnum:all,
+                shiftStatusEnum: 'All',
                 searchstring: searchstring.trim()
             });
 

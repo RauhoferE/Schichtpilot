@@ -118,7 +118,7 @@ public class WorkscheduleController : Controller
     /// <param name="startDate"> The startdate of the workschedule. </param>
     /// <returns> Returns the schedule as <see cref="WorkScheduleDto"/>. </returns>
     [HttpGet("active")]
-    [Authorize(Roles = UserRolesClass.User)]
+    [Authorize(Roles = $"{UserRolesClass.Admin},{UserRolesClass.User}")]
     [ProducesResponseType(typeof(WorkScheduleDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActiveScheduleForDateAsync([FromQuery, Required] DateTime startDate)
     {

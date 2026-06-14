@@ -247,13 +247,12 @@ public class Program
             app.UseHttpsRedirection();
         }
 
-        app.UseRouting();
-
         if (app.Environment.IsDevelopment())
         {
             app.UseCors("DevCors");
         }
-
+        
+        app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMiddleware<UserContextMiddleware>();

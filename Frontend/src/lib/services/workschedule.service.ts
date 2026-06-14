@@ -30,9 +30,9 @@ export function getSchedule(scheduleId: number): Promise<WorkScheduleDto>{
 }
 
 export function getactiveSchedule(startDate: Date): Promise<WorkScheduleDto>{
-    return get<WorkScheduleDto>(`${controllerURL}/active?startDate=${startDate}`);
+    const iso = startDate.toISOString().slice(0, 10);
+    return get<WorkScheduleDto>(`${controllerURL}/active?startDate=${iso}`);
 }
-
 export function getSchedulesRequest(params: GetSchedulesRequest): Promise<QueryableSchedules>{
     return get<QueryableSchedules>(`${controllerURL}/all?${qs.stringify(params)}`);
 }
