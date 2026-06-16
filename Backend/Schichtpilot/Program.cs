@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using AutoMapper;
+using Azure.Communication.Email;
 using Data;
 using Data.Entities;
 using FluentValidation;
@@ -135,6 +136,9 @@ public class Program
         builder.Services.Configure<AzureEmailSettings>(
             config.GetSection("AzureEmail"));
 
+        string azureEmailString = builder.Configuration["AzureEmail:ConnectionString"] ?? throw new InvalidOperationException("Azure Email String not found");
+
+        builder.Services.AddSingleton(new EmailClient(azureEmailString));
         // Add services to the container
         builder.Services.AddTransient<IEmailService, EmailService>();
         builder.Services.AddTransient<IUserService, UserService>();
