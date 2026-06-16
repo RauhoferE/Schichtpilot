@@ -134,9 +134,10 @@ public class AbsenceService : IAbsenceService
 
         var count = await query.CountAsync();
         var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
-        var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
+        var absences = pagedQuery.Select(x => this._mapper.Map<AbsenceDto>(x));
+        //var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        return new QueryableAbsenceResponse { Count = count, Absences = absences.ToList() };
     }
 
     /// <summary>
@@ -156,9 +157,10 @@ public class AbsenceService : IAbsenceService
 
         var count = await query.CountAsync();
         var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
-        var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
+        var absences = pagedQuery.Select(x => this._mapper.Map<AbsenceDto>(x));
+        //var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        return new QueryableAbsenceResponse { Count = count, Absences = absences.ToList() };
     }
 
     /// <summary>
