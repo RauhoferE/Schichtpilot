@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Schichtpilot.Settings;
 using Schichtpilot.Models.Enums;
 using Core;
+using Azure.Communication.Email;
 using Xunit;
 
 namespace UnitTests.Services;
@@ -569,7 +570,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        Assert.Throws<InvalidOperationException>(() => new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object));
+        Assert.Throws<InvalidOperationException>(() => new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test")));
     }
 
     [Fact]
@@ -582,7 +583,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        Assert.Throws<InvalidOperationException>(() => new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object));
+        Assert.Throws<InvalidOperationException>(() => new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test")));
     }
 
     [Fact]
@@ -595,7 +596,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        Assert.Throws<ArgumentNullException>(() => new EmailService(Options.Create(settings), null!, _loggerMock.Object));
+        Assert.Throws<ArgumentNullException>(() => new EmailService(Options.Create(settings), null!, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test")));
     }
 
     [Fact]
@@ -608,7 +609,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var user = new User { FirstName = "Anna", LastName = "Schmidt", Email = "anna@test.com" };
         var absence = new AbsenceDto { StartDate = new DateTime(2026, 4, 1), EndDate = new DateTime(2026, 4, 3), ManagerMessage = "Approved!", AbsenceType = AbsenceTypeEnum.Vacation };
@@ -629,7 +630,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var filePath = Path.Combine(_templatesPath, "approval.html");
         await File.WriteAllTextAsync(filePath, "<p>{{EmployeeName}} approved from {{StartDate}} to {{EndDate}} — {{ManagerMessage}}</p>");
@@ -650,7 +651,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var filePath = Path.Combine(_templatesPath, "rejection.html");
         await File.WriteAllTextAsync(filePath, "<div>{{EmployeeName}} rejected {{StartDate}}—{{EndDate}}. {{ManagerMessage}}</div>");
@@ -671,7 +672,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var filePath = Path.Combine(_templatesPath, "register.html");
         await File.WriteAllTextAsync(filePath, "<p>Welcome {{FullName}} ({{Email}})</p>");
@@ -690,7 +691,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var filePath = Path.Combine(_templatesPath, "schedule.html");
         await File.WriteAllTextAsync(filePath, "<div>{{EmployeeName}} — {{ShiftTable}}</div>");
@@ -733,7 +734,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var filePath = Path.Combine(_templatesPath, "absence.html");
         await File.WriteAllTextAsync(filePath, "<p>{{ManagerName}}: {{EmployeeName}} — {{AbsenceType}} {{StartDate}}–{{EndDate}}. {{Message}}</p>");
@@ -757,7 +758,7 @@ public class EmailServicePublicApiTests : IDisposable
             SendMail = false
         };
 
-        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object);
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
 
         var filePath1 = Path.Combine(_templatesPath, "scheduleInactive.html");
         var filePath2 = Path.Combine(_templatesPath, "scheduleInactiveManager.html");
