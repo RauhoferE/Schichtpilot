@@ -578,7 +578,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "",
             SendMail = false
         };
@@ -591,7 +591,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -604,7 +604,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -625,7 +625,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -646,7 +646,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -667,7 +667,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -686,7 +686,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -729,7 +729,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };
@@ -753,7 +753,7 @@ public class EmailServicePublicApiTests : IDisposable
     {
         var settings = new AzureEmailSettings
         {
-            ConnectionString = "some-conn",
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
             SenderAddress = "sender@test.com",
             SendMail = false
         };

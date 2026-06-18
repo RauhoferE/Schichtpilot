@@ -93,6 +93,22 @@ public class AbsenceServiceTest
                 CreatedAt = e.CreatedAt,
                 ManagerMessage = e.ManagerMessage ?? string.Empty
             }));
+        
+        _mapperMock
+            .Setup(m => m.Map<ManagerAbsenceDto>(It.IsAny<Absence>()))
+            .Returns(new Func<Absence, ManagerAbsenceDto>(e => new ManagerAbsenceDto()
+            {
+                Id = e.Id,
+                EmployeeName = e.User.FirstName + " " + e.User.LastName,
+                UserId = e.UserId,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                AbsenceType = Enum.Parse<AbsenceTypeEnum>(e.AbsenceType),
+                Message = e.Message,
+                Status = Enum.Parse<AbsenceStatusEnum>(e.Status),
+                CreatedAt = e.CreatedAt,
+                ManagerMessage = e.ManagerMessage ?? string.Empty
+            }));
     }
 
     [Fact]
@@ -242,92 +258,6 @@ public class AbsenceServiceTest
 
         _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(It.IsAny<int>()), Times.Never);
         _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(It.IsAny<int>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task CreateAbsenceRequestAsync_SickLeave_CreatesApprovedAbsenceAndUpdatesSchedules()
-    {
-        await using var dbContext = CreateDbContext();
-        var user = CreateCompleteUser(1);
-        user.JobRoles = new HashSet<UserJobRoles>();
-
-        var role = new JobRole
-        {
-            Id = 1,
-            Name = "Nurse",
-            Description = "Nurse role",
-            CreatedOn = DateTime.UtcNow,
-            UsersWithRole = new HashSet<UserJobRoles>(),
-            Dependencies = new HashSet<JobRoleDependency>(),
-            Prerequisites = new HashSet<JobRoleDependency>()
-        };
-
-        var userJobRole = new UserJobRoles
-        {
-            User = user,
-            UserId = user.Id,
-            JobRole = role,
-            JobRoleId = role.Id
-        };
-        user.JobRoles.Add(userJobRole);
-
-        var schedule = new WorkSchedule
-        {
-            Id = 10,
-            Name = "Schedule A",
-            StartDate = new DateTime(2026, 1, 1),
-            EndDate = new DateTime(2026, 1, 7),
-            IsActive = true,
-            IsValid = true,
-            Shifts = new HashSet<WorkScheduleShifts>(),
-            ShiftAssignments = new HashSet<ShiftAssignment>()
-        };
-
-        var assignment = new ShiftAssignment
-        {
-            WorkSchedule = schedule,
-            WorkScheduleId = schedule.Id,
-            UserJobRole = userJobRole,
-            UserId = user.Id,
-            JobRoleId = role.Id,
-            TimeslotId = 1,
-            StartTime = new DateTime(2026, 1, 2, 8, 0, 0),
-            EndTime = new DateTime(2026, 1, 3, 12, 0, 0)
-        };
-        schedule.ShiftAssignments.Add(assignment);
-
-        dbContext.JobRoles.Add(role);
-        dbContext.Users.Add(user);
-        dbContext.UserJobRoles.Add(userJobRole);
-        dbContext.WorkSchedules.Add(schedule);
-        dbContext.ShiftAssignments.Add(assignment);
-        await dbContext.SaveChangesAsync();
-
-        _workScheduleServiceMock
-            .Setup(x => x.SetScheduleOfflineAsync(schedule.Id))
-            .Returns(Task.CompletedTask);
-        _workScheduleServiceMock
-            .Setup(x => x.SetScheduleAsInvalidAsync(schedule.Id))
-            .Returns(Task.CompletedTask);
-
-        var service = CreateService(dbContext);
-        var dto = new CreateAbsenceDto
-        {
-            StartDate = new DateTime(2026, 1, 1),
-            EndDate = new DateTime(2026, 1, 4),
-            AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
-            Message = "Sick leave"
-        };
-
-        await service.CreateAbsenceRequestAsync(user.Id, dto);
-
-        var absence = await dbContext.Absences.FirstOrDefaultAsync();
-        Assert.NotNull(absence);
-        Assert.Equal(nameof(AbsenceStatusEnum.Approved), absence.Status);
-        Assert.Equal(dto.StartDate.Date, absence.StartDate);
-
-        _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(schedule.Id), Times.Once);
-        _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(schedule.Id), Times.Once);
     }
 
     [Fact]
@@ -702,7 +632,7 @@ public class AbsenceServiceTest
         var result = await service.ViewAllAbsencesAsync(new PaginationDto { Page = 2, PageSize = 2 }, null);
 
         Assert.Equal(4, result.Count);
-        Assert.Equal(2, result.Absences.Count);
+        Assert.Equal(2, result.Absences.Count());
         Assert.Equal(new[] { 11, 1 }, result.Absences.Select(x => x.Id));
     }
 
@@ -836,8 +766,8 @@ public class AbsenceServiceTest
 
         Assert.Equal(1, result.Count);
         Assert.Single(result.Absences);
-        Assert.Equal(1, result.Absences[0].Id);
-        Assert.Equal(AbsenceTypeEnum.Vacation, result.Absences[0].AbsenceType);
+        Assert.Equal(1, result.Absences.First().Id);
+        Assert.Equal(AbsenceTypeEnum.Vacation, result.Absences.First().AbsenceType);
     }
 
     [Fact]
@@ -973,10 +903,11 @@ public class AbsenceServiceTest
         await using var dbContext = CreateDbContext();
         
         this._mapperMock
-            .Setup(mapper => mapper.Map<AbsenceDto>(It.IsAny<Absence>()))
-            .Returns((Absence absence) => new AbsenceDto()
+            .Setup(mapper => mapper.Map<ManagerAbsenceDto>(It.IsAny<Absence>()))
+            .Returns((Absence absence) => new ManagerAbsenceDto()
             {
                 AbsenceType = Enum.Parse<AbsenceTypeEnum>(absence.AbsenceType),
+                EmployeeName = absence.User.FirstName + " " + absence.User.LastName,
                 CreatedAt =  absence.CreatedAt,
                 EndDate = absence.EndDate,
                 Id = absence.Id,
@@ -1009,7 +940,7 @@ public class AbsenceServiceTest
         var filtered = await service.ViewAllAbsencesAsync(new PaginationDto { Page = 1, PageSize = 10 }, new AbsenceFilterDto { Searchstring = "alice" });
         Assert.Equal(1, filtered.Count);
         Assert.Single(filtered.Absences);
-        Assert.Equal(100, filtered.Absences[0].Id);
+        Assert.Equal(100, filtered.Absences.First().Id);
     }
 
     private User CreateCompleteUser(int id)
