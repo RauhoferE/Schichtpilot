@@ -187,39 +187,46 @@ public class Program
 
         builder.Services.AddHttpContextAccessor();
 
-        // CORS (IMPORTANT: ALWAYS ENABLED)
+        // CORS
         var cors = config.GetSection("AllowedCors").Get<string[]>()
             ?? throw new Exception("AllowedCors configuration is missing.");
 
-        builder.Services.AddCors(options =>
+        if (builder.Environment.IsDevelopment())
         {
-            options.AddPolicy("DevCors", policy =>
+            builder.Services.AddCors(options =>
             {
-                policy.WithOrigins(cors)
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
+                options.AddPolicy("DevCors", policy =>
+                {
+                    policy.WithOrigins(cors)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
             });
-        });
+        }
 
         // Swagger
-        builder.Services.AddSwaggerGen(options =>
+        if (builder.Environment.IsDevelopment())
         {
-            options.SwaggerDoc("v1", new OpenApiInfo
+            builder.Services.AddSwaggerGen(options =>
             {
-                Title = "Schichtpilot",
-                Version = "v1"
-            });
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Schichtpilot",
+                    Version = "v1"
+                });
 
-            options.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
-            {
-                Name = authCookieName,
-                In = ParameterLocation.Cookie,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "CookieAuth",
-                Description = "Cookie-based authentication"
+                options.AddSecurityDefinition("CookieAuth", new OpenApiSecurityScheme
+                {
+                    Name = authCookieName,
+                    In = ParameterLocation.Cookie,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "CookieAuth",
+                    Description = "Cookie-based authentication"
+                });
             });
-        });
+        }
+
 
         var app = builder.Build();
 
