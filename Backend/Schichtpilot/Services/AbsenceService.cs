@@ -145,20 +145,39 @@ public class AbsenceService : IAbsenceService
     /// <param name="pagination"> The pagination element. </param>
     /// <param name="filter"> How to filter the available absences. </param>
     /// <returns> Return the absences as <see cref="QueryableAbsenceResponse"/>. </returns>
-    public async Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
+    public async Task<QueryableManagerAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
     {
-        //TODO: Missing filtering after employee
         IQueryable<Absence> query = _dbContext.Absences
-            .OrderByDescending(x => x.CreatedAt)
-            .Include(x => x.User);
+            .Include(x => x.User)
+            .OrderByDescending(x => x.CreatedAt);
 
         query = await FilterAbsencesAsync(query, filter);
 
         var count = await query.CountAsync();
-        var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
-        var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        var absences = await query
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(a => new ManagerAbsenceDto
+            {
+                Id = a.Id,
+                UserId = a.UserId,
+                EmployeeName = a.User.FirstName + " " + a.User.LastName,
+                StartDate = a.StartDate,
+                EndDate = a.EndDate,
+                AbsenceType = Enum.Parse<AbsenceTypeEnum>(a.AbsenceType),
+                Message = a.Message,
+                Status = Enum.Parse<AbsenceStatusEnum>(a.Status),
+                CreatedAt = a.CreatedAt,
+                ManagerMessage = a.ManagerMessage
+            })
+            .ToListAsync();
+
+        return new QueryableManagerAbsenceResponse
+        {
+            Count = count,
+            Absences = absences
+        };
     }
 
     /// <summary>
