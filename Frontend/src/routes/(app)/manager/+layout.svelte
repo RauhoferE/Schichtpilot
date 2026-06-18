@@ -9,10 +9,10 @@
     interface Props { children: Snippet; }
     let { children }: Props = $props();
 
-    // Manager navigation tabs 
-    // Order matches the mockup: Overview first, then the rest
+    // Manager navigation tabs
     const tabs = [
         { label: 'Overview',           href: '/manager/overview'    },
+        { label: 'Employee Management',     href: '/manager/employees'      },
         { label: 'Shift Management',     href: '/manager/shifts'      },
         { label: 'Job Role Management',     href: '/manager/jobrole'      },
         { label: 'Time Management',    href: '/manager/time'        },

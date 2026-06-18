@@ -100,7 +100,7 @@ function buildEmptyWeek(monday: Date): Week {
     };
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// state
 
 export function createScheduleState() {
     let currentMonday = $state(mondayOf(new Date()));
@@ -118,9 +118,11 @@ export function createScheduleState() {
         loading = true;
         errorMessage = '';
         try {
-            const isoDate = monday.toISOString().slice(0, 10); // "2026-06-15"
+            const isoDate = monday.toISOString().slice(0, 10);
             scheduleData = await getactiveSchedule(new Date(isoDate + 'T12:00:00'));
-        } catch {
+            console.log('scheduleData:', scheduleData);  // NEU
+        } catch (e) {
+            console.log('loadWeek error:', e);  // NEU
             scheduleData = null;
             errorMessage = 'No schedule found for this week.';
         } finally {

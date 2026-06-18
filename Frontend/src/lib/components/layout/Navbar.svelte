@@ -18,9 +18,6 @@
     let { tabs }: Props = $props();
 
     // Logout
-    // MOCK ONLY: clears session from sessionStorage and redirects to login.
-    // When backend is connected, replace with a real API call:
-    // await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     async function handleLogout() {
             await logout();
             removeCookie();
@@ -44,7 +41,7 @@
 <header class="bg-white border-b border-border shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
 
-        <!-- ── Top row: Logo + right actions ── -->
+        <!-- Top row: Logo + right actions  -->
         <div class="flex items-center justify-between h-16">
 
             <!-- Logo: amber text to distinguish brand from blue UI elements -->

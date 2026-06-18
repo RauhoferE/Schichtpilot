@@ -33,10 +33,18 @@
 		{ value: 6, label: 'Saturday' }
 	];
 
+	interface DraftTimeSlot {
+		id: number;
+		daysOfWeek: number[];
+		startTime: string;
+		endTime: string;
+		breaks: BreakDto[];
+	}
+
 	let name = $state('');
 	let description = $state('');
 	let colorAsHex = $state('#f59e0b');
-	let timeSlots = $state<TimeSlotDto[]>([]);
+	let timeSlots = $state<DraftTimeSlot[]>([]);
 	let jobRequirements = $state<ShiftRequirementDto[]>([]);
 
 	let errorMessage = $state('');
@@ -90,7 +98,7 @@
 	});
 
 	const availableJobOptions = $derived.by(() =>
-		jobOptions.filter((job) => !jobRequirements.some((req) => req.jobId === job.id))
+			jobOptions.filter((job) => !jobRequirements.some((req) => req.jobId === job.id))
 	);
 
 	function timeToMinutes(value: string): number | null {
@@ -114,7 +122,11 @@
 		return `${paddedHours}:${paddedMinutes}`;
 	}
 
-	function getTimeSlotError(slot: TimeSlotDto): string {
+	function getTimeSlotError(slot: DraftTimeSlot): string {
+		if (slot.daysOfWeek.length === 0) {
+			return 'Select at least one day.';
+		}
+
 		const start = timeToMinutes(slot.startTime);
 		const end = timeToMinutes(slot.endTime);
 
@@ -129,7 +141,7 @@
 		return '';
 	}
 
-	function getBreakError(slot: TimeSlotDto, breakItem: BreakDto): string {
+	function getBreakError(slot: DraftTimeSlot, breakItem: BreakDto): string {
 		const slotStart = timeToMinutes(slot.startTime);
 		const slotEnd = timeToMinutes(slot.endTime);
 		const breakStart = timeToMinutes(breakItem.startTime);
@@ -166,7 +178,7 @@
 			...timeSlots,
 			{
 				id: nextTimeSlotId++,
-				dayOfWeek: 1,
+				daysOfWeek: [1],
 				startTime: '09:00',
 				endTime: '17:00',
 				breaks: []
@@ -178,8 +190,36 @@
 		timeSlots = timeSlots.filter((slot) => slot.id !== slotId);
 	}
 
-	function updateTimeSlot(slotId: number, updates: Partial<TimeSlotDto>) {
+	function updateTimeSlot(slotId: number, updates: Partial<DraftTimeSlot>) {
 		timeSlots = timeSlots.map((slot) => (slot.id === slotId ? { ...slot, ...updates } : slot));
+	}
+
+	function toggleSlotDay(slotId: number, day: number) {
+		timeSlots = timeSlots.map((slot) => {
+			if (slot.id !== slotId) {
+				return slot;
+			}
+
+			const daysOfWeek = slot.daysOfWeek.includes(day)
+					? slot.daysOfWeek.filter((value) => value !== day)
+					: [...slot.daysOfWeek, day];
+
+			return { ...slot, daysOfWeek };
+		});
+	}
+
+	function toggleAllSlotDays(slotId: number) {
+		timeSlots = timeSlots.map((slot) => {
+			if (slot.id !== slotId) {
+				return slot;
+			}
+
+			const allSelected = slot.daysOfWeek.length === weekDayOptions.length;
+			return {
+				...slot,
+				daysOfWeek: allSelected ? [] : weekDayOptions.map((day) => day.value)
+			};
+		});
 	}
 
 	function addBreak(slotId: number) {
@@ -215,7 +255,7 @@
 			}
 
 			const breaks = slot.breaks.map((breakItem) =>
-				breakItem.id === breakId ? { ...breakItem, ...updates } : breakItem
+					breakItem.id === breakId ? { ...breakItem, ...updates } : breakItem
 			);
 
 			return { ...slot, breaks };
@@ -271,13 +311,13 @@
 		}
 
 		const selectedJobIdValues = selectedJobIds
-			.map((id) => Number(id))
-			.filter((id) => Number.isFinite(id));
+				.map((id) => Number(id))
+				.filter((id) => Number.isFinite(id));
 
 		const newJobs = selectedJobIdValues
-			.filter((id) => !jobRequirements.some((req) => req.jobId === id))
-			.map((id) => jobOptions.find((job) => job.id === id))
-			.filter((job): job is JobRoleShortDto => Boolean(job));
+				.filter((id) => !jobRequirements.some((req) => req.jobId === id))
+				.map((id) => jobOptions.find((job) => job.id === id))
+				.filter((job): job is JobRoleShortDto => Boolean(job));
 
 		if (newJobs.length === 0) {
 			return;
@@ -298,7 +338,7 @@
 
 	function updateRequirement(jobId: number, updates: Partial<ShiftRequirementDto>) {
 		jobRequirements = jobRequirements.map((req) =>
-			req.jobId === jobId ? { ...req, ...updates } : req
+				req.jobId === jobId ? { ...req, ...updates } : req
 		);
 	}
 
@@ -334,6 +374,18 @@
 		return isValid;
 	}
 
+	function expandTimeSlots(): TimeSlotDto[] {
+		return timeSlots.flatMap((slot) =>
+				slot.daysOfWeek.map((dayOfWeek) => ({
+					id: slot.id,
+					dayOfWeek,
+					startTime: slot.startTime,
+					endTime: slot.endTime,
+					breaks: slot.breaks
+				}))
+		);
+	}
+
 	async function handleCreateShift(event: SubmitEvent) {
 		event.preventDefault();
 		errorMessage = '';
@@ -349,7 +401,7 @@
 				name: name.trim(),
 				description: description.trim(),
 				colorAsHex,
-				timeSlots,
+				timeSlots: expandTimeSlots(),
 				jobRequirements
 			};
 
@@ -368,7 +420,7 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Content class="sm:max-w-3xl">
+	<Dialog.Content class="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
 		<Dialog.Header>
 			<Dialog.Title>Create shift</Dialog.Title>
 			<Dialog.Description>Define shift details, timeslots, and job requirements.</Dialog.Description
@@ -378,12 +430,12 @@
 		{#if errorMessage}
 			<Alert.Root variant="destructive">
 				<svg
-					class="h-4 w-4"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					aria-hidden="true"
+						class="h-4 w-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
 				>
 					<circle cx="12" cy="12" r="10" />
 					<line x1="12" y1="8" x2="12" y2="12" />
@@ -398,12 +450,12 @@
 				<div class="space-y-2">
 					<Label for="shiftName">Name</Label>
 					<Input
-						id="shiftName"
-						type="text"
-						placeholder="Lunch shift"
-						onblur={() => handleBlur('name')}
-						disabled={isSaving}
-						bind:value={name}
+							id="shiftName"
+							type="text"
+							placeholder="Lunch shift"
+							onblur={() => handleBlur('name')}
+							disabled={isSaving}
+							bind:value={name}
 					/>
 					{#if nameError !== '' && (touched.name || submitted)}
 						<span class="error">{nameError}</span>
@@ -413,12 +465,12 @@
 				<div class="space-y-2">
 					<Label for="shiftDescription">Description</Label>
 					<Input
-						id="shiftDescription"
-						type="text"
-						placeholder="Short description"
-						onblur={() => handleBlur('description')}
-						disabled={isSaving}
-						bind:value={description}
+							id="shiftDescription"
+							type="text"
+							placeholder="Short description"
+							onblur={() => handleBlur('description')}
+							disabled={isSaving}
+							bind:value={description}
 					/>
 				</div>
 
@@ -426,11 +478,11 @@
 					<Label for="shiftColor">Color</Label>
 					<div class="flex items-center gap-2">
 						<Input
-							id="shiftColor"
-							type="color"
-							class="h-9 w-16 p-1"
-							disabled={isSaving}
-							bind:value={colorAsHex}
+								id="shiftColor"
+								type="color"
+								class="h-9 w-16 p-1"
+								disabled={isSaving}
+								bind:value={colorAsHex}
 						/>
 						<Input type="text" readonly value={colorAsHex} />
 					</div>
@@ -451,48 +503,65 @@
 					<div class="space-y-4">
 						{#each timeSlots as slot (slot.id)}
 							<div class="border-border space-y-4 rounded-lg border p-4">
-								<div class="flex flex-wrap items-center gap-4">
-									<div class="min-w-[200px] space-y-2">
-										<Label>Day of week</Label>
-										<select
-											class="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:ring-3"
-											value={slot.dayOfWeek}
-											onchange={(event) =>
-												updateTimeSlot(slot.id, {
-													dayOfWeek: Number((event.currentTarget as HTMLSelectElement).value)
-												})}
-										>
+								<div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
+									<div class="w-full space-y-2 sm:min-w-[260px] sm:w-auto">
+										<div class="flex items-center justify-between gap-2">
+											<Label>Days of week</Label>
+											<button
+													type="button"
+													class="text-primary text-xs font-medium hover:underline"
+													onclick={() => toggleAllSlotDays(slot.id)}
+											>
+												{slot.daysOfWeek.length === weekDayOptions.length
+														? 'Deselect all'
+														: 'Select all'}
+											</button>
+										</div>
+										<div class="flex flex-wrap gap-3">
 											{#each weekDayOptions as day (day.value)}
-												<option value={day.value}>{day.label}</option>
+												<label class="text-muted-foreground flex items-center gap-2 text-sm">
+													<input
+															type="checkbox"
+															class="text-primary border-input h-4 w-4 rounded"
+															checked={slot.daysOfWeek.includes(day.value)}
+															onchange={() => toggleSlotDay(slot.id, day.value)}
+													/>
+													<span class="text-foreground">{day.label}</span>
+												</label>
 											{/each}
-										</select>
+										</div>
 									</div>
 
-									<div class="min-w-[160px] space-y-2">
+									<div class="w-full space-y-2 sm:min-w-[160px] sm:w-auto">
 										<Label>Start time</Label>
 										<Input
-											type="time"
-											value={slot.startTime}
-											oninput={(event) =>
+												type="time"
+												value={slot.startTime}
+												oninput={(event) =>
 												updateTimeSlot(slot.id, {
 													startTime: (event.currentTarget as HTMLInputElement).value
 												})}
 										/>
 									</div>
 
-									<div class="min-w-[160px] space-y-2">
+									<div class="w-full space-y-2 sm:min-w-[160px] sm:w-auto">
 										<Label>End time</Label>
 										<Input
-											type="time"
-											value={slot.endTime}
-											oninput={(event) =>
+												type="time"
+												value={slot.endTime}
+												oninput={(event) =>
 												updateTimeSlot(slot.id, {
 													endTime: (event.currentTarget as HTMLInputElement).value
 												})}
 										/>
 									</div>
 
-									<Button type="button" variant="ghost" onclick={() => removeTimeSlot(slot.id)}>
+									<Button
+											type="button"
+											variant="ghost"
+											class="w-full sm:w-auto"
+											onclick={() => removeTimeSlot(slot.id)}
+									>
 										Remove timeslot
 									</Button>
 								</div>
@@ -505,10 +574,10 @@
 									<div class="flex items-center justify-between">
 										<Label>Breaks</Label>
 										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onclick={() => addBreak(slot.id)}
+												type="button"
+												variant="outline"
+												size="sm"
+												onclick={() => addBreak(slot.id)}
 										>
 											Add break
 										</Button>
@@ -519,25 +588,25 @@
 									{:else}
 										<div class="space-y-3">
 											{#each slot.breaks as breakItem (breakItem.id)}
-												<div class="flex flex-wrap items-center gap-4">
-													<div class="min-w-[160px] space-y-2">
+												<div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+													<div class="w-full space-y-2 sm:min-w-[160px] sm:w-auto">
 														<Label>Break start</Label>
 														<Input
-															type="time"
-															value={breakItem.startTime}
-															oninput={(event) =>
+																type="time"
+																value={breakItem.startTime}
+																oninput={(event) =>
 																updateBreak(slot.id, breakItem.id, {
 																	startTime: (event.currentTarget as HTMLInputElement).value
 																})}
 														/>
 													</div>
 
-													<div class="min-w-[160px] space-y-2">
+													<div class="w-full space-y-2 sm:min-w-[160px] sm:w-auto">
 														<Label>Break end</Label>
 														<Input
-															type="time"
-															value={breakItem.endTime}
-															oninput={(event) =>
+																type="time"
+																value={breakItem.endTime}
+																oninput={(event) =>
 																updateBreak(slot.id, breakItem.id, {
 																	endTime: (event.currentTarget as HTMLInputElement).value
 																})}
@@ -545,9 +614,10 @@
 													</div>
 
 													<Button
-														type="button"
-														variant="ghost"
-														onclick={() => removeBreak(slot.id, breakItem.id)}
+															type="button"
+															variant="ghost"
+															class="w-full sm:w-auto"
+															onclick={() => removeBreak(slot.id, breakItem.id)}
 													>
 														Remove break
 													</Button>
@@ -567,40 +637,41 @@
 
 			<div class="space-y-3">
 				<JobRequirementAdder
-					title="Job requirements"
-					{jobSearch}
-					{isJobLoading}
-					{availableJobOptions}
-					bind:selectedJobIds
-					bind:newRequirementCount
-					{isSaving}
-					onSearchInput={handleJobSearchInput}
-					onAdd={handleAddRequirement}
+						title="Job requirements"
+						{jobSearch}
+						{isJobLoading}
+						{availableJobOptions}
+						bind:selectedJobIds
+						bind:newRequirementCount
+						{isSaving}
+						onSearchInput={handleJobSearchInput}
+						onAdd={handleAddRequirement}
 				/>
 
 				{#if jobRequirements.length > 0}
 					<div class="space-y-3">
 						{#each jobRequirements as requirement (requirement.jobId)}
-							<div class="flex flex-wrap items-center gap-4">
+							<div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
 								<div class="flex-1">
 									<span class="text-sm font-medium">{requirement.name}</span>
 								</div>
-								<div class="min-w-[120px] space-y-2">
+								<div class="w-full space-y-2 sm:min-w-[120px] sm:w-auto">
 									<Label>Staff count</Label>
 									<Input
-										type="number"
-										min="1"
-										value={requirement.requiredStaffCount}
-										oninput={(event) =>
+											type="number"
+											min="1"
+											value={requirement.requiredStaffCount}
+											oninput={(event) =>
 											updateRequirement(requirement.jobId, {
 												requiredStaffCount: Number((event.currentTarget as HTMLInputElement).value)
 											})}
 									/>
 								</div>
 								<Button
-									type="button"
-									variant="ghost"
-									onclick={() => removeRequirement(requirement.jobId)}
+										type="button"
+										variant="ghost"
+										class="w-full sm:w-auto"
+										onclick={() => removeRequirement(requirement.jobId)}
 								>
 									Remove
 								</Button>
@@ -614,8 +685,10 @@
 			</div>
 
 			<Dialog.Footer>
-				<Dialog.Close asChild>
-					<Button variant="outline" type="button" disabled={isSaving}>Cancel</Button>
+				<Dialog.Close>
+					{#snippet child({ props })}
+						<Button {...props} variant="outline" type="button" disabled={isSaving}>Cancel</Button>
+					{/snippet}
 				</Dialog.Close>
 				<Button type="submit" disabled={isSaving} aria-busy={isSaving}>Create shift</Button>
 			</Dialog.Footer>

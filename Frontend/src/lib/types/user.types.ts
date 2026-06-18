@@ -1,6 +1,7 @@
 import type { JobRoleShortDto } from "./jobRole.types"
 
 export interface UserDto{
+    id: number,
     email: string,
     addressDto: AddressDto,
     firstName: string,
@@ -49,3 +50,8 @@ export interface FrontendUser {
     role: string;
     exp: number;
 }
+
+export type QueryableUserResponse = {
+    users: UserDto[];
+    totalCount: number;
+};
