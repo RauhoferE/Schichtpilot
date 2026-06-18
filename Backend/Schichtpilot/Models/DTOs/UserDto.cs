@@ -5,6 +5,7 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class UserDto
 {
+    public int Id { get; set; }
     public required string Email { get; set; }
     public required AddressDto AddressDto { get; set; }
     public required string FirstName { get; set; }
