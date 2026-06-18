@@ -14,13 +14,21 @@ namespace Schichtpilot.Controllers;
 public class AuthController : Controller
 {
     private readonly IAuthService authService;
-
     private readonly IHostEnvironment _env;
+    private readonly IConfiguration _configuration;
+    private readonly string _authCookieName;
 
-    public AuthController(IAuthService authService, IHostEnvironment env)
+    public AuthController(
+        IAuthService authService,
+        IHostEnvironment env,
+        IConfiguration configuration)
     {
         this.authService = authService ?? throw new ArgumentNullException(nameof(authService));
         this._env = env ?? throw new ArgumentNullException(nameof(env));
+        this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+
+        this._authCookieName = this._configuration["AuthCookieName"]
+            ?? throw new Exception("AuthCookieName configuration is missing.");
     }
 
     /// <summary>
@@ -47,6 +55,15 @@ public class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await this.authService.LogoutAsync();
+
+        HttpContext.Response.Cookies.Delete(this._authCookieName, new CookieOptions()
+        {
+            HttpOnly = true,
+            Secure = this._env.IsDevelopment() ? false : true,
+            SameSite = this._env.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Strict,
+            Path = "/"
+        });
+
         return this.NoContent();
     }
 
@@ -56,11 +73,12 @@ public class AuthController : Controller
     /// <param name="jwtUserToken"> The jwt token with all user details. </param>
     private void AttachCookie(string jwtUserToken)
     {
-        HttpContext.Response.Cookies.Append("SchichtpilotUser", jwtUserToken, new CookieOptions()
+        HttpContext.Response.Cookies.Append(this._authCookieName, jwtUserToken, new CookieOptions()
         {
             HttpOnly = false,
             Secure = true,
             SameSite = this._env.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Strict,
+            Path = "/"
         });
     }
 }

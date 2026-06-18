@@ -34,6 +34,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
         var configuration = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", true, true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", false, true)
@@ -46,7 +47,9 @@ public class Program
         });
 
         var config = configuration.Build();
-        Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(config).CreateLogger();
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(config)
+            .CreateLogger();
 
         // Database
         builder.Services.AddDbContext<SchichtpilotDbContext>(options =>
@@ -59,36 +62,37 @@ public class Program
         var jwtKey = config["AuthenticationSettings:JwtKey"]
             ?? throw new Exception("JwtKey configuration is missing.");
 
+        // Identity
         builder.Services.AddIdentity<User, IdentityRole<long>>(opt =>
-            {
-                opt.Password.RequireDigit = true;
-                opt.Password.RequiredLength = 8;
-                opt.Password.RequireNonAlphanumeric = true;
-                opt.Password.RequireUppercase = true;
-                opt.Password.RequireLowercase = true;
-                opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(60);
-                opt.Lockout.MaxFailedAccessAttempts = 5;
-                opt.User.RequireUniqueEmail = true;
-            })
-            .AddEntityFrameworkStores<SchichtpilotDbContext>()
-            .AddDefaultTokenProviders();
+        {
+            opt.Password.RequireDigit = true;
+            opt.Password.RequiredLength = 8;
+            opt.Password.RequireNonAlphanumeric = true;
+            opt.Password.RequireUppercase = true;
+            opt.Password.RequireLowercase = true;
+            opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(60);
+            opt.Lockout.MaxFailedAccessAttempts = 5;
+            opt.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<SchichtpilotDbContext>()
+        .AddDefaultTokenProviders();
 
-        // JWT als Default-Auth-Schema überschreiben
+        // JWT Auth
         builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtKey)),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    RoleClaimType = ClaimTypes.Role
-                };
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtKey)),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RoleClaimType = ClaimTypes.Role
+            };
 
                 // Token aus Cookie lesen statt Authorization-Header
                 options.Events = new JwtBearerEvents
@@ -105,6 +109,7 @@ public class Program
         {
             options.Cookie.Name = authCookieName;
             options.Cookie.HttpOnly = true;
+
             options.Cookie.SameSite = builder.Environment.IsDevelopment()
                 ? SameSiteMode.None
                 : SameSiteMode.Strict;
@@ -152,6 +157,16 @@ public class Program
             options.Filters.Add<ValidationFilter>();
         });
 
+        builder.Services.AddControllers(options =>
+        {
+            options.Filters.Add<ExceptionFilter>();
+        })
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        });
+
+        // FluentValidation
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         builder.Services.AddFluentValidationAutoValidation();
 
@@ -161,37 +176,24 @@ public class Program
             cfg.AddProfile(new DtoMappingProfile());
         }, new NullLoggerFactory());
 
-        IMapper mapper = mapperConfig.CreateMapper();
-        builder.Services.AddSingleton(mapper);
+        builder.Services.AddSingleton(mapperConfig.CreateMapper());
 
         builder.Services.AddHttpContextAccessor();
 
-        builder.Services.AddControllers(options =>
-            {
-                options.Filters.Add<ExceptionFilter>();
-            })
-            .AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-            });
-
-        // CORS
+        // CORS (IMPORTANT: ALWAYS ENABLED)
         var cors = config.GetSection("AllowedCors").Get<string[]>()
             ?? throw new Exception("AllowedCors configuration is missing.");
 
-        if (builder.Environment.IsDevelopment())
+        builder.Services.AddCors(options =>
         {
-            builder.Services.AddCors(options =>
+            options.AddPolicy("DevCors", policy =>
             {
-                options.AddPolicy("DevCors", policy =>
-                {
-                    policy.WithOrigins(cors)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
+                policy.WithOrigins(cors)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
-        }
+        });
 
         // Swagger
         builder.Services.AddSwaggerGen(options =>
@@ -210,30 +212,23 @@ public class Program
                 Scheme = "CookieAuth",
                 Description = "Cookie-based authentication"
             });
-
-            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-            {
-                [new OpenApiSecuritySchemeReference("CookieAuth", document)] = []
-            });
         });
-        
-        var createTestData = config.GetSection("CreateTestData").Get<bool>();
 
         var app = builder.Build();
-        
+
+        // Test data
+        var createTestData = config.GetSection("CreateTestData").Get<bool>();
         if (createTestData)
         {
-            using (var scope = app.Services.CreateScope())
-            {
-                var testDataService = scope.ServiceProvider.GetRequiredService<ITestDataService>();
-                await testDataService.CreateUsersAsync(3,1);
-                await testDataService.CreateRolesAsync();
-                await testDataService.CreateWorkPolicyAsync();
-            }
+            using var scope = app.Services.CreateScope();
+            var testDataService = scope.ServiceProvider.GetRequiredService<ITestDataService>();
 
+            await testDataService.CreateUsersAsync(3, 1);
+            await testDataService.CreateRolesAsync();
+            await testDataService.CreateWorkPolicyAsync();
         }
 
-        // Configure the HTTP request pipeline
+        // Pipeline
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -247,14 +242,14 @@ public class Program
             app.UseHttpsRedirection();
         }
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseCors("DevCors");
-        }
-        
         app.UseRouting();
+
+        //CORS ALWAYS ACTIVE
+        app.UseCors("DevCors");
+
         app.UseAuthentication();
         app.UseAuthorization();
+
         app.UseMiddleware<UserContextMiddleware>();
 
         app.MapControllers();
