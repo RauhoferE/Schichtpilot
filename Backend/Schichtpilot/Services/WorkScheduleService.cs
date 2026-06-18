@@ -475,22 +475,15 @@ public class WorkScheduleService : IWorkScheduleService
     /// <exception cref="NotFoundException"> Thrown when there are no active schedules for the date. </exception>
     public async Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate)
     {
-        var activeSchedules = await this.GetSchedulesAsync(new PaginationDto()
-        {
-            Page = 1,
-            PageSize = 1
-        }, new ScheduleFilterDot()
-        {
-            StartDate = startDate,
-            Status = ScheduleStatusEnum.Active
-        });
+        var schedule = await _dbContext.WorkSchedules
+            .FirstOrDefaultAsync(x => x.IsActive && x.StartDate <= startDate && x.EndDate >= startDate);
 
-        if (activeSchedules.Count == 0)
+        if (schedule == null)
         {
             throw new NotFoundException($"No active schedule for date {startDate}.");
         }
 
-        return await this.GetScheduleAsync(activeSchedules.WorkSchedules.First().Id);
+        return await this.GetScheduleAsync(schedule.Id);
     }
 
     /// <summary>

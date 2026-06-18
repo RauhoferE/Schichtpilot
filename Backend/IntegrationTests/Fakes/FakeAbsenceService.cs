@@ -50,14 +50,14 @@ public class FakeAbsenceService : IAbsenceService
         });
     }
 
-    public Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
+    public Task<QueryableManagerAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
     {
         LastAllAbsencesPagination = pagination;
         LastAllAbsencesFilter = filter;
-        return Task.FromResult(new QueryableAbsenceResponse
+        return Task.FromResult(new QueryableManagerAbsenceResponse()
         {
             Count = 0,
-            Absences = new List<AbsenceDto>()
+            Absences = new List<ManagerAbsenceDto>()
         });
     }
 

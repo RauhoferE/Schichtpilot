@@ -44,6 +44,7 @@
     const canGoForward = $derived.by(() => page < totalPages);
     const startIndex = $derived.by(() => (response.count === 0 ? 0 : (page - 1) * pageSize + 1));
     const endIndex = $derived.by(() => Math.min(page * pageSize, response.count));
+    const allWeekDaysSelected = $derived.by(() => selectedWeekDays.length === weekDayOptions.length);
 
     function toggleWeekDay(day: string) {
         if (selectedWeekDays.includes(day)) {
@@ -52,6 +53,10 @@
         }
 
         selectedWeekDays = [...selectedWeekDays, day];
+    }
+
+    function toggleAllWeekDays() {
+        selectedWeekDays = allWeekDaysSelected ? [] : weekDayOptions.map((day) => day.value);
     }
 
     function handleSearchInput(event: Event) {
@@ -99,7 +104,7 @@
                 page,
                 pageSize,
                 weekDays: selectedWeekDays,
-                shiftStatusEnum,
+                shiftStatusEnum: 'All',
                 searchstring: searchstring.trim()
             });
 
@@ -130,64 +135,73 @@
 </svelte:head>
 
 <div class="space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-6">
-        <div class="flex flex-wrap gap-6">
-            <div class="min-w-[220px] space-y-2">
-            <Label for="shift-search">Search</Label>
-            <Input
-                id="shift-search"
-                type="text"
-                placeholder="Search by name"
-                bind:value={searchstring}
-                oninput={handleSearchInput}
-            />
-        </div>
-
-        <div class="min-w-[200px] space-y-2">
-            <Label for="shift-status">Shift status</Label>
-            <select
-                id="shift-status"
-                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
-                bind:value={shiftStatusEnum}
-                onchange={handleShiftStatusChange}
-            >
-                {#each shiftStatusOptions as option(option.value)}
-                    <option value={option.value}>{option.label}</option>
-                {/each}
-            </select>
-        </div>
-
-        <div class="min-w-[220px] space-y-2">
-            <Label for="page-size">Page size</Label>
-            <select
-                id="page-size"
-                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
-                bind:value={pageSize}
-                onchange={handlePageSizeChange}
-            >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-            </select>
-        </div>
-
-        <div class="min-w-[260px] space-y-2">
-            <Label>Weekdays</Label>
-            <div class="flex flex-wrap gap-3">
-                {#each weekDayOptions as day(day.value)}
-                    <label class="flex items-center gap-2 text-sm text-muted-foreground">
-                        <input
-                            type="checkbox"
-                            class="h-4 w-4 rounded border-input text-primary"
-                            checked={selectedWeekDays.includes(day.value)}
-                            onchange={() => toggleWeekDay(day.value)}
-                        />
-                        <span class="text-foreground">{day.label}</span>
-                    </label>
-                {/each}
+    <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-6">
+            <div class="w-full space-y-2 sm:min-w-[220px] sm:w-auto">
+                <Label for="shift-search">Search</Label>
+                <Input
+                        id="shift-search"
+                        type="text"
+                        placeholder="Search by name"
+                        bind:value={searchstring}
+                        oninput={handleSearchInput}
+                />
             </div>
-        </div>
+
+            <div class="w-full space-y-2 sm:min-w-[200px] sm:w-auto">
+                <Label for="shift-status">Shift status</Label>
+                <select
+                        id="shift-status"
+                        class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+                        bind:value={shiftStatusEnum}
+                        onchange={handleShiftStatusChange}
+                >
+                    {#each shiftStatusOptions as option(option.value)}
+                        <option value={option.value}>{option.label}</option>
+                    {/each}
+                </select>
+            </div>
+
+            <div class="w-full space-y-2 sm:min-w-[220px] sm:w-auto">
+                <Label for="page-size">Page size</Label>
+                <select
+                        id="page-size"
+                        class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+                        bind:value={pageSize}
+                        onchange={handlePageSizeChange}
+                >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                </select>
+            </div>
+
+            <div class="w-full space-y-2 sm:min-w-[260px] sm:w-auto">
+                <div class="flex items-center justify-between gap-2">
+                    <Label>Weekdays</Label>
+                    <button
+                            type="button"
+                            class="text-xs font-medium text-primary hover:underline"
+                            onclick={toggleAllWeekDays}
+                    >
+                        {allWeekDaysSelected ? 'Deselect all' : 'Select all'}
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    {#each weekDayOptions as day(day.value)}
+                        <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <input
+                                    type="checkbox"
+                                    class="h-4 w-4 rounded border-input text-primary"
+                                    checked={selectedWeekDays.includes(day.value)}
+                                    onchange={() => toggleWeekDay(day.value)}
+                            />
+                            <span class="text-foreground">{day.label}</span>
+                        </label>
+                    {/each}
+                </div>
+            </div>
         </div>
         <div class="flex w-full justify-end sm:w-auto">
             <Button onclick={() => (isCreateOpen = true)}>Create shift</Button>
@@ -205,7 +219,7 @@
         </Alert.Root>
     {/if}
 
-    <div class="rounded-lg border border-border">
+    <div class="overflow-x-auto rounded-lg border border-border">
         <Table.Root>
             <Table.Header>
                 <Table.Row>
@@ -230,16 +244,16 @@
                 {:else}
                     {#each response.shift as shift (shift.id)}
                         <Table.Row
-                            class="cursor-pointer"
-                            onclick={() => goto(`/manager/shift/${shift.id}`)}
+                                class="cursor-pointer"
+                                onclick={() => goto(`/manager/shift/${shift.id}`)}
                         >
                             <Table.Cell>{formatShiftId(shift)}</Table.Cell>
                             <Table.Cell class="font-medium">{shift.name}</Table.Cell>
                             <Table.Cell>
                                 <div class="flex items-center gap-2">
                                     <span
-                                        class="h-4 w-4 rounded-full border border-border"
-                                        style={`background-color: ${shift.colorAsHex}`}
+                                            class="h-4 w-4 rounded-full border border-border"
+                                            style={`background-color: ${shift.colorAsHex}`}
                                     ></span>
                                     <span class="text-sm text-muted-foreground">{shift.colorAsHex}</span>
                                 </div>

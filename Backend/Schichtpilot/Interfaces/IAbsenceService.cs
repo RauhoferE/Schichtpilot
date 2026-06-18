@@ -42,7 +42,7 @@ public interface IAbsenceService
     /// <param name="pagination"> The pagination element. </param>
     /// <param name="filter"> How to filter the available absences. </param>
     /// <returns> Return the absences as <see cref="QueryableAbsenceResponse"/>. </returns>
-    Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter); // UC-02-01-03
+    Task<QueryableManagerAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter); // UC-02-01-03
 
     /// <summary>
     /// Gets more details about a specific absence.

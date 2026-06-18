@@ -14,10 +14,12 @@ namespace Schichtpilot.Controllers;
 public class AuthController : Controller
 {
     private readonly IAuthService authService;
-
     private readonly IHostEnvironment _env;
 
-    public AuthController(IAuthService authService, IHostEnvironment env)
+    public AuthController(
+        IAuthService authService,
+        IHostEnvironment env,
+        IConfiguration configuration)
     {
         this.authService = authService ?? throw new ArgumentNullException(nameof(authService));
         this._env = env ?? throw new ArgumentNullException(nameof(env));
@@ -47,6 +49,15 @@ public class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await this.authService.LogoutAsync();
+
+        // HttpContext.Response.Cookies.Delete("SchichtpilotUser", new CookieOptions()
+        // {
+        //     HttpOnly = true,
+        //     Secure = this._env.IsDevelopment() ? false : true,
+        //     SameSite = this._env.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Strict,
+        //     Path = "/"
+        // });
+
         return this.NoContent();
     }
 
@@ -61,6 +72,7 @@ public class AuthController : Controller
             HttpOnly = false,
             Secure = true,
             SameSite = this._env.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Strict,
+            Path = "/"
         });
     }
 }

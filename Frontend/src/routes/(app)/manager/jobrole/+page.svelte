@@ -109,7 +109,7 @@
             <p class="text-sm text-muted-foreground">View and assign job roles to users.</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Button variant="outline" disabled={isLoading} onclick={() => (isAddDialogOpen = true)}>
+                <Button disabled={isLoading} onclick={() => (isAddDialogOpen = true)}>
                     Add job role
                 </Button>
             <div class="relative">

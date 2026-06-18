@@ -6,6 +6,12 @@
         DAY_HEADERS,
     } from '$lib/composables/useSchedule.svelte';
 
+    import { onMount } from 'svelte';
+
+    onMount(async () => {
+        await s.loadWeek(s.currentMonday);
+    });
+    
     const s = createScheduleState();
 
     let exportOpen = $state(false);
@@ -163,6 +169,18 @@
     </div>
 
     <!-- ── Week navigation + grid ── -->
+    {#if s.loading}
+        <div class="rounded-lg border bg-card p-10 text-center text-muted-foreground text-sm">
+            Loading schedule...
+        </div>
+    {:else if s.errorMessage}
+        <div class="rounded-lg border bg-card p-10 text-center text-muted-foreground text-sm">
+            {s.errorMessage}
+        </div>
+    {:else}
+        <!-- bestehender schedule-grid div hier -->
+    {/if}
+    
     <div id="schedule-grid" class="rounded-lg border bg-card overflow-hidden">
 
         <!-- Week header + navigation -->

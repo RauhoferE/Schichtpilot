@@ -48,7 +48,7 @@ public class EmailService : IEmailService
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         this._emailClient = emailClient;
 
-        //_emailClient = new EmailClient(settings.ConnectionString);
+        _emailClient = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
         _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
     }
@@ -66,6 +66,8 @@ public class EmailService : IEmailService
     /// <returns></returns>
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
+        _logger.LogInformation("SendNewAbsenceMailToManager called for employee {EmployeeEmail}", employee.Email);
+
         var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
 
         var tasks = managers.Select(m =>
@@ -87,6 +89,9 @@ public class EmailService : IEmailService
         });
         await Task.WhenAll(tasks);
     }
+    
+    
+    
     // ──────────────────────────────────────────────────────────────
     // Specific employee
     // ──────────────────────────────────────────────────────────────
