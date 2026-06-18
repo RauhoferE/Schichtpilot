@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using AutoMapper;
 using Data;
 using Data.Entities;
@@ -60,6 +59,24 @@ public class AbsenceServiceTest
     private AbsenceService CreateService(SchichtpilotDbContext dbContext)
     {
         return new AbsenceService(dbContext, _mapperMock.Object, _emailServiceMock.Object, _workScheduleServiceMock.Object);
+    }
+
+    private void SetupAbsenceListMapping()
+    {
+        _mapperMock
+            .Setup(m => m.Map<List<AbsenceDto>>(It.IsAny<object>()))
+            .Returns((object source) => ((IEnumerable<Absence>)source).Select(e => new AbsenceDto
+            {
+                Id = e.Id,
+                UserId = e.UserId,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                AbsenceType = Enum.Parse<AbsenceTypeEnum>(e.AbsenceType),
+                Message = e.Message,
+                Status = Enum.Parse<AbsenceStatusEnum>(e.Status),
+                CreatedAt = e.CreatedAt,
+                ManagerMessage = e.ManagerMessage ?? string.Empty
+            }).ToList());
     }
 
     [Fact]
@@ -529,6 +546,282 @@ public class AbsenceServiceTest
 
         _workScheduleServiceMock.Verify(x => x.SetScheduleOfflineAsync(It.IsAny<int>()), Times.Never);
         _workScheduleServiceMock.Verify(x => x.SetScheduleAsInvalidAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ViewUserAbsencesAsync_NoFilter_ReturnsOnlyCurrentUsersAbsencesOrderedByCreatedAtDescending()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var user = CreateCompleteUser(1);
+        var otherUser = CreateCompleteUser(2);
+        dbContext.Users.AddRange(user, otherUser);
+
+        dbContext.Absences.AddRange(
+            new Absence
+            {
+                Id = 1,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 1),
+                EndDate = new DateTime(2026, 1, 2),
+                AbsenceType = nameof(AbsenceTypeEnum.Vacation),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 2,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 3),
+                EndDate = new DateTime(2026, 1, 4),
+                AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 3, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 3,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 2),
+                EndDate = new DateTime(2026, 1, 3),
+                AbsenceType = nameof(AbsenceTypeEnum.PaidLeave),
+                Status = nameof(AbsenceStatusEnum.Denied),
+                CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 10,
+                UserId = otherUser.Id,
+                User = otherUser,
+                StartDate = new DateTime(2026, 1, 4),
+                EndDate = new DateTime(2026, 1, 5),
+                AbsenceType = nameof(AbsenceTypeEnum.CareLeave),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 4, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 11,
+                UserId = otherUser.Id,
+                User = otherUser,
+                StartDate = new DateTime(2026, 1, 5),
+                EndDate = new DateTime(2026, 1, 6),
+                AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 5, 8, 0, 0, DateTimeKind.Utc)
+            });
+        await dbContext.SaveChangesAsync();
+
+        SetupAbsenceListMapping();
+        var service = CreateService(dbContext);
+        var result = await service.ViewUserAbsencesAsync(new PaginationDto { Page = 1, PageSize = 2 }, null, user.Id);
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal(2, result.Absences.Count);
+        Assert.Equal(new[] { 2, 3 }, result.Absences.Select(x => x.Id));
+        Assert.All(result.Absences, x => Assert.Equal(user.Id, x.UserId));
+    }
+
+    [Fact]
+    public async Task ViewAllAbsencesAsync_NoFilter_ReturnsAllAbsencesOrderedByCreatedAtDescending()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var user = CreateCompleteUser(1);
+        var otherUser = CreateCompleteUser(2);
+        dbContext.Users.AddRange(user, otherUser);
+
+        dbContext.Absences.AddRange(
+            new Absence
+            {
+                Id = 1,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 1),
+                EndDate = new DateTime(2026, 1, 2),
+                AbsenceType = nameof(AbsenceTypeEnum.Vacation),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 2,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 3),
+                EndDate = new DateTime(2026, 1, 4),
+                AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 3, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 10,
+                UserId = otherUser.Id,
+                User = otherUser,
+                StartDate = new DateTime(2026, 1, 4),
+                EndDate = new DateTime(2026, 1, 5),
+                AbsenceType = nameof(AbsenceTypeEnum.CareLeave),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 4, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 11,
+                UserId = otherUser.Id,
+                User = otherUser,
+                StartDate = new DateTime(2026, 1, 2),
+                EndDate = new DateTime(2026, 1, 3),
+                AbsenceType = nameof(AbsenceTypeEnum.EducationalLeave),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0, DateTimeKind.Utc)
+            });
+        await dbContext.SaveChangesAsync();
+
+        SetupAbsenceListMapping();
+        var service = CreateService(dbContext);
+        var result = await service.ViewAllAbsencesAsync(new PaginationDto { Page = 2, PageSize = 2 }, null);
+
+        Assert.Equal(4, result.Count);
+        Assert.Equal(2, result.Absences.Count);
+        Assert.Equal(new[] { 11, 1 }, result.Absences.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task ViewUserAbsencesAsync_FilterBySearchStatusTypeAndDateRange_ReturnsOnlyMatchingAbsence()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var user = CreateCompleteUser(1);
+        dbContext.Users.Add(user);
+
+        dbContext.Absences.AddRange(
+            new Absence
+            {
+                Id = 1,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 10),
+                EndDate = new DateTime(2026, 1, 12),
+                AbsenceType = nameof(AbsenceTypeEnum.Vacation),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 3, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 2,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 10),
+                EndDate = new DateTime(2026, 1, 12),
+                AbsenceType = nameof(AbsenceTypeEnum.Vacation),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 3,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 10),
+                EndDate = new DateTime(2026, 1, 12),
+                AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 4,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 8),
+                EndDate = new DateTime(2026, 1, 9),
+                AbsenceType = nameof(AbsenceTypeEnum.Vacation),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 4, 8, 0, 0, DateTimeKind.Utc)
+            });
+        await dbContext.SaveChangesAsync();
+
+        SetupAbsenceListMapping();
+        var service = CreateService(dbContext);
+        var filter = new AbsenceFilterDto
+        {
+            Searchstring = "john",
+            Status = new List<AbsenceStatusEnum> { AbsenceStatusEnum.Approved },
+            AbsenceType = new List<AbsenceTypeEnum> { AbsenceTypeEnum.Vacation },
+            StartDateFrom = new DateTime(2026, 1, 10),
+            StartDateTo = new DateTime(2026, 1, 10)
+        };
+
+        var result = await service.ViewUserAbsencesAsync(new PaginationDto { Page = 1, PageSize = 10 }, filter, user.Id);
+
+        Assert.Equal(1, result.Count);
+        Assert.Single(result.Absences);
+        var absence = result.Absences[0];
+        Assert.Equal(1, absence.Id);
+        Assert.Equal(AbsenceStatusEnum.Approved, absence.Status);
+        Assert.Equal(AbsenceTypeEnum.Vacation, absence.AbsenceType);
+        Assert.Equal(new DateTime(2026, 1, 10), absence.StartDate);
+    }
+
+    [Fact]
+    public async Task ViewAllAbsencesAsync_FilterBySearchstringOnAbsenceType_ReturnsOnlyMatchingAbsence()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var user = CreateCompleteUser(1);
+        var otherUser = CreateCompleteUser(2);
+        dbContext.Users.AddRange(user, otherUser);
+
+        dbContext.Absences.AddRange(
+            new Absence
+            {
+                Id = 1,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 1),
+                EndDate = new DateTime(2026, 1, 2),
+                AbsenceType = nameof(AbsenceTypeEnum.Vacation),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 2,
+                UserId = otherUser.Id,
+                User = otherUser,
+                StartDate = new DateTime(2026, 1, 3),
+                EndDate = new DateTime(2026, 1, 4),
+                AbsenceType = nameof(AbsenceTypeEnum.SickLeave),
+                Status = nameof(AbsenceStatusEnum.Pending),
+                CreatedAt = new DateTime(2026, 1, 3, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Absence
+            {
+                Id = 3,
+                UserId = user.Id,
+                User = user,
+                StartDate = new DateTime(2026, 1, 5),
+                EndDate = new DateTime(2026, 1, 6),
+                AbsenceType = nameof(AbsenceTypeEnum.PaidLeave),
+                Status = nameof(AbsenceStatusEnum.Approved),
+                CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0, DateTimeKind.Utc)
+            });
+        await dbContext.SaveChangesAsync();
+
+        SetupAbsenceListMapping();
+        var service = CreateService(dbContext);
+        var filter = new AbsenceFilterDto { Searchstring = "vacation" };
+
+        var result = await service.ViewAllAbsencesAsync(new PaginationDto { Page = 1, PageSize = 10 }, filter);
+
+        Assert.Equal(1, result.Count);
+        Assert.Single(result.Absences);
+        Assert.Equal(1, result.Absences[0].Id);
+        Assert.Equal(AbsenceTypeEnum.Vacation, result.Absences[0].AbsenceType);
     }
 
     [Fact]
