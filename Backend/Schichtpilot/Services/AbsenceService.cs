@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using AutoMapper;
-
+using AutoMapper.QueryableExtensions;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;
@@ -133,10 +133,11 @@ public class AbsenceService : IAbsenceService
         query = await FilterAbsencesAsync(query, filter);
 
         var count = await query.CountAsync();
-        var pagedQuery = await query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize).ToListAsync();
-        var dtos = _mapper.Map<List<AbsenceDto>>(pagedQuery);
+        var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
+        var absences = pagedQuery.Select(x => this._mapper.Map<AbsenceDto>(x));
+        //var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        return new QueryableAbsenceResponse { Count = count, Absences = absences.ToList() };
     }
 
     /// <summary>
@@ -155,10 +156,11 @@ public class AbsenceService : IAbsenceService
         query = await FilterAbsencesAsync(query, filter);
 
         var count = await query.CountAsync();
-        var pagedQuery = await query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize).ToListAsync();
-        var dtos = _mapper.Map<List<AbsenceDto>>(pagedQuery);
+        var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
+        var absences = pagedQuery.Select(x => this._mapper.Map<AbsenceDto>(x));
+        //var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        return new QueryableAbsenceResponse { Count = count, Absences = absences.ToList() };
     }
 
     /// <summary>
