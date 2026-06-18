@@ -4,36 +4,72 @@
     import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
     import * as Alert from '$lib/components/ui/alert';
     import * as Table from '$lib/components/ui/table/index.js';
-    import { getSchedulesRequest, getSchedule, generateSchedule, deleteSchedule, publishSchedule, setScheduleAsActive, setScheduleAsInactive } from '$lib/services/workschedule.service';
+    import {
+        getSchedulesRequest,
+        getSchedule,
+        generateSchedule,
+        deleteSchedule,
+        publishSchedule,
+        setScheduleAsActive,
+        setScheduleAsInactive
+    } from '$lib/services/workschedule.service';
     import { getShifts } from '$lib/services/shift.service';
     import type { WorkScheduleShortDto, WorkScheduleDto } from '$lib/types/schedule.types';
     import type { ShortShiftDto } from '$lib/types/shift.types';
-    
-    //State
+    import { HttpError } from '$lib/customErrors';
+
+    type NotificationType = 'success' | 'error';
+
+    type NotificationState = {
+        type: NotificationType;
+        message: string;
+    } | null;
+
     let schedules: WorkScheduleShortDto[] = $state([]);
     let selectedSchedule = $state<WorkScheduleDto | null>(null);
     let availableShifts: ShortShiftDto[] = $state([]);
     let loading = $state(false);
-    let errorMessage = $state('');
-    let successMessage = $state('');
 
-    // Calendar
+    let notification = $state<NotificationState>(null);
+
     let currentYear = $state(new Date().getFullYear());
-    let currentMonth = $state(new Date().getMonth()); // 0-indexed
+    let currentMonth = $state(new Date().getMonth());
 
-    // Create dialog
     let showCreateDialog = $state(false);
     let newScheduleName = $state('');
-    let newStartDate = $state('');
-    let newEndDate = $state('');
+    let newWeekStart = $state<Date | null>(null);
+    let newWeekEnd = $state<Date | null>(null);
     let selectedShiftIds = $state<number[]>([]);
     let creating = $state(false);
+    let createError = $state('');
 
     const monthNames = ['January','February','March','April','May','June',
         'July','August','September','October','November','December'];
     const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
-    // Calendar helpers
+    function notify(type: NotificationType, message: string) {
+        notification = { type, message };
+    }
+
+    function notifySuccess(message: string) {
+        notify('success', message);
+    }
+
+    function notifyError(message: string) {
+        notify('error', message);
+    }
+
+    function clearNotification() {
+        notification = null;
+    }
+
+    function getErrorMessage(error: unknown, fallback: string): string {
+        if (error instanceof HttpError) {
+            return error.Error.message;
+        }
+        return fallback;
+    }
+
     function getDaysInMonth(year: number, month: number): (number | null)[] {
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -46,7 +82,7 @@
     function toDateString(year: number, month: number, day: number): string {
         return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
-    
+
     function getScheduleForDate(dateStr: string): WorkScheduleShortDto | undefined {
         return schedules.find(s => {
             const start = new Date(new Date(s.startDate).toDateString());
@@ -56,14 +92,6 @@
         });
     }
 
-    /*
-    function isSelectedDate(dateStr: string): boolean {
-        if (!selectedSchedule) return false;
-        const start = new Date(selectedSchedule.startDate);
-        const end = new Date(selectedSchedule.endDate);
-        const d = new Date(dateStr);
-        return d >= start && d <= end;
-    }*/
     function isSelectedDate(dateStr: string): boolean {
         if (!selectedSchedule) return false;
         const start = new Date(new Date(selectedSchedule.startDate).toDateString());
@@ -72,36 +100,81 @@
         return d >= start && d <= end;
     }
 
+    function getMonday(date: Date): Date {
+        const result = new Date(date);
+        const day = result.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        result.setDate(result.getDate() + diff);
+        result.setHours(0, 0, 0, 0);
+        return result;
+    }
+
+    function getWeekRange(date: Date): { start: Date; end: Date } {
+        const start = getMonday(date);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        return { start, end };
+    }
+
+    function getIsoWeekNumber(date: Date): number {
+        const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNumber = target.getUTCDay() || 7;
+        target.setUTCDate(target.getUTCDate() + 4 - dayNumber);
+        const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+        return Math.ceil((((target.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    }
+
+    function toInputDateString(date: Date): string {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
     function prevMonth() {
-        if (currentMonth === 0) { currentMonth = 11; currentYear--; }
-        else currentMonth--;
+        if (currentMonth === 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else {
+            currentMonth--;
+        }
     }
 
     function nextMonth() {
-        if (currentMonth === 11) { currentMonth = 0; currentYear++; }
-        else currentMonth++;
+        if (currentMonth === 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else {
+            currentMonth++;
+        }
+    }
+
+    function canActivate(schedule: WorkScheduleDto | null): boolean {
+        return !!schedule && schedule.assignedUsers.length > 0;
     }
 
     async function onDayClick(day: number | null) {
         if (!day) return;
+
+        clearNotification();
+
         const dateStr = toDateString(currentYear, currentMonth, day);
         const found = getScheduleForDate(dateStr);
+
         if (found) {
             loading = true;
             try {
                 selectedSchedule = await getSchedule(found.id);
-            } catch {
-                errorMessage = 'Failed to load schedule details.';
+            } catch (error) {
+                notifyError(getErrorMessage(error, 'Failed to load schedule details.'));
             } finally {
                 loading = false;
             }
+            return;
         }
+
+        openCreateDialogForWeek(new Date(currentYear, currentMonth, day));
     }
 
-    //Load Schedule
     async function loadSchedules() {
         loading = true;
-        errorMessage = '';
         try {
             const result = await getSchedulesRequest({
                 page: 1,
@@ -110,57 +183,81 @@
                 endDate: new Date(currentYear, currentMonth + 2, 0),
                 searchstring: '',
                 shiftIds: [],
-                status: 'All'  // leer → 'All'
+                status: 'All'
             });
             schedules = result.workSchedules;
-        } catch {
-            errorMessage = 'Failed to load schedules.';
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to load schedules.'));
         } finally {
             loading = false;
         }
     }
-    
-    //Load Shifts
+
     async function loadShifts() {
         try {
             const result = await getShifts({
                 page: 1,
                 pageSize: 100,
                 weekDays: [],
-                shiftStatusEnum: 'All',  // leer → 'All'
+                shiftStatusEnum: 'All',
                 searchstring: ''
             });
             availableShifts = result.shift;
-        } catch {
-            errorMessage = 'Failed to load shifts.';
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to load shifts.'));
         }
     }
 
-    // Create Schedule
+    function openCreateDialogForWeek(date: Date) {
+        const { start, end } = getWeekRange(date);
+        newWeekStart = start;
+        newWeekEnd = end;
+        newScheduleName = `KW ${getIsoWeekNumber(start)}`;
+        selectedShiftIds = [];
+        createError = '';
+        showCreateDialog = true;
+    }
+
+    function handleCreateButtonClick() {
+        openCreateDialogForWeek(new Date());
+    }
+
     async function handleCreate() {
-        if (!newScheduleName || !newStartDate || !newEndDate || selectedShiftIds.length === 0) {
-            errorMessage = 'Please fill in all fields and select at least one shift.';
+        createError = '';
+
+        if (!newScheduleName.trim()) {
+            createError = 'Please enter a name for the work schedule.';
             return;
         }
+
+        if (!newWeekStart || !newWeekEnd) {
+            createError = 'Please select a week in the calendar first.';
+            return;
+        }
+
+        if (selectedShiftIds.length === 0) {
+            createError = 'Please select at least one shift.';
+            return;
+        }
+
         creating = true;
-        errorMessage = '';
         try {
             await generateSchedule({
-                name: newScheduleName,
-                startDate: new Date(newStartDate + 'T12:00:00'),  // Mittag statt Mitternacht
-                endDate: new Date(newEndDate + 'T12:00:00'),
+                name: newScheduleName.trim(),
+                startDate: new Date(`${toInputDateString(newWeekStart)}T12:00:00`),
+                endDate: new Date(`${toInputDateString(newWeekEnd)}T12:00:00`),
                 shiftIds: selectedShiftIds
             });
-            
-            successMessage = 'Work schedule created successfully.';
+
+            notifySuccess('Work schedule created successfully.');
             showCreateDialog = false;
             newScheduleName = '';
-            newStartDate = '';
-            newEndDate = '';
+            newWeekStart = null;
+            newWeekEnd = null;
             selectedShiftIds = [];
             await loadSchedules();
-        } catch {
-            errorMessage = 'Failed to create work schedule.';
+        } catch (error) {
+            createError = getErrorMessage(error, 'Failed to create work schedule.');
         } finally {
             creating = false;
         }
@@ -174,7 +271,6 @@
         }
     }
 
-    //Format helper
     function formatTime(date: Date | string): string {
         const d = new Date(date);
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -183,6 +279,68 @@
     function formatDate(date: Date | string): string {
         const d = new Date(date);
         return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear()).slice(2)}`;
+    }
+
+    async function activateSelectedSchedule() {
+        if (!selectedSchedule) return;
+        if (!canActivate(selectedSchedule)) {
+            notifyError('This schedule cannot be activated because no staff is assigned.');
+            return;
+        }
+
+        try {
+            await setScheduleAsActive(selectedSchedule.id);
+            selectedSchedule = await getSchedule(selectedSchedule.id);
+            await loadSchedules();
+            notifySuccess('Schedule activated.');
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to activate schedule.'));
+        }
+    }
+
+    async function deactivateSelectedSchedule() {
+        if (!selectedSchedule) return;
+
+        try {
+            await setScheduleAsInactive(selectedSchedule.id);
+            selectedSchedule = await getSchedule(selectedSchedule.id);
+            await loadSchedules();
+            notifySuccess('Schedule deactivated.');
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to deactivate schedule.'));
+        }
+    }
+
+    async function publishSelectedSchedule() {
+        if (!selectedSchedule) return;
+
+        const confirmed = window.confirm(`Publish "${selectedSchedule.name}"? Staff will be notified by email.`);
+        if (!confirmed) return;
+
+        try {
+            await publishSchedule(selectedSchedule.id);
+            selectedSchedule = await getSchedule(selectedSchedule.id);
+            await loadSchedules();
+            notifySuccess('Schedule published. Staff notified by email.');
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to publish schedule.'));
+        }
+    }
+
+    async function deleteSelectedSchedule() {
+        if (!selectedSchedule) return;
+
+        const confirmed = window.confirm(`Delete schedule "${selectedSchedule.name}"? This cannot be undone.`);
+        if (!confirmed) return;
+
+        try {
+            await deleteSchedule(selectedSchedule.id);
+            selectedSchedule = null;
+            await loadSchedules();
+            notifySuccess('Schedule deleted.');
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to delete schedule.'));
+        }
     }
 
     onMount(async () => {
@@ -194,42 +352,50 @@
         currentYear;
         loadSchedules();
     });
+
+    $effect(() => {
+        if (!notification) return;
+
+        const timeoutId = setTimeout(() => {
+            clearNotification();
+        }, 5000);
+
+        return () => clearTimeout(timeoutId);
+    });
 </script>
 
 <svelte:head>
-    <title>Time Management — Schichtpilot</title>
+    <title>Work Schedule — Schichtpilot</title>
 </svelte:head>
 
 <div class="space-y-4">
-
-    <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-xl font-semibold">Time Management</h1>
+            <h1 class="text-xl font-semibold">Work Schedule</h1>
             <p class="text-sm text-muted-foreground">View and manage work schedules.</p>
         </div>
-        <Button onclick={() => showCreateDialog = true}>
+        <Button onclick={handleCreateButtonClick}>
             Create new work schedule
         </Button>
     </div>
 
-    {#if errorMessage}
-        <Alert.Root variant="destructive">
-            <Alert.Title>Error</Alert.Title>
-            <Alert.Description>{errorMessage}</Alert.Description>
-        </Alert.Root>
-    {/if}
-
-    {#if successMessage}
-        <Alert.Root class="border-2 border-green-200 bg-green-50 text-green-900">
-            <Alert.Title class="font-semibold text-green-800">Success</Alert.Title>
-            <Alert.Description class="text-green-700">{successMessage}</Alert.Description>
+    {#if notification}
+        <Alert.Root
+                variant={notification.type === 'error' ? 'destructive' : undefined}
+                class={notification.type === 'success'
+                ? 'border-2 border-green-200 bg-green-50 text-green-900'
+                : ''}
+        >
+            <Alert.Title class={notification.type === 'success' ? 'font-semibold text-green-800' : ''}>
+                {notification.type === 'success' ? 'Success' : 'Error'}
+            </Alert.Title>
+            <Alert.Description class={notification.type === 'success' ? 'text-green-700' : ''}>
+                {notification.message}
+            </Alert.Description>
         </Alert.Root>
     {/if}
 
     <div class="flex gap-6 items-start">
-
-        <!-- KALENDER -->
         <Card class="w-72 shrink-0">
             <CardHeader class="pb-2">
                 <div class="flex items-center justify-between">
@@ -244,6 +410,7 @@
                         <span>{d}</span>
                     {/each}
                 </div>
+
                 <div class="grid grid-cols-7 gap-1 text-center text-xs">
                     {#each getDaysInMonth(currentYear, currentMonth) as day}
                         {#if day === null}
@@ -254,9 +421,9 @@
                             {@const isSelected = isSelectedDate(dateStr)}
                             <button
                                     class="rounded-md py-1 w-full transition-colors
-                                    {isSelected ? 'bg-amber-400 text-white font-bold' :
-                                     hasSchedule ? 'bg-amber-100 text-amber-800 cursor-pointer hover:bg-amber-200' :
-                                     'hover:bg-muted cursor-default text-muted-foreground'}"
+                                {isSelected ? 'bg-amber-400 text-white font-bold' :
+                                 hasSchedule ? 'bg-amber-100 text-amber-800 cursor-pointer hover:bg-amber-200' :
+                                 'hover:bg-muted cursor-pointer text-muted-foreground'}"
                                     onclick={() => onDayClick(day)}
                             >
                                 {day}
@@ -265,7 +432,6 @@
                     {/each}
                 </div>
 
-                <!-- Legende -->
                 <div class="mt-3 flex flex-col gap-1 text-xs text-muted-foreground">
                     <div class="flex items-center gap-2">
                         <span class="w-3 h-3 rounded bg-amber-400 inline-block"></span>
@@ -279,12 +445,11 @@
             </CardContent>
         </Card>
 
-        <!-- RECHTE SEITE -->
         <div class="flex-1 space-y-4">
             {#if !selectedSchedule}
                 <Card>
                     <CardContent class="py-10 text-center text-muted-foreground text-sm">
-                        Select a week in the calendar to view the schedule.
+                        Select a week in the calendar to view the schedule, or click an empty day to create one.
                     </CardContent>
                 </Card>
             {:else}
@@ -298,54 +463,51 @@
                                     · {selectedSchedule.isActive ? '✅ Active' : '⏸ Inactive'}
                                 </CardDescription>
                             </div>
+
                             <div class="flex gap-2">
                                 {#if !selectedSchedule.isActive}
-                                    <Button size="sm" onclick={async () => {
-                                try {
-                                    await setScheduleAsActive(selectedSchedule!.id);
-                                    selectedSchedule = await getSchedule(selectedSchedule!.id);
-                                    await loadSchedules();
-                                    successMessage = 'Schedule activated.';
-                                } catch {
-                                    errorMessage = 'Failed to activate schedule.';
-                                }
-                            }}>
+                                    <Button
+                                            size="sm"
+                                            disabled={!canActivate(selectedSchedule)}
+                                            onclick={activateSelectedSchedule}
+                                    >
                                         Activate
                                     </Button>
                                 {:else}
-                                    <Button size="sm" variant="outline" onclick={async () => {
-                                try {
-                                    await setScheduleAsInactive(selectedSchedule!.id);
-                                    selectedSchedule = await getSchedule(selectedSchedule!.id);
-                                    await loadSchedules();
-                                    successMessage = 'Schedule deactivated.';
-                                } catch {
-                                    errorMessage = 'Failed to deactivate schedule.';
-                                }
-                            }}>
+                                    <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onclick={deactivateSelectedSchedule}
+                                    >
                                         Deactivate
                                     </Button>
                                 {/if}
-                                <Button size="sm" variant="destructive" onclick={async () => {
-                            const confirmed = window.confirm(`Delete schedule "${selectedSchedule!.name}"? This cannot be undone.`);
-                            if (!confirmed) return;
-                            try {
-                                await deleteSchedule(selectedSchedule!.id);
-                                selectedSchedule = null;
-                                await loadSchedules();
-                                successMessage = 'Schedule deleted.';
-                            } catch {
-                                errorMessage = 'Failed to delete schedule.';
-                            }
-                        }}>
+
+                                {#if selectedSchedule.isActive}
+                                    <Button size="sm" onclick={publishSelectedSchedule}>
+                                        Publish
+                                    </Button>
+                                {/if}
+
+                                <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onclick={deleteSelectedSchedule}
+                                >
                                     Delete
                                 </Button>
                             </div>
                         </div>
                     </CardHeader>
+
                     <CardContent>
                         {#if selectedSchedule.assignedUsers.length === 0}
-                            <p class="text-sm text-muted-foreground">No staff assigned to this schedule.</p>
+                            <div class="space-y-2">
+                                <p class="text-sm text-muted-foreground">No staff assigned to this schedule.</p>
+                                <p class="text-sm text-amber-600">
+                                    This schedule cannot be activated until staff has been assigned.
+                                </p>
+                            </div>
                         {:else}
                             <Table.Root>
                                 <Table.Header>
@@ -383,31 +545,40 @@
     </div>
 </div>
 
-<!-- CREATE DIALOG -->
 {#if showCreateDialog}
     <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <Card class="w-full max-w-md">
             <CardHeader>
                 <CardTitle>Create new Work Schedule</CardTitle>
-                <CardDescription>Enter the details for the new work schedule.</CardDescription>
+                <CardDescription>Pick a week in the calendar, then select the shifts to apply.</CardDescription>
             </CardHeader>
+
             <CardContent class="space-y-4">
+                {#if createError}
+                    <Alert.Root variant="destructive">
+                        <Alert.Title>Error</Alert.Title>
+                        <Alert.Description>{createError}</Alert.Description>
+                    </Alert.Root>
+                {/if}
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-medium">Calendar week</label>
+                    {#if newWeekStart && newWeekEnd}
+                        <p class="text-sm">
+                            KW {getIsoWeekNumber(newWeekStart)} · {formatDate(newWeekStart)} – {formatDate(newWeekEnd)}
+                        </p>
+                    {/if}
+                </div>
+
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-medium">Name</label>
                     <input
                             class="border rounded-md px-3 py-2 text-sm"
-                            placeholder="e.g. Week 23"
+                            placeholder="e.g. KW 25"
                             bind:value={newScheduleName}
                     />
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium">Start Date</label>
-                    <input type="date" class="border rounded-md px-3 py-2 text-sm" bind:value={newStartDate} />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium">End Date</label>
-                    <input type="date" class="border rounded-md px-3 py-2 text-sm" bind:value={newEndDate} />
-                </div>
+
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-medium">Shifts</label>
                     {#if availableShifts.length === 0}
@@ -432,10 +603,19 @@
                     {/if}
                 </div>
             </CardContent>
+
             <div class="flex justify-end gap-3 p-6 pt-0">
-                <Button variant="outline" onclick={() => showCreateDialog = false} disabled={creating}>
+                <Button
+                        variant="outline"
+                        onclick={() => {
+                        showCreateDialog = false;
+                        createError = '';
+                    }}
+                        disabled={creating}
+                >
                     Cancel
                 </Button>
+
                 <Button onclick={handleCreate} disabled={creating}>
                     {creating ? 'Creating...' : 'Create'}
                 </Button>

@@ -268,8 +268,10 @@
             </div>
 
             <Dialog.Footer>
-                <Dialog.Close asChild>
-                    <Button variant="outline" type="button" disabled={isCreating}>Cancel</Button>
+                <Dialog.Close>
+                    {#snippet child({ props })}
+                        <Button {...props} variant="outline" type="button" disabled={isCreating}>Cancel</Button>
+                    {/snippet}
                 </Dialog.Close>
                 <Button type="submit" disabled={isCreating} aria-busy={isCreating}>
                     Create
