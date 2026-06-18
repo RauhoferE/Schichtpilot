@@ -158,19 +158,8 @@ public class AbsenceService : IAbsenceService
         var absences = await query
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
-            .Select(a => new ManagerAbsenceDto
-            {
-                Id = a.Id,
-                UserId = a.UserId,
-                EmployeeName = a.User.FirstName + " " + a.User.LastName,
-                StartDate = a.StartDate,
-                EndDate = a.EndDate,
-                AbsenceType = Enum.Parse<AbsenceTypeEnum>(a.AbsenceType),
-                Message = a.Message,
-                Status = Enum.Parse<AbsenceStatusEnum>(a.Status),
-                CreatedAt = a.CreatedAt,
-                ManagerMessage = a.ManagerMessage
-            })
+            .Select(a =>
+                this._mapper.Map<ManagerAbsenceDto>(a))
             .ToListAsync();
 
         return new QueryableManagerAbsenceResponse

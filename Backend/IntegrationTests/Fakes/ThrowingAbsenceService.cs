@@ -16,7 +16,7 @@ public class ThrowingAbsenceService : IAbsenceService
     public Task<QueryableAbsenceResponse> ViewUserAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter, long userId) =>
         throw new NotImplementedException();
 
-    public Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter) =>
+    public Task<QueryableManagerAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter) =>
         throw new NotImplementedException();
 
     public Task<AbsenceDto> GetAbsenceDetailAsync(int id) =>

@@ -63,32 +63,6 @@ public class EmailService : IEmailService
     /// <param name="employee"> The user that created the absence. </param>
     /// <param name="absence"> The specifics about the absence. </param>
     /// <returns></returns>
-    /**
-     * public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
-    {
-        var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
-
-        var tasks = managers.Select(m =>
-        {
-            var placeholders = new Dictionary<string, string>
-            {
-                { "{{ManagerName}}", $"{m.FirstName} {m.LastName}"},
-                { "{{EmployeeName}}", $"{employee.FirstName} {employee.LastName}" },
-                { "{{StartDate}}", absence.StartDate.ToString("dd.MM.yyyy") },
-                { "{{EndDate}}", absence.EndDate.ToString("dd.MM.yyyy") },
-                { "{{AbsenceType}}", absence.AbsenceType.ToString() },
-                { "{{Message}}", absence.Message }
-            };
-
-            return SendTemplateAsync(
-                m.Email, $"New Absence Request from {employee.FirstName}",
-                "absence.html",
-                placeholders);
-        });
-        await Task.WhenAll(tasks);
-    }
-    **/
-    
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
         _logger.LogInformation("SendNewAbsenceMailToManager called for employee {EmployeeEmail}", employee.Email);
