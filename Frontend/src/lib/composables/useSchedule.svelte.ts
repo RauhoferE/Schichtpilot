@@ -11,7 +11,7 @@ export const SHIFT_META: Record<NonNullable<ShiftCode>, { label: string; hours: 
     X: { label: 'Closed',        hours: '',            bg: 'bg-green-200',  text: ''                },
 };
 
-// ── Helpers 
+// ── Helpers
 
 function mondayOf(date: Date): Date {
     const d = new Date(date);
@@ -23,7 +23,7 @@ function mondayOf(date: Date): Date {
 }
 
 function fmtShort(date: Date): string {
-    return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getFullYear()).slice(2)}`;
+    return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
 }
 
 function addDays(date: Date, n: number): Date {
@@ -32,17 +32,31 @@ function addDays(date: Date, n: number): Date {
     return d;
 }
 
+// Zeitzonen-sicher: baut "YYYY-MM-DD" aus den LOKALEN Datumsteilen,
+// statt toISOString() zu verwenden (das konvertiert nach UTC und
+// verschiebt das Datum je nach Zeitzone um einen Tag).
 function toIso(date: Date): string {
-    return date.toISOString().slice(0, 10);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// ── Map WorkScheduleDto → Week 
+function getIsoWeekNumber(date: Date): number {
+    const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNumber = target.getUTCDay() || 7;
+    target.setUTCDate(target.getUTCDate() + 4 - dayNumber);
+    const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+    return Math.ceil((((target.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function buildLabel(monday: Date, end: Date): string {
+    return `KW ${getIsoWeekNumber(monday)}: ${fmtShort(monday)}-${fmtShort(end)}`;
+}
+
+// ── Map WorkScheduleDto → Week
 
 function mapScheduleToWeek(schedule: WorkScheduleDto, monday: Date): Week {
     const end = addDays(monday, 6);
-    const label = `${fmtShort(monday)} – ${fmtShort(end)}`;
+    const label = buildLabel(monday, end);
 
-    // Group assignedUsers by user name
     const userMap = new Map<string, ShiftCode[]>();
 
     for (const assignment of schedule.assignedUsers) {
@@ -51,22 +65,15 @@ function mapScheduleToWeek(schedule: WorkScheduleDto, monday: Date): Week {
             userMap.set(name, [null, null, null, null, null, null, null]);
         }
 
-        // Get day index (0=Mon ... 6=Sun)
         const assignDate = new Date(assignment.startTime);
         const jsDay = assignDate.getDay(); // 0=Sun, 1=Mon...
         const dayIndex = jsDay === 0 ? 6 : jsDay - 1; // convert to Mon=0
 
-        // Find which shift this assignment belongs to
+        // Exaktes Matching über die Timeslot-ID statt über Uhrzeiten raten
         const shift = schedule.shifts.find(s =>
-            s.timeSlots?.some(ts => {
-                const slotStart = new Date(assignment.startTime);
-                const hour = slotStart.getHours();
-                // Map shift name to ShiftCode
-                return true;
-            })
+            s.timeSlots?.some(ts => ts.id === assignment.timeSlot.id)
         );
 
-        // Map shift name to ShiftCode
         let code: ShiftCode = null;
         if (shift) {
             const name_lower = shift.name.toLowerCase();
@@ -74,7 +81,7 @@ function mapScheduleToWeek(schedule: WorkScheduleDto, monday: Date): Week {
             else if (name_lower.includes('evening')) code = 'E';
             else if (name_lower.includes('mixed')) code = 'M';
             else if (name_lower.includes('closed')) code = 'X';
-            else code = 'E'; // fallback
+            else code = 'E';
         }
 
         userMap.get(name)![dayIndex] = code;
@@ -94,7 +101,7 @@ function mapScheduleToWeek(schedule: WorkScheduleDto, monday: Date): Week {
 function buildEmptyWeek(monday: Date): Week {
     const end = addDays(monday, 6);
     return {
-        label: `${fmtShort(monday)} – ${fmtShort(end)}`,
+        label: buildLabel(monday, end),
         startDate: toIso(monday),
         staff: []
     };
@@ -118,11 +125,10 @@ export function createScheduleState() {
         loading = true;
         errorMessage = '';
         try {
-            const isoDate = monday.toISOString().slice(0, 10);
+            const isoDate = toIso(monday);
             scheduleData = await getactiveSchedule(new Date(isoDate + 'T12:00:00'));
-            console.log('scheduleData:', scheduleData);  // NEU
         } catch (e) {
-            console.log('loadWeek error:', e);  // NEU
+            console.log('loadWeek error:', e);
             scheduleData = null;
             errorMessage = 'No schedule found for this week.';
         } finally {

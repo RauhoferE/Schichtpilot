@@ -8,6 +8,7 @@
         getSchedulesRequest,
         getSchedule,
         generateSchedule,
+        regenerateSchedule,
         deleteSchedule,
         publishSchedule,
         setScheduleAsActive,
@@ -327,6 +328,24 @@
         }
     }
 
+    async function regenerateSelectedSchedule() {
+        if (!selectedSchedule) return;
+
+        const confirmed = window.confirm(
+            `Regenerate "${selectedSchedule.name}"? This replaces all current assignments based on the latest shifts/timeslots, and deactivates the schedule if it is currently active.`
+        );
+        if (!confirmed) return;
+
+        try {
+            await regenerateSchedule(selectedSchedule.id);
+            selectedSchedule = await getSchedule(selectedSchedule.id);
+            await loadSchedules();
+            notifySuccess('Schedule regenerated.');
+        } catch (error) {
+            notifyError(getErrorMessage(error, 'Failed to regenerate schedule.'));
+        }
+    }
+
     async function deleteSelectedSchedule() {
         if (!selectedSchedule) return;
 
@@ -488,6 +507,14 @@
                                         Publish
                                     </Button>
                                 {/if}
+
+                                <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onclick={regenerateSelectedSchedule}
+                                >
+                                    Regenerate
+                                </Button>
 
                                 <Button
                                         size="sm"

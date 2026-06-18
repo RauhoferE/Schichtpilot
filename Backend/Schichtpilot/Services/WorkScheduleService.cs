@@ -473,7 +473,7 @@ public class WorkScheduleService : IWorkScheduleService
     /// <param name="startDate"> The start date of the schedule. </param>
     /// <returns> Returns the work schedule as <see cref="WorkScheduleDto"/>. </returns>
     /// <exception cref="NotFoundException"> Thrown when there are no active schedules for the date. </exception>
-    public async Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate)
+   /** public async Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate)
     {
         var activeSchedules = await this.GetSchedulesAsync(new PaginationDto()
         {
@@ -491,6 +491,19 @@ public class WorkScheduleService : IWorkScheduleService
         }
 
         return await this.GetScheduleAsync(activeSchedules.WorkSchedules.First().Id);
+    }**/
+    
+    public async Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate)
+    {
+        var schedule = await _dbContext.WorkSchedules
+            .FirstOrDefaultAsync(x => x.IsActive && x.StartDate <= startDate && x.EndDate >= startDate);
+
+        if (schedule == null)
+        {
+            throw new NotFoundException($"No active schedule for date {startDate}.");
+        }
+
+        return await this.GetScheduleAsync(schedule.Id);
     }
 
     /// <summary>
