@@ -78,6 +78,21 @@ public class AbsenceServiceTest
                 CreatedAt = e.CreatedAt,
                 ManagerMessage = e.ManagerMessage ?? string.Empty
             }).ToList());
+        
+        _mapperMock
+            .Setup(m => m.Map<AbsenceDto>(It.IsAny<Absence>()))
+            .Returns(new Func<Absence, AbsenceDto>(e => new AbsenceDto()
+            {
+                Id = e.Id,
+                UserId = e.UserId,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                AbsenceType = Enum.Parse<AbsenceTypeEnum>(e.AbsenceType),
+                Message = e.Message,
+                Status = Enum.Parse<AbsenceStatusEnum>(e.Status),
+                CreatedAt = e.CreatedAt,
+                ManagerMessage = e.ManagerMessage ?? string.Empty
+            }));
     }
 
     [Fact]
