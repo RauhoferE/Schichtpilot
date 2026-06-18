@@ -5,8 +5,8 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class BreakDto
 {
-    public int Id { get; set; }
-    public required TimeOnly StartTime { get; set; }
+    public int Id { get; init; }
+    public required TimeOnly StartTime { get; init; }
 
-    public required TimeOnly EndTime { get; set; }
+    public required TimeOnly EndTime { get; init; }
 }

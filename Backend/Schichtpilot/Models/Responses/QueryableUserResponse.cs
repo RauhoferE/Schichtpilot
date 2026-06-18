@@ -8,6 +8,6 @@ namespace Schichtpilot.Models.Responses;
 /// </summary>
 public class QueryableUserResponse
 {
-    public int Count { get; set; }
-    public IEnumerable<UserDto> Users { get; set; }
+    public int Count { get; init; }
+    public IEnumerable<UserDto> Users { get; init; } = [];
 }

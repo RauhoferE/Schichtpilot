@@ -60,10 +60,10 @@ public class Program
 
         // Authentication
         var authCookieName = config["AuthCookieName"]
-            ?? throw new Exception("AuthCookieName configuration is missing.");
+            ?? throw new InvalidOperationException("AuthCookieName configuration is missing.");
 
         var jwtKey = config["AuthenticationSettings:JwtKey"]
-            ?? throw new Exception("JwtKey configuration is missing.");
+            ?? throw new InvalidOperationException("JwtKey configuration is missing.");
 
         // Identity
         builder.Services.AddIdentity<User, IdentityRole<long>>(opt =>
@@ -143,7 +143,7 @@ public class Program
         builder.Services.Configure<AzureEmailSettings>(
             config.GetSection("AzureEmail"));
 
-        string azureEmailString = builder.Configuration["AzureEmail:ConnectionString"] ?? throw new InvalidOperationException("Azure Email String not found");
+        var azureEmailString = builder.Configuration["AzureEmail:ConnectionString"] ?? throw new InvalidOperationException("Azure Email String not found");
 
         builder.Services.AddSingleton(new EmailClient(azureEmailString));
         // Add services to the container
@@ -189,7 +189,7 @@ public class Program
 
         // CORS
         var cors = config.GetSection("AllowedCors").Get<string[]>()
-            ?? throw new Exception("AllowedCors configuration is missing.");
+            ?? throw new InvalidOperationException("AllowedCors configuration is missing.");
 
         if (builder.Environment.IsDevelopment())
         {

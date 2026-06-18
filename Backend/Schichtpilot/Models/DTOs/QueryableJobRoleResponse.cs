@@ -5,6 +5,6 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class QueryableJobRoleResponse
 {
-    public int Count { get; set; }
-    public IEnumerable<JobRoleShortDto> JobRoles { get; set; }
+    public int Count { get; init; }
+    public IEnumerable<JobRoleShortDto> JobRoles { get; init; } = [];
 }

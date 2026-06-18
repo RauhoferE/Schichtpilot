@@ -4,7 +4,6 @@ using Core;
 using Data;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
@@ -130,7 +129,7 @@ public class UserService : IUserService
 
         users = await this.SortUsersAsync(users, userSortingDto);
 
-        return new QueryableUserResponse()
+        return new QueryableUserResponse
         {
             Count = users.Count(),
             Users = users

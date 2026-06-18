@@ -5,17 +5,17 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class JobRoleDto
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 
-    public required string Name { get; set; }
+    public required string Name { get; init; }
 
-    public required string Description { get; set; }
+    public required string Description { get; init; }
 
     // Needs the following roles
-    public List<JobRoleShortDto> DependentOn { get; set; }
+    public List<JobRoleShortDto> DependentOn { get; init; } = new List<JobRoleShortDto>();
 
     // Role is dependent on
-    public List<JobRoleShortDto> Prerequisites { get; set; }
+    public List<JobRoleShortDto> Prerequisites { get; init; } = new List<JobRoleShortDto>();
 
-    public List<UserDto> Users { get; set; }
+    public List<UserDto> Users { get; init; } = new List<UserDto>();
 }

@@ -132,7 +132,7 @@ public class TestEmailController : ControllerBase
                         {
                             Id = 3, DayOfWeek = DayOfWeek.Friday, StartTime = new TimeOnly(8, 0),
                             EndTime = new TimeOnly(16, 0), Breaks = []
-                        },
+                        }
                     }
                 },
                 new ShiftDto
@@ -154,7 +154,7 @@ public class TestEmailController : ControllerBase
                         {
                             Id = 6, DayOfWeek = DayOfWeek.Sunday, StartTime = new TimeOnly(16, 0),
                             EndTime = new TimeOnly(23, 0), Breaks = []
-                        },
+                        }
                     }
                 }
             }

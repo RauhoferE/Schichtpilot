@@ -7,14 +7,14 @@ using Enums;
 
 public class ManagerAbsenceDto
 {
-    public int Id { get; set; }
-    public long UserId { get; set; }
-    public string EmployeeName { get; set; } = "";
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public AbsenceTypeEnum AbsenceType { get; set; }
-    public string Message { get; set; } = "";
-    public AbsenceStatusEnum Status { get; set; } = AbsenceStatusEnum.Pending;
-    public DateTime CreatedAt { get; set; }
-    public string ManagerMessage { get; set; } = "";
+    public int Id { get; init; }
+    public long UserId { get; init; }
+    public string EmployeeName { get; init; } = "";
+    public DateTime StartDate { get; init; }
+    public DateTime EndDate { get; init; }
+    public AbsenceTypeEnum AbsenceType { get; init; }
+    public string Message { get; init; } = "";
+    public AbsenceStatusEnum Status { get; init; } = AbsenceStatusEnum.Pending;
+    public DateTime CreatedAt { get; init; }
+    public string ManagerMessage { get; init; } = "";
 }

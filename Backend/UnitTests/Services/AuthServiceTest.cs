@@ -24,7 +24,6 @@ public class AuthServiceTest
     {
         var userManagerMock = CreateUserManagerMock();
         var signInManagerMock = CreateSignInManagerMock(userManagerMock.Object);
-        var dbContext = CreateDbContext();
         var settings = CreateAuthSettings();
 
         userManagerMock
@@ -34,7 +33,6 @@ public class AuthServiceTest
         var service = new AuthService(
             userManagerMock.Object,
             signInManagerMock.Object,
-            dbContext,
             Options.Create(settings));
 
         await Assert.ThrowsAsync<LoginException>(
@@ -46,7 +44,6 @@ public class AuthServiceTest
     {
         var userManagerMock = CreateUserManagerMock();
         var signInManagerMock = CreateSignInManagerMock(userManagerMock.Object);
-        var dbContext = CreateDbContext();
         var settings = CreateAuthSettings();
         var user = CreateUser();
 
@@ -61,7 +58,6 @@ public class AuthServiceTest
         var service = new AuthService(
             userManagerMock.Object,
             signInManagerMock.Object,
-            dbContext,
             Options.Create(settings));
 
         await Assert.ThrowsAsync<LoginException>(
@@ -73,7 +69,6 @@ public class AuthServiceTest
     {
         var userManagerMock = CreateUserManagerMock();
         var signInManagerMock = CreateSignInManagerMock(userManagerMock.Object);
-        var dbContext = CreateDbContext();
         var settings = CreateAuthSettings();
         var user = CreateUser();
         var roles = new List<string> { "Admin", "User" };
@@ -93,7 +88,6 @@ public class AuthServiceTest
         var service = new AuthService(
             userManagerMock.Object,
             signInManagerMock.Object,
-            dbContext,
             Options.Create(settings));
 
         var token = await service.AuthenticateAsync(user.Email!, "secret");
@@ -122,13 +116,11 @@ public class AuthServiceTest
     {
         var userManagerMock = CreateUserManagerMock();
         var signInManagerMock = CreateSignInManagerMock(userManagerMock.Object);
-        var dbContext = CreateDbContext();
         var settings = CreateAuthSettings();
 
         var service = new AuthService(
             userManagerMock.Object,
             signInManagerMock.Object,
-            dbContext,
             Options.Create(settings));
 
         await service.LogoutAsync();
@@ -170,12 +162,6 @@ public class AuthServiceTest
             logger.Object,
             schemes.Object,
             confirmation.Object);
-    }
-
-    private static SchichtpilotDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<SchichtpilotDbContext>().Options;
-        return new SchichtpilotDbContext(options);
     }
 
     private static AuthenticationSettings CreateAuthSettings()

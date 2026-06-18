@@ -5,13 +5,13 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class AssignedUserDto
 {
-    public TimeSlotDto TimeSlot { get; set; }
+    public required TimeSlotDto TimeSlot { get; init; }
 
-    public UserDto User { get; set; }
+    public required UserDto User { get; init; }
 
-    public JobRoleShortDto JobRole { get; set; }
+    public required JobRoleShortDto JobRole { get; init; }
 
-    public DateTime StartTime { get; set; }
+    public DateTime StartTime { get; init; }
 
-    public DateTime EndTime { get; set; }
+    public DateTime EndTime { get; init; }
 }

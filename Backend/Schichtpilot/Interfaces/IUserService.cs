@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Data.Entities;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Responses;
 

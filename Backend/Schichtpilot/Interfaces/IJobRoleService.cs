@@ -1,4 +1,3 @@
-using Data.Entities;
 using Schichtpilot.Models.DTOs;
 
 namespace Schichtpilot.Interfaces;

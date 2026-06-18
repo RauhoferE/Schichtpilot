@@ -38,7 +38,7 @@ public class CompanyPolicyService : ICompanyPolicyService
 
             if (holidayEntity == null)
             {
-                this._dbContext.Holidays.Add(new Holiday()
+                this._dbContext.Holidays.Add(new Holiday
                 {
                     Date = holiday.Date
                 });
@@ -76,7 +76,7 @@ public class CompanyPolicyService : ICompanyPolicyService
     public Task<HolidaysDto> GetHolidaysAsync()
     {
         var holidays = this._dbContext.Holidays.ToList();
-        return Task.FromResult(new HolidaysDto()
+        return Task.FromResult(new HolidaysDto
         {
             Holidays = holidays.Select(x => x.Date.Date).ToList()
         });
@@ -93,7 +93,7 @@ public class CompanyPolicyService : ICompanyPolicyService
 
         if (policy == null)
         {
-            this._dbContext.WorkPolicies.Add(new WorkPolicy()
+            this._dbContext.WorkPolicies.Add(new WorkPolicy
             {
                 MaximumConsecutiveWorkHoursPerDay = policyDto.MaximumConsecutiveWorkHoursPerDay,
                 MinimumRestPeriodInMinutes = policyDto.MinimumRestPeriodInMinutes,

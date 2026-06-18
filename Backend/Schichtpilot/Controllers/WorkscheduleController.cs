@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
-using Schichtpilot.Models.Enums;
 using Schichtpilot.Models.Requests;
 
 namespace Schichtpilot.Controllers;

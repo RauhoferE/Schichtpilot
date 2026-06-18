@@ -5,5 +5,5 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class HolidaysDto
 {
-    public required List<DateTime> Holidays { get; set; }
+    public required List<DateTime> Holidays { get; init; }
 }

@@ -25,7 +25,7 @@ IdentityUserClaim<long>,
 
     }
 
-    public DbSet<User> Users { get; set; }
+    public new DbSet<User> Users { get; set; }
 
     public DbSet<UserJobRoles> UserJobRoles { get; set; }
 

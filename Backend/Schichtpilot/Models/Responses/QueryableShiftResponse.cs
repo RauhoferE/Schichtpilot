@@ -7,7 +7,7 @@ namespace Schichtpilot.Models.Responses;
 /// </summary>
 public class QueryableShiftResponse
 {
-    public int Count { get; set; }
+    public int Count { get; init; }
 
-    public IEnumerable<ShortShiftDto> Shift { get; set; }
+    public IEnumerable<ShortShiftDto> Shift { get; init; } = [];
 }

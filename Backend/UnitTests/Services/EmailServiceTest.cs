@@ -716,7 +716,9 @@ public class EmailServicePublicApiTests : IDisposable
                         LastName = "User",
                         AddressDto = new AddressDto { Street = "Street", City = "City", PostalCode = 1120 },
                         AssignedJobRoles = new List<JobRoleShortDto>()
-                    }
+                    },
+                    TimeSlot = null,
+                    JobRole = null
                 }
             }
         };
@@ -788,7 +790,9 @@ public class EmailServicePublicApiTests : IDisposable
                         LastName = "Person",
                         AddressDto = new AddressDto { Street = "Street", City = "City", PostalCode = 1120 },
                         AssignedJobRoles = new List<JobRoleShortDto>()
-                    }
+                    },
+                    JobRole = null,
+                    TimeSlot =  null,
                 }
             }
         };

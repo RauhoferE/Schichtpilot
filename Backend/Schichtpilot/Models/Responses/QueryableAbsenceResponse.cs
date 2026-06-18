@@ -7,7 +7,7 @@ namespace Schichtpilot.Models.Responses;
 /// </summary>
 public class QueryableAbsenceResponse
 {
-    public int Count { get; set; }
+    public int Count { get; init; }
 
-    public List<AbsenceDto> Absences { get; set; } = new();
+    public List<AbsenceDto> Absences { get; init; } = new List<AbsenceDto>();
 }

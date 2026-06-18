@@ -65,6 +65,6 @@ public class FakeShiftService : IShiftService
 
     public Task<ShiftDto> GetShiftAsync(int shiftId)
     {
-        return Task.FromResult(new ShiftDto());
+        return Task.FromResult(new ShiftDto(){Id = shiftId, Name = "test", ColorAsHex = "FFFFFF"});
     }
 }

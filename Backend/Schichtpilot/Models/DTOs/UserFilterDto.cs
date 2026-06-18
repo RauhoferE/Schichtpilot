@@ -7,7 +7,7 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class UserFilterDto
 {
-    public string[] JobFilters { get; set; }
-    public AccountStatusEnum AccountStatus { get; set; }
-    public string? Searchstring { get; set; }
+    public string[] JobFilters { get; init; } = [];
+    public AccountStatusEnum AccountStatus { get; init; }
+    public string? Searchstring { get; init; }
 }

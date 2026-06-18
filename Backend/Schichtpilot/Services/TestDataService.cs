@@ -1,7 +1,6 @@
 using Data;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 

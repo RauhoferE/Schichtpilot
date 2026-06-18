@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using AutoMapper;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;

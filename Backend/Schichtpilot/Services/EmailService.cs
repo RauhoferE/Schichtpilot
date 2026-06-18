@@ -5,9 +5,7 @@ using Microsoft.Extensions.Options;
 using Schichtpilot.Models.DTOs;
 using System.Text;
 using Core;
-using Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Settings;
 
@@ -341,7 +339,7 @@ public class EmailService : IEmailService
     {
         try
         {
-            var emailMessage = new Azure.Communication.Email.EmailMessage(
+            var emailMessage = new EmailMessage(
                 senderAddress: _senderAddress,
                 content: new EmailContent(subject) { Html = htmlBody },
                 recipients: new EmailRecipients(new List<EmailAddress>
@@ -350,7 +348,7 @@ public class EmailService : IEmailService
                 })
             );
 
-            EmailSendOperation operation = await _emailClient.SendAsync(
+            var operation = await _emailClient.SendAsync(
                 WaitUntil.Completed,
                 emailMessage
             );

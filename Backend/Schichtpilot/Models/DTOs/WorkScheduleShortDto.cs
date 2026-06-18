@@ -5,17 +5,17 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class WorkScheduleShortDto
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
-    public DateTime StartDate { get; set; }
+    public DateTime StartDate { get; init; }
 
-    public DateTime EndDate { get; set; }
+    public DateTime EndDate { get; init; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; init; }
 
-    public bool IsValid { get; set; }
+    public bool IsValid { get; init; }
 
-    public int ShiftCount { get; set; }
+    public int ShiftCount { get; init; }
 }
