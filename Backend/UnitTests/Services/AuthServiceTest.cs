@@ -104,7 +104,7 @@ public class AuthServiceTest
         var jwt = handler.ReadJwtToken(token);
 
         Assert.Contains(jwt.Claims, claim => claim.Type == JwtRegisteredClaimNames.Email && claim.Value == user.Email);
-        Assert.Contains(jwt.Claims, claim => claim.Type == JwtRegisteredClaimNames.Sub && claim.Value == user.Email);
+        Assert.Contains(jwt.Claims, claim => claim.Type == JwtRegisteredClaimNames.Sub && claim.Value == user.Id.ToString());
         Assert.Contains(jwt.Claims, claim => claim.Type == JwtRegisteredClaimNames.Name && claim.Value == user.FirstName);
         Assert.Contains(jwt.Claims, claim => claim.Type == JwtRegisteredClaimNames.FamilyName && claim.Value == user.LastName);
 

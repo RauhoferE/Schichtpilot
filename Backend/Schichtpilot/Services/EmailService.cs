@@ -30,7 +30,7 @@ public class EmailService : IEmailService
     public EmailService(
         IOptions<AzureEmailSettings> emailSettings,
         UserManager<User> userManager,
-        ILogger<EmailService> logger)
+        ILogger<EmailService> logger, EmailClient emailClient)
     {
         // _userManager = userManager;
         _logger = logger;
@@ -46,6 +46,7 @@ public class EmailService : IEmailService
             throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
 
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        this._emailClient = emailClient;
 
         _emailClient = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
