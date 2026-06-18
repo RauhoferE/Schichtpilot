@@ -14,7 +14,9 @@
         fmtDate,
         todayIso,
     } from '$lib/composables/useAbsence.svelte';
-
+   
+    import { onMount } from 'svelte';
+    
     const MONTH_NAMES = [
         'January','February','March','April','May','June',
         'July','August','September','October','November','December'
@@ -23,6 +25,10 @@
 
     const s = createAbsenceState();
 
+    onMount(() => {
+        s.loadAbsences();
+    });
+    
     // Build calendar grid for current month
     function buildCalendarGrid(year: number, month: number) {
         const totalDays  = s.daysInMonth(year, month);
@@ -228,14 +234,14 @@
                 </div>
             </div>
 
-            <!-- Optional message -->
+            <!-- enter a message -->
             <div class="space-y-2">
-                <Label for="message">Message <span class="text-muted-foreground">(optional)</span></Label>
+                <Label for="message">Message</Label>
                 <textarea
                         id="message"
                         rows={3}
                         maxlength={250}
-                        placeholder="Any additional information for your manager…"
+                        placeholder="Please provide a short reason for your absence…"
                         class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         bind:value={s.form.message}
                 ></textarea>

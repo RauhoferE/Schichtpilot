@@ -1,12 +1,14 @@
 ﻿export type AbsenceStatus = 'Pending' | 'Approved' | 'Denied';
 
 export type AbsenceType =
-    | 'Vacation'
+    |'Vacation'
     | 'SickLeave'
+    | 'PaidLeave'
     | 'ParentalLeave'
+    | 'CareLeave'
+    | 'EducationalLeave'
     | 'CompensationTime'
-    | 'PersonalLeave'
-    | 'Other';
+    | 'PersonalLeave';
 
 export interface AbsenceDto {
     id:             number;

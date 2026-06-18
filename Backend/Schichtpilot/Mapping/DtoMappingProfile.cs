@@ -14,7 +14,11 @@ public class DtoMappingProfile : Profile
     public DtoMappingProfile()
     {
         CreateMap<WorkPolicy, CompanyPolicyDto>();
-        CreateMap<Absence, AbsenceDto>();
+        CreateMap<Absence, AbsenceDto>()
+            .ForMember(dest => dest.AbsenceType,
+                opt => opt.MapFrom(src => Enum.Parse<AbsenceTypeEnum>(src.AbsenceType)))
+            .ForMember(dest => dest.Status,
+                opt => opt.MapFrom(src => Enum.Parse<AbsenceStatusEnum>(src.Status)));
         CreateMap<JobRole, JobRoleDto>()
             .ForMember(dest => dest.DependentOn, opt => opt.MapFrom(src => src.Dependencies.Select(x => x.Dependency).ToList()))
             .ForMember(dest => dest.Prerequisites, opt => opt.MapFrom(src => src.Prerequisites.Select(x => x.JobRole).ToList()))

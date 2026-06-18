@@ -18,6 +18,8 @@ using Schichtpilot.Middleware;
 using Schichtpilot.Services;
 using Schichtpilot.Settings;
 using Serilog;
+using System.Text.Json.Serialization;
+
 
 namespace Schichtpilot;
 
@@ -158,13 +160,14 @@ public class Program
         });
 
         builder.Services.AddControllers(options =>
-        {
-            options.Filters.Add<ExceptionFilter>();
-        })
-        .AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-        });
+            {
+                options.Filters.Add<ExceptionFilter>();
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
 
         // FluentValidation
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());

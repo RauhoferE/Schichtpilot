@@ -57,8 +57,8 @@ public class AbsenceService : IAbsenceService
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
             Message = dto.Message,
-            // If the person is sick this has to be approved
-            Status = dto.AbsenceType == AbsenceTypeEnum.SickLeave.ToString() ? AbsenceStatusEnum.Approved.ToString() : AbsenceStatusEnum.Pending.ToString(),
+            // If the person is sick this has to be approved by manager
+            Status = AbsenceStatusEnum.Pending.ToString(),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -71,8 +71,8 @@ public class AbsenceService : IAbsenceService
         }
         //map tp AbsenceDto and pass User object
         var absenceDto = _mapper.Map<AbsenceDto>(absence);
-        _ = Task.Run(async () =>
-            await _emailService.SendNewAbsenceMailToManager(user, absenceDto));
+        //_ = Task.Run(async () =>
+            await _emailService.SendNewAbsenceMailToManager(user, absenceDto);
     }
 
     /// <summary>
