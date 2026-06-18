@@ -224,6 +224,7 @@ public class Program
         var app = builder.Build();
 
         // Test data
+        //TODO remove in prod
         var createTestData = config.GetSection("CreateTestData").Get<bool>();
         if (createTestData)
         {
