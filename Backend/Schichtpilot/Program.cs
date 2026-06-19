@@ -229,25 +229,25 @@ public class Program
 
 
         var app = builder.Build();
-        
+
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             try
             {
                 var context = services.GetRequiredService<SchichtpilotDbContext>();
-        
+
                 // This applies any pending migrations and creates the DB if it doesn't exist
-                await context.Database.MigrateAsync(); 
+                await context.Database.MigrateAsync();
             }
             catch (Exception ex)
             {
                 var logger = services.GetRequiredService<ILogger<Program>>();
                 logger.LogError(ex, "An error occurred while migrating the database.");
-        
+
                 // Optional: Depending on your needs, you might want to crash the app 
                 // if the database fails to migrate successfully on startup.
-                throw; 
+                throw;
             }
         }
 
