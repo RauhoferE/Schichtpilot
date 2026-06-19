@@ -13,6 +13,6 @@ public class GetShiftsRequestValidator : AbstractValidator<GetShiftsRequest>
             .WithMessage("Pagesize has to be between 1 and 100");
         RuleForEach(x => x.WeekDays).IsEnumName(typeof(DayOfWeek))
             .When(x => x.WeekDays != null && x.WeekDays.Count() > 0).WithMessage("Weekday not found");
-        RuleFor(x => x.ShiftStatusEnum).NotNull().IsEnumName(typeof(ShiftStatusEnum)) .WithMessage("Status not found");
+        RuleFor(x => x.ShiftStatusEnum).NotNull().IsEnumName(typeof(ShiftStatusEnum)).WithMessage("Status not found");
     }
 }

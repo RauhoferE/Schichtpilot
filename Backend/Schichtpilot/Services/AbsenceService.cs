@@ -70,7 +70,7 @@ public class AbsenceService : IAbsenceService
         //map tp AbsenceDto and pass User object
         var absenceDto = _mapper.Map<AbsenceDto>(absence);
         //_ = Task.Run(async () =>
-            await _emailService.SendNewAbsenceMailToManager(user, absenceDto);
+        await _emailService.SendNewAbsenceMailToManager(user, absenceDto);
     }
 
     /// <summary>

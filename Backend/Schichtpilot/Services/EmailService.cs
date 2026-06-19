@@ -87,9 +87,9 @@ public class EmailService : IEmailService
         });
         await Task.WhenAll(tasks);
     }
-    
-    
-    
+
+
+
     // ──────────────────────────────────────────────────────────────
     // Specific employee
     // ──────────────────────────────────────────────────────────────

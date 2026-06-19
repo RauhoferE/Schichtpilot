@@ -86,7 +86,7 @@ public class ExceptionFilter : IExceptionFilter
                 }),
             StatusCode = statusCode,
             ContentType = "application/json"
-            
+
 
         };
     }

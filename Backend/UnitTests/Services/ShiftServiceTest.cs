@@ -1199,7 +1199,7 @@ public class ShiftServiceTest
                     EndTime = b.EndTime
                 }).ToList() ?? new List<BreakDto>()
             });
-        
+
         mapperMock
             .Setup(mapper => mapper.Map<ShiftRequirement, ShiftRequirementDto>(It.IsAny<ShiftRequirement>()))
             .Returns((ShiftRequirement timeslot) => new ShiftRequirementDto

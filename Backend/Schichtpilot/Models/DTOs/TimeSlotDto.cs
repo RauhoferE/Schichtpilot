@@ -8,7 +8,7 @@ namespace Schichtpilot.Models.DTOs;
 public class TimeSlotDto
 {
     public int Id { get; set; }
-    
+
     [JsonConverter(typeof(JsonNumberEnumConverter<DayOfWeek>))]
     public DayOfWeek DayOfWeek { get; set; }
 

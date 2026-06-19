@@ -78,7 +78,7 @@ public class AbsenceServiceTest
                 CreatedAt = e.CreatedAt,
                 ManagerMessage = e.ManagerMessage ?? string.Empty
             }).ToList());
-        
+
         _mapperMock
             .Setup(m => m.Map<AbsenceDto>(It.IsAny<Absence>()))
             .Returns(new Func<Absence, AbsenceDto>(e => new AbsenceDto()
@@ -93,7 +93,7 @@ public class AbsenceServiceTest
                 CreatedAt = e.CreatedAt,
                 ManagerMessage = e.ManagerMessage ?? string.Empty
             }));
-        
+
         _mapperMock
             .Setup(m => m.Map<ManagerAbsenceDto>(It.IsAny<Absence>()))
             .Returns(new Func<Absence, ManagerAbsenceDto>(e => new ManagerAbsenceDto()
@@ -786,20 +786,20 @@ public class AbsenceServiceTest
         await using var dbContext = CreateDbContext();
         var user = CreateCompleteUser(1);
         dbContext.Users.Add(user);
-        
+
         this._mapperMock
             .Setup(mapper => mapper.Map<AbsenceDto>(It.IsAny<Absence>()))
             .Returns((Absence absence) => new AbsenceDto()
             {
                 AbsenceType = Enum.Parse<AbsenceTypeEnum>(absence.AbsenceType),
-                CreatedAt =  absence.CreatedAt,
+                CreatedAt = absence.CreatedAt,
                 EndDate = absence.EndDate,
                 Id = absence.Id,
                 ManagerMessage = absence.ManagerMessage,
-                Message =  absence.Message,
-                StartDate =  absence.StartDate,
+                Message = absence.Message,
+                StartDate = absence.StartDate,
                 Status = Enum.Parse<AbsenceStatusEnum>(absence.Status),
-                UserId =  absence.UserId,
+                UserId = absence.UserId,
 
             });
 
@@ -830,14 +830,14 @@ public class AbsenceServiceTest
             .Returns((Absence absence) => new AbsenceDto()
             {
                 AbsenceType = Enum.Parse<AbsenceTypeEnum>(absence.AbsenceType),
-                CreatedAt =  absence.CreatedAt,
+                CreatedAt = absence.CreatedAt,
                 EndDate = absence.EndDate,
                 Id = absence.Id,
                 ManagerMessage = absence.ManagerMessage,
-                Message =  absence.Message,
-                StartDate =  absence.StartDate,
+                Message = absence.Message,
+                StartDate = absence.StartDate,
                 Status = Enum.Parse<AbsenceStatusEnum>(absence.Status),
-                UserId =  absence.UserId,
+                UserId = absence.UserId,
 
             });
         var user = CreateCompleteUser(5);
@@ -901,21 +901,21 @@ public class AbsenceServiceTest
     public async Task ViewAllAbsencesAsync_NoFilterAndSearchWorks()
     {
         await using var dbContext = CreateDbContext();
-        
+
         this._mapperMock
             .Setup(mapper => mapper.Map<ManagerAbsenceDto>(It.IsAny<Absence>()))
             .Returns((Absence absence) => new ManagerAbsenceDto()
             {
                 AbsenceType = Enum.Parse<AbsenceTypeEnum>(absence.AbsenceType),
                 EmployeeName = absence.User.FirstName + " " + absence.User.LastName,
-                CreatedAt =  absence.CreatedAt,
+                CreatedAt = absence.CreatedAt,
                 EndDate = absence.EndDate,
                 Id = absence.Id,
                 ManagerMessage = absence.ManagerMessage,
-                Message =  absence.Message,
-                StartDate =  absence.StartDate,
+                Message = absence.Message,
+                StartDate = absence.StartDate,
                 Status = Enum.Parse<AbsenceStatusEnum>(absence.Status),
-                UserId =  absence.UserId,
+                UserId = absence.UserId,
 
             });
         var u1 = CreateCompleteUser(20);

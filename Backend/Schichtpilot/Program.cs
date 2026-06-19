@@ -97,16 +97,16 @@ public class Program
                 RoleClaimType = ClaimTypes.Role
             };
 
-                // Token aus Cookie lesen statt Authorization-Header
-                options.Events = new JwtBearerEvents
+            // Token aus Cookie lesen statt Authorization-Header
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
                 {
-                    OnMessageReceived = context =>
-                    {
-                        context.Token = context.Request.Cookies["SchichtpilotUser"];
-                        return Task.CompletedTask;
-                    }
-                };
-            });
+                    context.Token = context.Request.Cookies["SchichtpilotUser"];
+                    return Task.CompletedTask;
+                }
+            };
+        });
 
         builder.Services.ConfigureApplicationCookie(options =>
         {
@@ -270,7 +270,7 @@ public class Program
         app.UseMiddleware<UserContextMiddleware>();
 
         app.MapControllers();
-        
+
         app.MapFallbackToFile("index.html");
 
         app.Run();

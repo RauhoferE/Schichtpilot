@@ -20,13 +20,13 @@ public class TestDataService : ITestDataService
     }
 
     private readonly SchichtpilotDbContext _dbContext;
-    
+
     private readonly IUserService _userService;
-    
+
     private readonly IJobRoleService _jobRoleService;
-    
+
     private readonly ICompanyPolicyService _companyPolicyService;
-    
+
     private readonly UserManager<User> _userManager;
 
     public async Task CreateUsersAsync(int employees, int managers)
@@ -35,7 +35,7 @@ public class TestDataService : ITestDataService
         {
             return;
         }
-        
+
         for (int i = 0; i < employees; i++)
         {
             await this._userService.CreateUserAsync(new UserDto()
@@ -53,7 +53,7 @@ public class TestDataService : ITestDataService
                 Birthdate = DateTime.Now.AddYears(-20),
             }, "PasswordPassword1!!!");
         }
-        
+
         for (int i = 0; i < managers; i++)
         {
             await this._userService.CreateUserAsync(new UserDto()
@@ -77,39 +77,39 @@ public class TestDataService : ITestDataService
                 await this._userManager.AddToRoleAsync(addedUser, "ADMIN");
                 await this._userManager.RemoveFromRoleAsync(addedUser, "USER");
             }
-            
+
         }
     }
 
     public async Task CreateRolesAsync()
     {
-        
+
         if (this._dbContext.JobRoles.FirstOrDefault(x => x.Name == "Waiter") != null)
         {
             return;
         }
-        
+
         await this._jobRoleService.CreateJobRoleAsync(new CreateJobRoleDto()
         {
             Name = "Waiter",
             Description = "Waiter",
             DependentOnJobRoleIds = new List<int>()
         });
-        
+
         await this._jobRoleService.CreateJobRoleAsync(new CreateJobRoleDto()
         {
             Name = "Cook",
             Description = "Cook",
             DependentOnJobRoleIds = new List<int>()
         });
-        
+
         await this._jobRoleService.CreateJobRoleAsync(new CreateJobRoleDto()
         {
             Name = "Cookhelp",
             Description = "Cookhelp",
             DependentOnJobRoleIds = new List<int>()
         });
-        
+
         await this._jobRoleService.CreateJobRoleAsync(new CreateJobRoleDto()
         {
             Name = "Greeter",
@@ -124,7 +124,7 @@ public class TestDataService : ITestDataService
         {
             return;
         }
-        
+
         await this._companyPolicyService.SetPolicyAsync(new CompanyPolicyDto()
         {
             RestPeriodThresholdInMinutes = 480,

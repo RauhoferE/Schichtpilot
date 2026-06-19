@@ -53,7 +53,7 @@ public class JobRoleService : IJobRoleService
 
         if (createdJobRole == null)
         {
-            throw new  NotFoundException("Jobrole not found!");
+            throw new NotFoundException("Jobrole not found!");
         }
 
         foreach (var jobRoleIds in jobRole.DependentOnJobRoleIds)
@@ -330,7 +330,7 @@ public class JobRoleService : IJobRoleService
         {
             throw new PolicyConflictException("Jobrole still active in shift!");
         }
-        
+
         var relationships = this._dbContext.JobRoleDependencies.Where(x => x.JobRoleId == jobRoleToModify.Id || x.DependencyJobRoleId == jobRoleToModify.Id);
 
         foreach (var relationship in relationships)

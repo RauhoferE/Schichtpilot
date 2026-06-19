@@ -411,7 +411,7 @@ public class ShiftService : IShiftService
         var jobsToCheck = shiftToModiy.JobRequirements.Select(x => this._mapper.Map<ShiftRequirement, ShiftRequirementDto>(x)).ToList();
         jobsToCheck.Add(jobRequirement);
         var missingPrerequisiteJobs = await this.GetMissingPrerequisites(jobsToCheck);
-        
+
         if (missingPrerequisiteJobs.Any())
         {
             throw new NotFoundException(this.GenerateMissingPrerequisiteErrorMessage(missingPrerequisiteJobs));
@@ -435,7 +435,7 @@ public class ShiftService : IShiftService
         {
             errorText += $"{missingPrerequisiteJob.Item2} requires {missingPrerequisiteJob.Item1}\n";
         }
-        
+
         return errorText;
     }
 
@@ -497,11 +497,11 @@ public class ShiftService : IShiftService
         {
             throw new NotFoundException($"Job requirement with id {jobRequirementId} does not exist");
         }
-        
+
         var jobsToCheck = shiftToModiy.JobRequirements.Select(x => this._mapper.Map<ShiftRequirement, ShiftRequirementDto>(x)).ToList();
         jobsToCheck = jobsToCheck.Where(x => x.JobId != jobRequirementId).ToList();
         var missingPrerequisiteJobs = await this.GetMissingPrerequisites(jobsToCheck);
-        
+
         if (missingPrerequisiteJobs.Any())
         {
             throw new NotFoundException(this.GenerateMissingPrerequisiteErrorMessage(missingPrerequisiteJobs));
@@ -558,7 +558,7 @@ public class ShiftService : IShiftService
         {
             return [];
         }
-        
+
         var missingRole = new List<(string, string)>();
         foreach (var missingIdsTuple in missingIds)
         {
@@ -569,7 +569,7 @@ public class ShiftService : IShiftService
             {
                 missingRole.Add((dependency.Name, dependents.Name));
             }
-            
+
         }
 
         return missingRole;
