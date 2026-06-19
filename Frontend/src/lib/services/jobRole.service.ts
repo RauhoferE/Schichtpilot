@@ -1,9 +1,8 @@
 import { del, get, post, put } from "$lib/api";
 import type { CreateJobRoleDto, EditJobRoleDto, GetJobRoleRequest, JobRoleDto, QueryableJobRoleResponse } from "$lib/types/jobRole.types";
-import { PUBLIC_BASE_URL } from '$env/static/public';
 import qs from "qs";
 
-const controllerURL: string = PUBLIC_BASE_URL + '/api/jobrole';
+const controllerURL = '/api/jobrole';
 
 export function createJobRoleRequest(dto: CreateJobRoleDto): Promise<void>{
     return post<void>(`${controllerURL}`, dto);

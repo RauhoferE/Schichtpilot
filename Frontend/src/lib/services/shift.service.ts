@@ -1,10 +1,8 @@
-import { PUBLIC_BASE_URL } from "$env/static/public";
 import { del, get, patch, post, put } from "$lib/api";
 import type { CreateShiftDto, EditShiftDto, GetShiftsRequest, QueryableShiftResponse, ShiftDto, ShiftRequirementDto, TimeSlotDto } from "$lib/types/shift.types";
 import qs from 'qs';
 
-const controllerURL: string = PUBLIC_BASE_URL + '/api/shift';
-
+const controllerURL = '/api/shift';
 export function createShift(dto: CreateShiftDto): Promise<void>{
     return post<void>(`${controllerURL}`, dto);
 }

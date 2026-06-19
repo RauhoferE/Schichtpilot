@@ -1,9 +1,7 @@
-import { PUBLIC_BASE_URL } from '$env/static/public';
 import { del, get, post, put } from '$lib/api';
 import type { CompanyPolicyDto, HolidaysDto } from '$lib/types/policy.types';
 
-const controllerURL: string = PUBLIC_BASE_URL + '/api/companypolicy';
-
+const controllerURL = '/api/companypolicy';
 function normalizeHolidayDate(date: string): string {
     if (!date) return date;
     return date.includes('T') ? date.split('T')[0] : date;
