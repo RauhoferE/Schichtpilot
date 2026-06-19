@@ -5,7 +5,7 @@ namespace Schichtpilot.Settings;
 /// </summary>
 public class AuthenticationSettings
 {
-    public string JwtKey { get; set; }
+    public required string JwtKey { get; set; }
 
     public int TokenLifeTimeInMinutes { get; set; }
 }

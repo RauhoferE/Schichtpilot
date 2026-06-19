@@ -5,9 +5,7 @@ using Microsoft.Extensions.Options;
 using Schichtpilot.Models.DTOs;
 using System.Text;
 using Core;
-using Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Settings;
 
@@ -30,7 +28,7 @@ public class EmailService : IEmailService
     public EmailService(
         IOptions<AzureEmailSettings> emailSettings,
         UserManager<User> userManager,
-        ILogger<EmailService> logger)
+        ILogger<EmailService> logger, EmailClient emailClient)
     {
         // _userManager = userManager;
         _logger = logger;
@@ -46,6 +44,7 @@ public class EmailService : IEmailService
             throw new InvalidOperationException("AzureEmail:SenderAddress is missing.");
 
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        this._emailClient = emailClient;
 
         _emailClient = new EmailClient(settings.ConnectionString);
         _senderAddress = settings.SenderAddress;
@@ -65,6 +64,8 @@ public class EmailService : IEmailService
     /// <returns></returns>
     public async Task SendNewAbsenceMailToManager(User employee, AbsenceDto absence)
     {
+        _logger.LogInformation("SendNewAbsenceMailToManager called for employee {EmployeeEmail}", employee.Email);
+
         var managers = await this._userManager.GetUsersInRoleAsync(UserRolesClass.Admin);
 
         var tasks = managers.Select(m =>
@@ -86,6 +87,9 @@ public class EmailService : IEmailService
         });
         await Task.WhenAll(tasks);
     }
+
+
+
     // ──────────────────────────────────────────────────────────────
     // Specific employee
     // ──────────────────────────────────────────────────────────────
@@ -335,7 +339,7 @@ public class EmailService : IEmailService
     {
         try
         {
-            var emailMessage = new Azure.Communication.Email.EmailMessage(
+            var emailMessage = new EmailMessage(
                 senderAddress: _senderAddress,
                 content: new EmailContent(subject) { Html = htmlBody },
                 recipients: new EmailRecipients(new List<EmailAddress>
@@ -344,7 +348,7 @@ public class EmailService : IEmailService
                 })
             );
 
-            EmailSendOperation operation = await _emailClient.SendAsync(
+            var operation = await _emailClient.SendAsync(
                 WaitUntil.Completed,
                 emailMessage
             );

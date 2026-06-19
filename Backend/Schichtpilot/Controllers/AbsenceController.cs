@@ -104,7 +104,7 @@ public class AbsenceController : Controller
     /// <returns> Returns the absences as <see cref="QueryableAbsenceResponse"/> </returns>
     [HttpGet("all")]
     [Authorize(Roles = UserRolesClass.Admin)]
-    [ProducesResponseType(typeof(QueryableAbsenceResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QueryableManagerAbsenceResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllAbsencesAsync([FromQuery, Required] GetAbsencesRequest request)
     {
         var paginationDto = _mapper.Map<PaginationDto>(request);

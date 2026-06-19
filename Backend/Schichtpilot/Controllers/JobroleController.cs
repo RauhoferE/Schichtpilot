@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Schichtpilot.Interfaces;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Models.Requests;
-using Schichtpilot.Models.Responses;
 
 namespace Schichtpilot.Controllers;
 

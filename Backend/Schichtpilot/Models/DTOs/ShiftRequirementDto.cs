@@ -5,9 +5,9 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class ShiftRequirementDto
 {
-    public int JobId { get; set; }
+    public int JobId { get; init; }
 
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
     public required int RequiredStaffCount { get; set; }
 }

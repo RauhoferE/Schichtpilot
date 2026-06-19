@@ -5,11 +5,12 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class UserDto
 {
-    public required string Email { get; set; }
-    public required AddressDto AddressDto { get; set; }
-    public required string FirstName { get; set; }
-    public required string LastName { get; set; }
-    public DateTime Birthdate { get; set; }
+    public int Id { get; init; }
+    public required string Email { get; init; }
+    public required AddressDto AddressDto { get; init; }
+    public required string FirstName { get; init; }
+    public required string LastName { get; init; }
+    public DateTime Birthdate { get; init; }
 
-    public List<JobRoleShortDto> AssignedJobRoles { get; set; }
+    public List<JobRoleShortDto> AssignedJobRoles { get; init; } = new List<JobRoleShortDto>();
 }

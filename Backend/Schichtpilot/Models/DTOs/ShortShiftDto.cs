@@ -5,9 +5,9 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class ShortShiftDto
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
-    public string ColorAsHex { get; set; }
+    public required string ColorAsHex { get; init; }
 }

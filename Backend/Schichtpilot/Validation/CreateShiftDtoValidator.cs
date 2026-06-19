@@ -17,6 +17,7 @@ public class CreateShiftDtoValidator : AbstractValidator<CreateShiftDto>
         RuleFor(x => x.TimeSlots)
             .Must(x => x.DistinctBy(y => y.DayOfWeek).Count() == x.Count()).WithMessage("Every day can only have one timeslot");
         RuleForEach(x => x.TimeSlots).SetValidator(timeSlotDtoValidator);
+        RuleFor(x => x.TimeSlots).Must(x => x.Count > 0).WithMessage("Atleast one Timeslot is needed!");
         RuleForEach(x => x.JobRequirements).NotNull()
             .Must(x => x.RequiredStaffCount > 0)
             .SetValidator(shiftDtoValidator);

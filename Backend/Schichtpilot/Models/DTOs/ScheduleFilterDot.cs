@@ -8,9 +8,9 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class ScheduleFilterDot
 {
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public string? Searchstring { get; set; }
-    public List<int> ShiftIds { get; set; } = new List<int>();
-    public ScheduleStatusEnum Status { get; set; }
+    public DateTime? StartDate { get; init; }
+    public DateTime? EndDate { get; init; }
+    public string? Searchstring { get; init; }
+    public List<int> ShiftIds { get; init; } = new List<int>();
+    public ScheduleStatusEnum Status { get; init; }
 }

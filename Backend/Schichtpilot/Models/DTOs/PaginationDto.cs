@@ -5,6 +5,6 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class PaginationDto
 {
-    public int Page { get; set; }
-    public int PageSize { get; set; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
 }

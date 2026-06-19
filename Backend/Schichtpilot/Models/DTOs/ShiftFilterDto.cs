@@ -8,7 +8,7 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class ShiftFilterDto
 {
-    public List<DayOfWeek> WeekDays { get; set; }
-    public ShiftStatusEnum Status { get; set; }
-    public string? Searchstring { get; set; }
+    public List<DayOfWeek> WeekDays { get; init; } = new List<DayOfWeek>();
+    public ShiftStatusEnum Status { get; init; }
+    public string? Searchstring { get; init; }
 }

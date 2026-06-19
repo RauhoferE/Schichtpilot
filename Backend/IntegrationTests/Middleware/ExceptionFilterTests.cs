@@ -19,7 +19,7 @@ public class ExceptionFilterTests
 
         var response = await client.GetAsync("/api/Absence/999");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(content);

@@ -5,13 +5,13 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class ShiftDto
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
-    public string ColorAsHex { get; set; }
+    public required string ColorAsHex { get; init; }
 
-    public List<TimeSlotDto> TimeSlots { get; set; }
+    public List<TimeSlotDto> TimeSlots { get; init; } = new List<TimeSlotDto>();
 
-    public List<ShiftRequirementDto> JobRequirements { get; set; }
+    public List<ShiftRequirementDto> JobRequirements { get; init; } = new List<ShiftRequirementDto>();
 }

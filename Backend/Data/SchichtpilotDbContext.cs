@@ -25,7 +25,7 @@ IdentityUserClaim<long>,
 
     }
 
-    public DbSet<User> Users { get; set; }
+    public new DbSet<User> Users { get; set; }
 
     public DbSet<UserJobRoles> UserJobRoles { get; set; }
 
@@ -107,12 +107,12 @@ IdentityUserClaim<long>,
             entity.HasKey(d => new { d.JobRoleId, d.DependencyJobRoleId });
             entity.HasOne(d => d.JobRole)
                 .WithMany(x => x.Dependencies)
-                .HasForeignKey(d => d.DependencyJobRoleId)
+                .HasForeignKey(d => d.JobRoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(d => d.Dependency)
                 .WithMany(x => x.Prerequisites)
-                .HasForeignKey(d => d.JobRoleId)
+                .HasForeignKey(d => d.DependencyJobRoleId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

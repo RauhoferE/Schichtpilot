@@ -41,7 +41,7 @@ public class JobRoleService : IJobRoleService
             throw new AlreadyExistsException($"Jobrole  with name {jobRole.Name} already exists");
         }
 
-        this._dbContext.JobRoles.Add(new JobRole()
+        this._dbContext.JobRoles.Add(new JobRole
         {
             Name = jobRole.Name,
             Description = jobRole.Description,
@@ -51,17 +51,20 @@ public class JobRoleService : IJobRoleService
 
         var createdJobRole = await this._dbContext.JobRoles.FirstOrDefaultAsync(jr => jr.Name == jobRole.Name);
 
+        if (createdJobRole == null)
+        {
+            throw new NotFoundException("Jobrole not found!");
+        }
+
         foreach (var jobRoleIds in jobRole.DependentOnJobRoleIds)
         {
             var dependentJobRole = this._dbContext.JobRoles
                 .FirstOrDefault(jr => jr.Id == jobRoleIds);
             if (dependentJobRole != null)
             {
-                this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
+                this._dbContext.JobRoleDependencies.Add(new JobRoleDependency
                 {
                     DependencyJobRoleId = dependentJobRole.Id,
-                    Dependency = dependentJobRole,
-                    JobRole = createdJobRole,
                     JobRoleId = createdJobRole.Id
                 });
             }
@@ -138,11 +141,11 @@ public class JobRoleService : IJobRoleService
             throw new InvalidDependencyException("Circular dependency detected!");
         }
 
-        this._dbContext.JobRoleDependencies.Add(new JobRoleDependency()
+        this._dbContext.JobRoleDependencies.Add(new JobRoleDependency
         {
             DependencyJobRoleId = dependencyJobRole.Id,
-            Dependency = dependencyJobRole,
-            JobRole = jobRole,
+            //Dependency = dependencyJobRole,
+            //JobRole = jobRole,
             JobRoleId = jobRole.Id
         });
 
@@ -156,8 +159,9 @@ public class JobRoleService : IJobRoleService
 
         foreach (var shift in shiftsToModify)
         {
-            await this._shiftService.AddJobRequirementAsync(shift.Id, new ShiftRequirementDto()
+            await this._shiftService.AddJobRequirementAsync(shift.Id, new ShiftRequirementDto
             {
+                Name = shift.Name,
                 JobId = jobRole.Id,
                 RequiredStaffCount = 1
             });
@@ -235,9 +239,8 @@ public class JobRoleService : IJobRoleService
         // Check if user doesnt already have the role
         if (user.JobRoles.FirstOrDefault(x => x.JobRoleId == jobRoleToModify.Id) == null)
         {
-            user.JobRoles.Add(new UserJobRoles()
+            user.JobRoles.Add(new UserJobRoles
             {
-                JobRole = jobRoleToModify,
                 JobRoleId = jobRoleToModify.Id,
                 User = user,
                 UserId = (int)user.Id
@@ -328,6 +331,13 @@ public class JobRoleService : IJobRoleService
             throw new PolicyConflictException("Jobrole still active in shift!");
         }
 
+        var relationships = this._dbContext.JobRoleDependencies.Where(x => x.JobRoleId == jobRoleToModify.Id || x.DependencyJobRoleId == jobRoleToModify.Id);
+
+        foreach (var relationship in relationships)
+        {
+            this._dbContext.JobRoleDependencies.Remove(relationship);
+        }
+
         this._dbContext.JobRoles.Remove(jobRoleToModify);
         await this._dbContext.SaveChangesAsync();
     }
@@ -342,7 +352,9 @@ public class JobRoleService : IJobRoleService
     {
         var jobRole = await this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
+            .ThenInclude(x => x.JobRole)
             .Include(x => x.Dependencies)
+            .ThenInclude(x => x.Dependency)
             .Include(x => x.UsersWithRole)
             .ThenInclude(x => x.User)
             .FirstOrDefaultAsync(jr => jr.Id == id);
@@ -352,7 +364,8 @@ public class JobRoleService : IJobRoleService
             throw new NotFoundException("Jobrole not found!");
         }
 
-        return this._mapper.Map<JobRole, JobRoleDto>(jobRole);
+        var mapped = this._mapper.Map<JobRole, JobRoleDto>(jobRole);
+        return mapped;
     }
 
     /// <summary>
@@ -361,7 +374,7 @@ public class JobRoleService : IJobRoleService
     /// <param name="paginationDto"> The pagination element. </param>
     /// <param name="searchString"> The job role to look for. </param>
     /// <returns> Returns the job roles as <see cref="QueryableJobRoleResponse"/>. </returns>
-    public async Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString)
+    public Task<QueryableJobRoleResponse> GetJobRolesAsync(PaginationDto paginationDto, string? searchString)
     {
         var jobRoles = this._dbContext.JobRoles
             .Include(x => x.Prerequisites)
@@ -376,14 +389,14 @@ public class JobRoleService : IJobRoleService
             jobRoles = jobRoles.Where(x => x.Name.ToLower().Contains(searchString.ToLower()));
         }
 
-        return new QueryableJobRoleResponse()
+        return Task.FromResult(new QueryableJobRoleResponse
         {
             Count = jobRoles.Count(),
             JobRoles = jobRoles
                 .Skip((paginationDto.Page - 1) * paginationDto.PageSize)
                 .Take(paginationDto.PageSize)
                 .Select(x => this._mapper.Map<JobRole, JobRoleShortDto>(x)).ToList()
-        };
+        });
     }
 
     /// <summary>

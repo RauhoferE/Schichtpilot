@@ -5,7 +5,6 @@ using Data;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using Schichtpilot.Exceptions;
 using Schichtpilot.Interfaces;
@@ -20,15 +19,12 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
-    private readonly SchichtpilotDbContext _dbContext;
     private readonly AuthenticationSettings _authenticationSettings;
 
-    public AuthService(UserManager<User> userManager, SignInManager<User> signInManager,
-        SchichtpilotDbContext dbContext, IOptions<AuthenticationSettings> authenticationSettings)
+    public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IOptions<AuthenticationSettings> authenticationSettings)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _authenticationSettings =
             authenticationSettings.Value ?? throw new ArgumentNullException(nameof(authenticationSettings));
     }
@@ -81,12 +77,13 @@ public class AuthService : IAuthService
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(this._authenticationSettings.JwtKey);
 
-        var claims = new List<Claim>()
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+            //new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Name, user.FirstName),
-            new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
+            new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName)
         };
 
         foreach (var role in roles)
@@ -94,7 +91,7 @@ public class AuthService : IAuthService
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        var tokenDescriptor = new SecurityTokenDescriptor()
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(this._authenticationSettings.TokenLifeTimeInMinutes),

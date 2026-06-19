@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using AutoMapper;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Schichtpilot.Exceptions;
@@ -57,8 +55,8 @@ public class AbsenceService : IAbsenceService
             EndDate = dto.EndDate.Date,
             AbsenceType = dto.AbsenceType,
             Message = dto.Message,
-            // If the person is sick this has to be approved
-            Status = dto.AbsenceType == AbsenceTypeEnum.SickLeave.ToString() ? AbsenceStatusEnum.Approved.ToString() : AbsenceStatusEnum.Pending.ToString(),
+            // If the person is sick this has to be approved by manager
+            Status = AbsenceStatusEnum.Pending.ToString(),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -71,8 +69,8 @@ public class AbsenceService : IAbsenceService
         }
         //map tp AbsenceDto and pass User object
         var absenceDto = _mapper.Map<AbsenceDto>(absence);
-        _ = Task.Run(async () =>
-            await _emailService.SendNewAbsenceMailToManager(user, absenceDto));
+        //_ = Task.Run(async () =>
+        await _emailService.SendNewAbsenceMailToManager(user, absenceDto);
     }
 
     /// <summary>
@@ -134,9 +132,10 @@ public class AbsenceService : IAbsenceService
 
         var count = await query.CountAsync();
         var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
-        var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
+        var absences = pagedQuery.Select(x => this._mapper.Map<AbsenceDto>(x));
+        //var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        return new QueryableAbsenceResponse { Count = count, Absences = absences.ToList() };
     }
 
     /// <summary>
@@ -145,20 +144,28 @@ public class AbsenceService : IAbsenceService
     /// <param name="pagination"> The pagination element. </param>
     /// <param name="filter"> How to filter the available absences. </param>
     /// <returns> Return the absences as <see cref="QueryableAbsenceResponse"/>. </returns>
-    public async Task<QueryableAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
+    public async Task<QueryableManagerAbsenceResponse> ViewAllAbsencesAsync(PaginationDto pagination, AbsenceFilterDto? filter)
     {
-        //TODO: Missing filtering after employee
         IQueryable<Absence> query = _dbContext.Absences
-            .OrderByDescending(x => x.CreatedAt)
-            .Include(x => x.User);
+            .Include(x => x.User)
+            .OrderByDescending(x => x.CreatedAt);
 
         query = await FilterAbsencesAsync(query, filter);
 
         var count = await query.CountAsync();
-        var pagedQuery = query.Skip((pagination.Page - 1) * pagination.PageSize).Take(pagination.PageSize);
-        var dtos = await pagedQuery.ProjectTo<AbsenceDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-        return new QueryableAbsenceResponse { Count = count, Absences = dtos };
+        var absences = await query
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(a =>
+                this._mapper.Map<ManagerAbsenceDto>(a))
+            .ToListAsync();
+
+        return new QueryableManagerAbsenceResponse
+        {
+            Count = count,
+            Absences = absences
+        };
     }
 
     /// <summary>

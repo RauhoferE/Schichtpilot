@@ -87,6 +87,17 @@ docker run -d \
   ghcr.io/rauhofere/schichtpilot:latest
 ```
 
+## .env
+
+This file needs to be in the root of the frontend folder
+.env
+.env.development
+.env.production
+
+```
+PUBLIC_BASE_URL='https://localhost:5001'
+```
+
 ## Appsettings Development
 
 ```

@@ -76,8 +76,8 @@ public class FakeJobRoleService : IJobRoleService
             Name = "Fake Role",
             Description = "Fake Description",
             Users = new List<UserDto>(),
-            DependentOn = new List<JobRoleDto>(),
-            Prerequisites = new List<JobRoleDto>()
+            DependentOn = new List<JobRoleShortDto>(),
+            Prerequisites = new List<JobRoleShortDto>()
         });
     }
 

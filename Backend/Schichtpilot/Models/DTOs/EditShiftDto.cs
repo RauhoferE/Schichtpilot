@@ -5,7 +5,7 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class EditShiftDto
 {
-    public string Name { get; set; }
+    public required string Name { get; init; }
 
-    public string ColorAsHex { get; set; }
+    public required string ColorAsHex { get; init; }
 }

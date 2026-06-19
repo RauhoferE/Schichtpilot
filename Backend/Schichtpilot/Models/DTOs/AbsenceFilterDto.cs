@@ -7,11 +7,11 @@ namespace Schichtpilot.Models.DTOs;
 /// </summary>
 public class AbsenceFilterDto
 {
-    public List<AbsenceStatusEnum>? Status { get; set; }
-    public List<AbsenceTypeEnum>? AbsenceType { get; set; }
-    public DateTime? CreatedFrom { get; set; }
-    public DateTime? CreatedTo { get; set; }
-    public DateTime? StartDateFrom { get; set; }
-    public DateTime? StartDateTo { get; set; }
-    public string? Searchstring { get; set; } // employee/type
+    public List<AbsenceStatusEnum>? Status { get; init; }
+    public List<AbsenceTypeEnum>? AbsenceType { get; init; }
+    public DateTime? CreatedFrom { get; init; }
+    public DateTime? CreatedTo { get; init; }
+    public DateTime? StartDateFrom { get; init; }
+    public DateTime? StartDateTo { get; init; }
+    public string? Searchstring { get; init; } // employee/type
 }

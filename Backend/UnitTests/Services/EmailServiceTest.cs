@@ -1,9 +1,22 @@
-﻿using Data.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Data.Entities;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Schichtpilot.Models.DTOs;
 using Schichtpilot.Services;
-
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Microsoft.AspNetCore.Identity;
+using Schichtpilot.Settings;
+using Schichtpilot.Models.Enums;
+using Core;
+using Azure.Communication.Email;
+using Xunit;
 
 namespace UnitTests.Services;
 
@@ -527,4 +540,284 @@ public class TemplateFileTests : IDisposable
     }
 
     public void Dispose() => Directory.Delete(_tempDir, recursive: true);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 6. Integration-like tests that exercise EmailService public API
+//    (constructing the service and invoking its public methods)
+// ══════════════════════════════════════════════════════════════════
+public class EmailServicePublicApiTests : IDisposable
+{
+    private readonly Mock<UserManager<User>> _userManagerMock;
+    private readonly Mock<ILogger<EmailService>> _loggerMock;
+    private readonly string _templatesPath;
+
+    public EmailServicePublicApiTests()
+    {
+        _userManagerMock = CreateUserManagerMock();
+        _loggerMock = new Mock<ILogger<EmailService>>();
+        _templatesPath = Path.Combine(AppContext.BaseDirectory, "Services", "EmailTemplate");
+        Directory.CreateDirectory(_templatesPath);
+    }
+
+    [Fact]
+    public void Ctor_Throws_WhenConnectionStringMissing()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        Assert.Throws<InvalidOperationException>(() => new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test")));
+    }
+
+    [Fact]
+    public void Ctor_Throws_WhenSenderAddressMissing()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "",
+            SendMail = false
+        };
+
+        Assert.Throws<InvalidOperationException>(() => new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test")));
+    }
+
+    [Fact]
+    public void Ctor_Throws_WhenUserManagerIsNull()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        Assert.Throws<ArgumentNullException>(() => new EmailService(Options.Create(settings), null!, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test")));
+    }
+
+    [Fact]
+    public async Task SendApprovalMail_Throws_WhenTemplateMissing()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var user = new User { FirstName = "Anna", LastName = "Schmidt", Email = "anna@test.com" };
+        var absence = new AbsenceDto { StartDate = new DateTime(2026, 4, 1), EndDate = new DateTime(2026, 4, 3), ManagerMessage = "Approved!", AbsenceType = AbsenceTypeEnum.Vacation };
+
+        var filePath = Path.Combine(_templatesPath, "approval.html");
+        if (File.Exists(filePath)) File.Delete(filePath);
+
+        await Assert.ThrowsAsync<FileNotFoundException>(() => service.SendApprovalMail(user, absence));
+    }
+
+    [Fact]
+    public async Task SendApprovalMail_WithTemplate_DoesNotThrow()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var filePath = Path.Combine(_templatesPath, "approval.html");
+        await File.WriteAllTextAsync(filePath, "<p>{{EmployeeName}} approved from {{StartDate}} to {{EndDate}} — {{ManagerMessage}}</p>");
+
+        var user = new User { FirstName = "Anna", LastName = "Schmidt", Email = "anna@test.com" };
+        var absence = new AbsenceDto { StartDate = new DateTime(2026, 4, 1), EndDate = new DateTime(2026, 4, 3), ManagerMessage = "Approved!", AbsenceType = AbsenceTypeEnum.Vacation };
+
+        await service.SendApprovalMail(user, absence); // should not throw
+    }
+
+    [Fact]
+    public async Task SendRejectionMail_WithTemplate_DoesNotThrow()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var filePath = Path.Combine(_templatesPath, "rejection.html");
+        await File.WriteAllTextAsync(filePath, "<div>{{EmployeeName}} rejected {{StartDate}}—{{EndDate}}. {{ManagerMessage}}</div>");
+
+        var user = new User { FirstName = "Bob", LastName = "Smith", Email = "bob@test.com" };
+        var absence = new AbsenceDto { StartDate = new DateTime(2026, 5, 1), EndDate = new DateTime(2026, 5, 2), ManagerMessage = "No capacity", AbsenceType = AbsenceTypeEnum.Vacation };
+
+        await service.SendRejectionMail(user, absence); // should not throw
+    }
+
+    [Fact]
+    public async Task SendUserRegisterMail_WithTemplate_DoesNotThrow()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var filePath = Path.Combine(_templatesPath, "register.html");
+        await File.WriteAllTextAsync(filePath, "<p>Welcome {{FullName}} ({{Email}})</p>");
+
+        var newUser = new User { FirstName = "New", LastName = "User", Email = "new@user.com" };
+        await service.SendUserRegisterMail(newUser); // should not throw
+    }
+
+    [Fact]
+    public async Task SendScheduleMail_WithTemplate_DoesNotThrow()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var filePath = Path.Combine(_templatesPath, "schedule.html");
+        await File.WriteAllTextAsync(filePath, "<div>{{EmployeeName}} — {{ShiftTable}}</div>");
+
+        var schedule = new WorkScheduleDto
+        {
+            Id = 1,
+            Name = "Week 1",
+            StartDate = new DateTime(2026, 4, 7),
+            EndDate = new DateTime(2026, 4, 13),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new List<ShiftDto>(),
+            AssignedUsers = new List<AssignedUserDto>
+            {
+                new AssignedUserDto
+                {
+                    User = new UserDto
+                    {
+                        Email = "employee@test.com",
+                        FirstName = "Emp",
+                        LastName = "User",
+                        AddressDto = new AddressDto { Street = "Street", City = "City", PostalCode = 1120 },
+                        AssignedJobRoles = new List<JobRoleShortDto>()
+                    },
+                    TimeSlot = null,
+                    JobRole = null
+                }
+            }
+        };
+
+        await service.SendScheduleMail(schedule); // should not throw
+    }
+
+    [Fact]
+    public async Task SendNewAbsenceMailToManager_WithManagersAndTemplate_DoesNotThrow()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var filePath = Path.Combine(_templatesPath, "absence.html");
+        await File.WriteAllTextAsync(filePath, "<p>{{ManagerName}}: {{EmployeeName}} — {{AbsenceType}} {{StartDate}}–{{EndDate}}. {{Message}}</p>");
+
+        var manager = new User { FirstName = "Manager", LastName = "One", Email = "manager@company.com" };
+        _userManagerMock.Setup(u => u.GetUsersInRoleAsync(UserRolesClass.Admin)).ReturnsAsync(new List<User> { manager });
+
+        var employee = new User { FirstName = "Employee", LastName = "A", Email = "employee@company.com" };
+        var absence = new AbsenceDto { StartDate = new DateTime(2026, 4, 10), EndDate = new DateTime(2026, 4, 12), AbsenceType = AbsenceTypeEnum.Vacation, Message = "Trip" };
+
+        await service.SendNewAbsenceMailToManager(employee, absence); // should not throw
+    }
+
+    [Fact]
+    public async Task SendScheduleInActiveMail_WithManagersAndTemplate_DoesNotThrow()
+    {
+        var settings = new AzureEmailSettings
+        {
+            ConnectionString = "endpoint=https://localhost/;accesskey=test",
+            SenderAddress = "sender@test.com",
+            SendMail = false
+        };
+
+        var service = new EmailService(Options.Create(settings), _userManagerMock.Object, _loggerMock.Object, new EmailClient("endpoint=https://localhost/;accesskey=test"));
+
+        var filePath1 = Path.Combine(_templatesPath, "scheduleInactive.html");
+        var filePath2 = Path.Combine(_templatesPath, "scheduleInactiveManager.html");
+        await File.WriteAllTextAsync(filePath1, "<p>{{EmployeeName}}: {{ScheduleName}} deactivated</p>");
+        await File.WriteAllTextAsync(filePath2, "<p>{{EmployeeName}}: {{ScheduleName}} (manager)</p>");
+
+        var manager = new User { FirstName = "Manager", LastName = "One", Email = "manager@company.com" };
+        _userManagerMock.Setup(u => u.GetUsersInRoleAsync(UserRolesClass.Admin)).ReturnsAsync(new List<User> { manager });
+
+        var schedule = new WorkScheduleDto
+        {
+            Id = 1,
+            Name = "Week X",
+            StartDate = new DateTime(2026, 4, 7),
+            EndDate = new DateTime(2026, 4, 13),
+            IsActive = true,
+            IsValid = true,
+            Shifts = new List<ShiftDto>(),
+            AssignedUsers = new List<AssignedUserDto>
+            {
+                new AssignedUserDto
+                {
+                    User = new UserDto
+                    {
+                        Email = "assigned@company.com",
+                        FirstName = "Assigned",
+                        LastName = "Person",
+                        AddressDto = new AddressDto { Street = "Street", City = "City", PostalCode = 1120 },
+                        AssignedJobRoles = new List<JobRoleShortDto>()
+                    },
+                    JobRole = null,
+                    TimeSlot =  null,
+                }
+            }
+        };
+
+        await service.SendScheduleInActiveMail(schedule); // should not throw
+    }
+
+    // Helper to create a mocked UserManager used across tests
+    private static Mock<UserManager<User>> CreateUserManagerMock()
+    {
+        var store = new Mock<IUserStore<User>>();
+        return new Mock<UserManager<User>>(
+            store.Object,
+            new Mock<IOptions<IdentityOptions>>().Object,
+            new Mock<IPasswordHasher<User>>().Object,
+            Array.Empty<IUserValidator<User>>(),
+            Array.Empty<IPasswordValidator<User>>(),
+            new Mock<ILookupNormalizer>().Object,
+            new IdentityErrorDescriber(),
+            new Mock<IServiceProvider>().Object,
+            new Mock<ILogger<UserManager<User>>>().Object);
+    }
+
+    public void Dispose()
+    {
+        // Intentionally do not delete the directory in case other tests run concurrently.
+    }
 }

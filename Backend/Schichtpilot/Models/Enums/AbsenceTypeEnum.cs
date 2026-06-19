@@ -10,7 +10,9 @@ public enum AbsenceTypeEnum
     PaidLeave,
     ParentalLeave,
     CareLeave,
-    EducationalLeave
+    EducationalLeave,
+    CompensationTime,
+    PersonalLeave
     // Add more as needed
 }
 
