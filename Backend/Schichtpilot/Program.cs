@@ -257,6 +257,8 @@ public class Program
             app.UseHttpsRedirection();
         }
 
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
         app.UseRouting();
 
         //CORS ALWAYS ACTIVE
@@ -268,6 +270,8 @@ public class Program
         app.UseMiddleware<UserContextMiddleware>();
 
         app.MapControllers();
+        
+        app.MapFallbackToFile("index.html");
 
         app.Run();
     }

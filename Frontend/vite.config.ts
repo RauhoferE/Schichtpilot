@@ -8,6 +8,15 @@ export default defineConfig({
 
 	// Required: bits-ui (used by shadcn-svelte) ships raw .svelte files.
 	// Vite must compile them instead of treating them as pre-built SSR modules.
+	server: {
+        proxy: {
+            '/api': {
+                target: 'https://localhost:8081', // 👈 Your ASP.NET Core Local URL
+                changeOrigin: true,
+                secure: false // Allows self-signed development certificates
+            }
+        }
+    },
 	ssr: {
 		noExternal: ['bits-ui', '@internationalized/date'],
 	},

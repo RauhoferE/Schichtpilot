@@ -1,10 +1,8 @@
-import { PUBLIC_BASE_URL } from "$env/static/public";
 import { del, get, patch, post } from "$lib/api";
 import type { GenerateScheduleDto, GetSchedulesRequest, QueryableSchedules, UpdateScheduleRequest, WorkScheduleDto } from "$lib/types/schedule.types";
 import qs from "qs";
 
-const controllerURL: string = PUBLIC_BASE_URL + '/api/workschedule';
-
+const controllerURL = '/api/workschedule';
 export function generateSchedule(dto: GenerateScheduleDto): Promise<void>{
     return post<void>(`${controllerURL}/generate`, dto);
 }

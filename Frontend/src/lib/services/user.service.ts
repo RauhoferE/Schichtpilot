@@ -1,10 +1,8 @@
-import { PUBLIC_BASE_URL } from "$env/static/public";
 import { get, post } from "$lib/api";
 import type { CreateUserRequest, GetUsersRequest, QueryableJobRoleResponse,QueryableUserResponse, UserDto } from "$lib/types/user.types";
 import qs from "qs";
 
-const controllerURL: string = PUBLIC_BASE_URL + '/api/user';
-
+const controllerURL = '/api/user';
 export function createUser(dto: CreateUserRequest): Promise<void>{
     return post<void>(`${controllerURL}`, dto);
 }
