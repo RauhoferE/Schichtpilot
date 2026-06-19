@@ -40,7 +40,7 @@ public class Program
 
         var configuration = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", true, true)
-            .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", false, true)
+            .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", true, true)
             .AddEnvironmentVariables();
 
         // Serilog
