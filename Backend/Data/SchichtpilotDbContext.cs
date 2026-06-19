@@ -6,8 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data;
 
+/// <summary>
+/// Manages all tables and database entities.
+/// </summary>
 public class SchichtpilotDbContext : IdentityDbContext<
-    User, 
+    User,
     IdentityRole<long>,
 long,
 IdentityUserClaim<long>,
@@ -19,53 +22,55 @@ IdentityUserClaim<long>,
 {
     public SchichtpilotDbContext(DbContextOptions<SchichtpilotDbContext> options) : base(options)
     {
-        
+
     }
-    
-    public DbSet<User> Users { get; set; }
-    
+
+    public new DbSet<User> Users { get; set; }
+
     public DbSet<UserJobRoles> UserJobRoles { get; set; }
-    
+
     public DbSet<JobRole> JobRoles { get; set; }
-    
+
     public DbSet<JobRoleDependency> JobRoleDependencies { get; set; }
-    
+
     public DbSet<IdentityRole<long>> AccountRoles { get; set; }
-    
+
     public DbSet<IdentityUserRole<long>> UserAccountRoles { get; set; }
-    
+
     public DbSet<ShiftRequirement> ShiftRequirements { get; set; }
-    
+
     public DbSet<Shift> Shifts { get; set; }
-    
+
     public DbSet<Timeslot> Timeslots { get; set; }
-    
+
     public DbSet<Break> Breaks { get; set; }
-    
+
     public DbSet<Absence> Absences { get; set; }
-    
-    public DbSet<WorkPolicy>  WorkPolicies { get; set; }
-    
+
+    public DbSet<WorkPolicy> WorkPolicies { get; set; }
+
     public DbSet<Holiday> Holidays { get; set; }
-    
+
     public DbSet<WorkSchedule> WorkSchedules { get; set; }
-    
+
     public DbSet<ShiftAssignment> ShiftAssignments { get; set; }
-    
+
     public DbSet<WorkScheduleShifts> WorkScheduleShifts { get; set; }
-    
-    
-    // Here should be the DBSets
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.ConfigureWarnings(w => 
+        optionsBuilder.ConfigureWarnings(w =>
             w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     }
 
+    /// <summary>
+    /// Configures the entites and tables.
+    /// </summary>
+    /// <param name="modelBuilder">Defines the shape of your entities, the relationships between them, and how they map to the database.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        
+
         // Add data that should be in the database
         // Add attributes to model properties like pk, fk, etc..
         base.OnModelCreating(modelBuilder);
@@ -102,12 +107,12 @@ IdentityUserClaim<long>,
             entity.HasKey(d => new { d.JobRoleId, d.DependencyJobRoleId });
             entity.HasOne(d => d.JobRole)
                 .WithMany(x => x.Dependencies)
-                .HasForeignKey(d => d.DependencyJobRoleId)
+                .HasForeignKey(d => d.JobRoleId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             entity.HasOne(d => d.Dependency)
                 .WithMany(x => x.Prerequisites)
-                .HasForeignKey(d => d.JobRoleId)
+                .HasForeignKey(d => d.DependencyJobRoleId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -130,7 +135,7 @@ IdentityUserClaim<long>,
                 .WithOne(x => x.Shift)
                 .HasForeignKey(x => x.ShiftId)
                 .OnDelete(DeleteBehavior.Cascade);
-            
+
             entity.HasMany(e => e.ShiftAssignments).WithOne(e => e.Shift);
         });
 
@@ -140,7 +145,7 @@ IdentityUserClaim<long>,
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.HasOne(e => e.Timeslot).WithMany(t => t.Breaks).OnDelete(DeleteBehavior.Cascade);
         });
-        
+
         modelBuilder.Entity<Absence>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -151,13 +156,13 @@ IdentityUserClaim<long>,
             entity.Property(e => e.Status)
                 .HasDefaultValue("Pending");
         });
-        
+
         modelBuilder.Entity<WorkPolicy>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
         });
-        
+
         modelBuilder.Entity<Holiday>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -179,18 +184,18 @@ IdentityUserClaim<long>,
 
         modelBuilder.Entity<ShiftAssignment>(entity =>
         {
-            entity.HasKey(e => new { e.TimeslotId, e.WorkScheduleId,  e.UserId, e.JobRoleId });
+            entity.HasKey(e => new { e.TimeslotId, e.WorkScheduleId, e.UserId, e.JobRoleId });
             entity.HasOne(e => e.WorkSchedule)
                 .WithMany(s => s.ShiftAssignments)
                 .HasForeignKey(e => e.WorkScheduleId);
-            
+
             entity.HasOne(e => e.Timeslot)
                 .WithMany(s => s.ShiftAssignments)
                 .HasForeignKey(e => e.TimeslotId);
 
             entity.HasOne(e => e.UserJobRole)
                 .WithMany(s => s.ShiftAssignments)
-                .HasForeignKey(e => new {e.UserId, e.JobRoleId});
+                .HasForeignKey(e => new { e.UserId, e.JobRoleId });
 
         });
     }

@@ -9,12 +9,16 @@ using Schichtpilot.Models.Enums;
 
 namespace Schichtpilot.Services;
 
+/// <summary>
+/// Orchestrates work schedule related operations, including generating, updating, publishing, deleting workschedules.
+/// Also includes setting the work schedule as active/inactive.
+/// </summary>
 public class WorkScheduleService : IWorkScheduleService
 {
     private readonly SchichtpilotDbContext _dbContext;
-    
+
     private readonly IEmailService _emailService;
-    
+
     private readonly IMapper _mapper;
 
     public WorkScheduleService(SchichtpilotDbContext dbContext, IMapper mapper, IEmailService emailService)
@@ -24,6 +28,12 @@ public class WorkScheduleService : IWorkScheduleService
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
     }
 
+    /// <summary>
+    /// Generates a new work schedule from a shift.
+    /// </summary>
+    /// <param name="generateScheduleDto"> The parameters of the to be generated schedule. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when a required shift could not be found.  </exception>
     public async Task GenerateScheduleAsync(GenerateScheduleDto generateScheduleDto)
     {
         var shifts = await _dbContext.Shifts
@@ -36,7 +46,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException("One or more shifts were not found.");
         }
-        
+
         var schedule = new WorkSchedule
         {
             Name = generateScheduleDto.Name,
@@ -47,7 +57,7 @@ public class WorkScheduleService : IWorkScheduleService
             ShiftAssignments = new HashSet<ShiftAssignment>(),
             Shifts = new HashSet<WorkScheduleShifts>()
         };
-        
+
         foreach (var shift in shifts)
         {
             schedule.Shifts.Add(new WorkScheduleShifts
@@ -56,13 +66,19 @@ public class WorkScheduleService : IWorkScheduleService
                 WorkSchedule = schedule
             });
         }
-        
+
         this._dbContext.WorkSchedules.Add(schedule);
         await this._dbContext.SaveChangesAsync();
-        
+
         await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
+    /// <summary>
+    /// This method creates tries to create work schedule with the a given shifts.
+    /// </summary>
+    /// <param name="schedule"> The schedule. </param>
+    /// <param name="shifts"> The shifts of the schedule. </param>
+    /// <exception cref="PolicyConflictException"> Thrown when the company policy is not compliant. </exception>
     private async Task CreateShiftAssignmentsAsync(WorkSchedule schedule, List<Shift> shifts)
     {
         var endDateOfSchedule = schedule.EndDate;
@@ -78,7 +94,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException("Shifts have intersections with each other.");
         }
-        
+
         var workPolicy = await _dbContext.WorkPolicies.FirstOrDefaultAsync();
         if (workPolicy == null)
         {
@@ -162,7 +178,7 @@ public class WorkScheduleService : IWorkScheduleService
                     {
                         break;
                     }
-                    
+
                     // Approved absences still block assignment
                     var candidateApprovedAbsenceOverlap = approvedAbsences.Any(a =>
                         a.UserId == candidate.UserId &&
@@ -187,13 +203,13 @@ public class WorkScheduleService : IWorkScheduleService
                     {
                         continue;
                     }
-                    
+
                     if (!RespectsMaximumConsecutiveHours(userAssignments, slotStart, slotEnd,
                             workPolicy.MaximumConsecutiveWorkHoursPerDay))
                     {
                         continue;
                     }
-                    
+
                     if (!RespectsMaximumWeeklyHours(
                             userAssignments,
                             slotStart,
@@ -230,6 +246,14 @@ public class WorkScheduleService : IWorkScheduleService
         await _dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// This method checks if the user is under the maximum consecutive work hour threshhold.
+    /// </summary>
+    /// <param name="userAssignments"> The start and end time of the user in the schedule. </param>
+    /// <param name="newTimeslotStart"> The start time of the timeslot. </param>
+    /// <param name="newTimeslotEnd"> The end time of the timeslot. </param>
+    /// <param name="maximumConsecutiveWorkHours"> The maximum consecutive work hours per user. </param>
+    /// <returns> Returns true if no policy is broken. </returns>
     private bool RespectsMaximumConsecutiveHours(
         List<(DateTime Start, DateTime End)> userAssignments,
         DateTime newTimeslotStart,
@@ -277,7 +301,15 @@ public class WorkScheduleService : IWorkScheduleService
 
         return currentConsecutiveHoursOfUser <= TimeSpan.FromHours(maximumConsecutiveWorkHours);
     }
-    
+
+    /// <summary>
+    /// This method checks if the users assigned to timeslots respect the maximum weekly work hours.
+    /// </summary>
+    /// <param name="userAssignments"> The assigned start and endtimes of a specific user in a schedule. </param>
+    /// <param name="newTimeslotStart"> The start time of the schedule. </param>
+    /// <param name="newTimeslotEnd"> The end time of the schedule. </param>
+    /// <param name="maximumWeeklyHours"> The maximum allowed work hours for a week. </param>
+    /// <returns> Returns true if no company policy is broken. </returns>
     private bool RespectsMaximumWeeklyHours(
         List<(DateTime Start, DateTime End)> userAssignments,
         DateTime newTimeslotStart,
@@ -290,15 +322,20 @@ public class WorkScheduleService : IWorkScheduleService
         {
             total += assignment.End - assignment.Start;
         }
-        
+
         total += newTimeslotEnd - newTimeslotStart;
 
         return total <= TimeSpan.FromHours(maximumWeeklyHours);
     }
-    
+
+    /// <summary>
+    /// This method checks if any timeslots of shifts are intersecting with each other.
+    /// </summary>
+    /// <param name="slots"> The timeslots to check. </param>
+    /// <returns> Returns true if any timeslot start and end dates are intersecting. </returns>
     private bool HasIntersections(List<Timeslot> slots)
     {
-        if (slots == null || slots.Count < 2) return false;
+        if (slots.Count < 2) return false;
 
         var groupedByDayOfWeek = slots.GroupBy(s => s.DayOfWeek);
 
@@ -320,6 +357,13 @@ public class WorkScheduleService : IWorkScheduleService
         return false;
     }
 
+    /// <summary>
+    /// Regenerates an existing schedule.
+    /// Cannot be done on active schedule or deleted schedule 
+    /// </summary>
+    /// <param name="scheduleId"> The schedule to be regenerated. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule could not be found. </exception>
     public async Task ReGenerateScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
@@ -331,7 +375,7 @@ public class WorkScheduleService : IWorkScheduleService
             .ThenInclude(x => x.JobRequirements)
             .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
-        
+
 
         if (schedule == null)
         {
@@ -339,17 +383,21 @@ public class WorkScheduleService : IWorkScheduleService
         }
 
         var shifts = schedule.Shifts.Select(x => x.Shift).ToList();
-        
+
         // Set to inactive since we dont know if generation is possible
         schedule.IsActive = false;
         schedule.IsValid = false;
-        
+
         // Remove all previous assignments
         await RemoveAllShiftAssignments(schedule);
-        
+
         await CreateShiftAssignmentsAsync(schedule, shifts);
     }
 
+    /// <summary>
+    /// This method removes all shifts assigned to a specific schedule.
+    /// </summary>
+    /// <param name="schedule"> The workschedule where the shifts are removed. </param>
     private async Task RemoveAllShiftAssignments(WorkSchedule schedule)
     {
         foreach (var shiftAssignment in schedule.ShiftAssignments)
@@ -360,7 +408,15 @@ public class WorkScheduleService : IWorkScheduleService
         await this._dbContext.SaveChangesAsync();
     }
 
-    public async Task PublishScheduleAsync(int scheduleId)
+    /// <summary>
+    /// Publishes an existing schedule.
+    /// Can only be done on active schedule
+    /// </summary>
+    /// <param name="scheduleId"> The schedule to be published. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule could not be found. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when the schedule is invalid or not active. </exception>
+    public Task PublishScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .FirstOrDefault(x => x.Id == scheduleId);
@@ -374,28 +430,35 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException($"Schedule with id {scheduleId} is invalid.");
         }
-        
+
         if (!schedule.IsActive)
         {
-            throw new PolicyConflictException($"Only active schedules can be published.");
+            throw new PolicyConflictException("Only active schedules can be published.");
         }
-        
+
         _ = Task.Run(async () => this._emailService.SendScheduleMail(await this.GetScheduleAsync(scheduleId)));
+        return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Gets a list of existing schedules. 
+    /// </summary>
+    /// <param name="paginationDto"> The pagination element. </param>
+    /// <param name="filter"> How to sort and filter the schedules. </param>
+    /// <returns> Returns the schedules as <see cref="QueryableSchedules"/>. </returns>
     public async Task<QueryableSchedules> GetSchedulesAsync(PaginationDto paginationDto, ScheduleFilterDot? filter)
     {
         IQueryable<WorkSchedule> query = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
             .ThenInclude(x => x.Shift)
             .AsQueryable();
-        
+
         if (filter != null)
         {
             query = await this.FilterSchedulesAsync(query, filter);
         }
-        
-        return new QueryableSchedules()
+
+        return new QueryableSchedules
         {
             Count = query.Count(),
             WorkSchedules = query
@@ -405,27 +468,33 @@ public class WorkScheduleService : IWorkScheduleService
         };
     }
 
+    /// <summary>
+    /// Gets the workschedule for the start date.
+    /// </summary>
+    /// <param name="startDate"> The start date of the schedule. </param>
+    /// <returns> Returns the work schedule as <see cref="WorkScheduleDto"/>. </returns>
+    /// <exception cref="NotFoundException"> Thrown when there are no active schedules for the date. </exception>
     public async Task<WorkScheduleDto> GetActiveScheduleForDateAsync(DateTime startDate)
     {
-        var activeSchedules = await this.GetSchedulesAsync(new PaginationDto()
-        {
-            Page = 1,
-            PageSize = 1
-        },  new ScheduleFilterDot()
-        {
-            StartDate = startDate,
-            Status = ScheduleStatusEnum.Active
-        });
+        var schedule = await _dbContext.WorkSchedules
+            .FirstOrDefaultAsync(x => x.IsActive && x.StartDate <= startDate && x.EndDate >= startDate);
 
-        if (activeSchedules.Count == 0)
+        if (schedule == null)
         {
             throw new NotFoundException($"No active schedule for date {startDate}.");
         }
 
-        return await this.GetScheduleAsync(activeSchedules.WorkSchedules.First().Id);
+        return await this.GetScheduleAsync(schedule.Id);
     }
 
-    private async Task<IQueryable<WorkSchedule>> FilterSchedulesAsync(IQueryable<WorkSchedule> query, ScheduleFilterDot filter)
+    /// <summary>
+    /// Filters the given schedules.
+    /// </summary>
+    /// <param name="query"> The schedules to be filtered. </param>
+    /// <param name="filter"> How to filter the schedules. </param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"> Thrown when the filter enum is not found. </exception>
+    private Task<IQueryable<WorkSchedule>> FilterSchedulesAsync(IQueryable<WorkSchedule> query, ScheduleFilterDot filter)
     {
         if (!string.IsNullOrEmpty(filter.Searchstring))
         {
@@ -442,7 +511,7 @@ public class WorkScheduleService : IWorkScheduleService
             query = query.Where(x => x.StartDate <= filter.EndDate);
         }
 
-        switch (filter.Status)  
+        switch (filter.Status)
         {
             case ScheduleStatusEnum.All:
                 break;
@@ -466,11 +535,18 @@ public class WorkScheduleService : IWorkScheduleService
         {
             query = query.Where(x => x.Shifts.Any(y => filter.ShiftIds.Contains(y.ShiftId)));
         }
-        
-        return query;
+
+        return Task.FromResult(query);
     }
 
-    public async Task<WorkScheduleDto> GetScheduleAsync(int scheduleId)
+    // Cannot be done on active schedule or deleted schedule
+    /// <summary>
+    /// Gets the details of a workschedule.
+    /// </summary>
+    /// <param name="scheduleId"> The targeted schedule. </param>
+    /// <returns> Returns the work schedule as <see cref="WorkScheduleDto"/>. </returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule could not be found. </exception>
+    public Task<WorkScheduleDto> GetScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.Shifts)
@@ -492,9 +568,16 @@ public class WorkScheduleService : IWorkScheduleService
             throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
 
-        return this._mapper.Map<WorkSchedule, WorkScheduleDto>(schedule);
+        return Task.FromResult(this._mapper.Map<WorkSchedule, WorkScheduleDto>(schedule));
     }
 
+    /// <summary>
+    /// Deletes an existing schedule.
+    /// </summary>
+    /// <param name="scheduleId"> The schedule to be deleted. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule could not be found. </exception>
+    /// <exception cref="PolicyConflictException"> Thrown when the schedule is still active. </exception>
     public async Task DeleteScheduleAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
@@ -511,11 +594,19 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException("Cannot delete active schedule");
         }
-        
+
         this._dbContext.WorkSchedules.Remove(schedule);
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Sets an existing schedule as active.
+    /// </summary>
+    /// <param name="scheduleId"> The targeted schedule. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule could not be found. </exception>
+    /// <exception cref="PolicyConflictException"> Throws when the schedule is invalid. </exception>
+    /// <exception cref="InvalidDependencyException"> Throws when there is already another schedule for the same time frame. </exception>
     public async Task SetScheduleActiveAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
@@ -530,22 +621,28 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new PolicyConflictException($"Schedule with id {scheduleId} is invalid.");
         }
-        
+
         var overlappingSchedule = this._dbContext.WorkSchedules
-            .FirstOrDefault(x => schedule.StartDate < x.EndDate && x.StartDate < schedule.EndDate 
+            .FirstOrDefault(x => schedule.StartDate < x.EndDate && x.StartDate < schedule.EndDate
                                                                 && schedule.Id != x.Id && schedule.IsActive);
 
         if (overlappingSchedule != null)
         {
             throw new InvalidDependencyException($"Schedule is overlapping with another active schedule {overlappingSchedule.Name}.");
         }
-        
+
         schedule.IsActive = true;
         await this._dbContext.SaveChangesAsync();
-        _= Task.Run(async () =>
+        _ = Task.Run(async () =>
             await _emailService.SendScheduleMail(await this.GetScheduleAsync(scheduleId)));
     }
 
+    /// <summary>
+    /// Sets an existing schedule as inacitve.
+    /// </summary>
+    /// <param name="scheduleId"> The targeted schedule. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule is not found. </exception>
     public async Task SetScheduleOfflineAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
@@ -558,10 +655,16 @@ public class WorkScheduleService : IWorkScheduleService
 
         schedule.IsActive = false;
         await this._dbContext.SaveChangesAsync();
-        _= Task.Run(async () =>
+        _ = Task.Run(async () =>
             await _emailService.SendScheduleInActiveMail(await this.GetScheduleAsync(scheduleId)));
     }
 
+    /// <summary>
+    /// Sets an existing schedule as invalid.
+    /// </summary>
+    /// <param name="scheduleId"> The targetd schedule. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule is not found. </exception>
     public async Task SetScheduleAsInvalidAsync(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
@@ -571,17 +674,22 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
-        
+
         schedule.IsValid = false;
         await this._dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="scheduleId"></param>
+    /// <exception cref="NotFoundException"> Thrown when the schedule is not found. </exception>
     public async Task RemoveAllShiftAssignments(int scheduleId)
     {
         var schedule = this._dbContext.WorkSchedules
             .Include(x => x.ShiftAssignments)
             .FirstOrDefault(x => x.Id == scheduleId);
-        
+
 
         if (schedule == null)
         {
@@ -591,6 +699,14 @@ public class WorkScheduleService : IWorkScheduleService
         await this.RemoveAllShiftAssignments(schedule);
     }
 
+    /// <summary>
+    /// Changes the start and end dates of a schedule.
+    /// </summary>
+    /// <param name="scheduleId"> The schedule to be updated. </param>
+    /// <param name="startDate"> The new start date of the schedule. </param>
+    /// <param name="endDate"> The end date of the schedule. </param>
+    /// <returns></returns>
+    /// <exception cref="NotFoundException"> Thrown when the schedule is not found. </exception>
     public async Task ChangeScheduleDateAsync(int scheduleId, DateTime startDate, DateTime endDate)
     {
         var schedule = this._dbContext.WorkSchedules
@@ -600,7 +716,7 @@ public class WorkScheduleService : IWorkScheduleService
         {
             throw new NotFoundException($"Schedule with id {scheduleId} not found.");
         }
-        
+
         schedule.StartDate = startDate;
         schedule.EndDate = endDate;
         await this._dbContext.SaveChangesAsync();

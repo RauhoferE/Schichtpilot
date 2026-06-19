@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.Requests;
 
+/// <summary>
+/// Represents a request to get users.
+/// </summary>
 public class GetUsersRequest
 {
     public required int Page { get; set; }
@@ -9,5 +12,5 @@ public class GetUsersRequest
     public string[]? JobFilters { get; set; }
     public required string AccountStatus { get; set; }
     public string? Searchstring { get; set; }
-    
+
 }

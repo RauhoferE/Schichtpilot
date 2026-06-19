@@ -5,8 +5,16 @@ using Schichtpilot.Models.Responses;
 
 namespace Schichtpilot.Middleware;
 
+/// <summary>
+/// Used to catch errors in requests.
+/// </summary>
 public class ValidationFilter : IAsyncActionFilter
 {
+    /// <summary>
+    /// Contains the logic to catch errors in requests.
+    /// </summary>
+    /// <param name="context"> The current action context. </param>
+    /// <param name="next"> The next action. (Route, etc..) </param>
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         if (!context.ModelState.IsValid)
@@ -29,7 +37,7 @@ public class ValidationFilter : IAsyncActionFilter
                     errorResponse.ErrorStates.Add(errorState);
                 }
             }
-            
+
             context.Result = new BadRequestObjectResult(errorResponse);
             return;
         }

@@ -162,8 +162,8 @@ namespace Data.Migrations
 
                     b.Property<string>("ColorAsHex")
                         .IsRequired()
-                        .HasMaxLength(6)
-                        .HasColumnType("nvarchar(6)");
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -469,14 +469,14 @@ namespace Data.Migrations
                         new
                         {
                             Id = 1L,
-                            ConcurrencyStamp = "840ea4a6-20fe-488c-a8c0-63fa8b46fc0b",
+                            ConcurrencyStamp = "562da0f8-f65b-488e-bdbc-e6bd1842cb3c",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = 2L,
-                            ConcurrencyStamp = "735f0ce2-b347-438c-b4bf-5364e52eac43",
+                            ConcurrencyStamp = "6cfa7b67-a19f-4caf-8103-8b629e4eba61",
                             Name = "User",
                             NormalizedName = "USER"
                         });

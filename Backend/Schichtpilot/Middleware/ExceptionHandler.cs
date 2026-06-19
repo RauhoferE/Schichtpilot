@@ -5,6 +5,9 @@ using Schichtpilot.Exceptions;
 
 namespace Schichtpilot.Middleware;
 
+/// <summary>
+/// Used to catch exceptions thrown by the application.
+/// </summary>
 public class ExceptionFilter : IExceptionFilter
 {
     private readonly ILogger<ExceptionFilter> _logger;
@@ -14,6 +17,10 @@ public class ExceptionFilter : IExceptionFilter
         _logger = logger;
     }
 
+    /// <summary>
+    /// Returns various status codes and messages depending on the thrown exception.
+    /// </summary>
+    /// <param name="context"> The context in which the exception is thrown. </param>
     public void OnException(ExceptionContext context)
     {
         var exception = context.Exception;
@@ -76,7 +83,10 @@ public class ExceptionFilter : IExceptionFilter
                     stackTrace = exception.StackTrace,
                     exceptionType = exception.GetType().Name
 #endif
-                })
+                }),
+            StatusCode = statusCode,
+            ContentType = "application/json"
+
 
         };
     }

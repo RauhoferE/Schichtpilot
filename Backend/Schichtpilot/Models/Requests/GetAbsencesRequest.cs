@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.Requests;
 
+/// <summary>
+/// Represents a request to get absences.
+/// </summary>
 public class GetAbsencesRequest
 {
     public required int Page { get; set; }

@@ -1200,6 +1200,15 @@ public class ShiftServiceTest
                 }).ToList() ?? new List<BreakDto>()
             });
 
+        mapperMock
+            .Setup(mapper => mapper.Map<ShiftRequirement, ShiftRequirementDto>(It.IsAny<ShiftRequirement>()))
+            .Returns((ShiftRequirement timeslot) => new ShiftRequirementDto
+            {
+                RequiredStaffCount = timeslot.RequiredStaffCount,
+                JobId = timeslot.JobRoleId,
+                Name = timeslot.JobRole?.Name ?? string.Empty,
+            });
+
         return mapperMock;
     }
 

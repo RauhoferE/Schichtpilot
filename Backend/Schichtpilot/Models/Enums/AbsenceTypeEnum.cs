@@ -1,5 +1,8 @@
 ﻿namespace Schichtpilot.Models.Enums;
 
+/// <summary>
+/// Contains the types of absences.
+/// </summary>
 public enum AbsenceTypeEnum
 {
     Vacation,
@@ -7,7 +10,9 @@ public enum AbsenceTypeEnum
     PaidLeave,
     ParentalLeave,
     CareLeave,
-    EducationalLeave
+    EducationalLeave,
+    CompensationTime,
+    PersonalLeave
     // Add more as needed
 }
 

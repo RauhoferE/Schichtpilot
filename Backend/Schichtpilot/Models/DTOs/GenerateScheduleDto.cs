@@ -1,5 +1,8 @@
 namespace Schichtpilot.Models.DTOs;
 
+/// <summary>
+/// Represents a request to generate a schedule.
+/// </summary>
 public class GenerateScheduleDto
 {
     public required string Name { get; set; }
