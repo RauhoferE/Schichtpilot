@@ -7,4 +7,4 @@ appsettings.Development.json
 node_modules/
 *.DotSettings.user
 *.user
-**wwwroot/*
+**/wwwroot/*
