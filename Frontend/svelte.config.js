@@ -1,8 +1,20 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-static';
 import { relative, sep } from 'node:path';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
+	preprocess: vitePreprocess(),
+	kit: {
+		adapter: adapter({
+			// These options tell SvelteKit exactly where to dump your compiled files
+			pages: '../Backend/Schichtpilot/wwwroot',
+			assets: '../Backend/Schichtpilot/wwwroot',
+			fallback: 'index.html', // Generates a fallback file for your backend's SPA routing
+			precompress: false,
+			strict: false
+		})
+	},
 	compilerOptions: {
 		// defaults to rune mode for the project, except for `node_modules`. Can be removed in svelte 6.
 		runes: ({ filename }) => {
@@ -12,12 +24,6 @@ const config = {
 
 			return isExternalLibrary ? undefined : true;
 		}
-	},
-	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-		adapter: adapter()
 	}
 };
 
