@@ -187,15 +187,15 @@
                 <CardDescription>Enter new values for the company policy and holidays.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div class="policy-grid">
+                <div class="policy-grid grid gap-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Rest Period Parameters</CardTitle>
                             <CardDescription>Configure the minimum required rest rules.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div class="form-grid two-columns">
-                                <div class="field">
+                            <div class="form-grid two-columns grid gap-x-4 gap-y-6">
+                                <div class="field flex flex-col gap-4">
                                     <Label for="minimumRestPeriodInMinutes">Minimum rest period (minutes)</Label>
                                     <Input
                                             id="minimumRestPeriodInMinutes"
@@ -204,7 +204,7 @@
                                             oninput={(e) => (policyState.companyPolicy.minimumRestPeriodInMinutes = toNumber(e.currentTarget.value))}
                                     />
                                 </div>
-                                <div class="field">
+                                <div class="field flex flex-col gap-4">
                                     <Label for="restPeriodThresholdInMinutes">Rest threshold (minutes)</Label>
                                     <Input
                                             id="restPeriodThresholdInMinutes"
@@ -223,8 +223,8 @@
                             <CardDescription>Configure work-hour limits per day and week.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div class="form-grid two-columns">
-                                <div class="field">
+                            <div class="form-grid two-columns grid gap-x-4 gap-y-6">
+                                <div class="field flex flex-col gap-4">
                                     <Label for="maximumConsecutiveWorkHoursPerDay">
                                         Maximum consecutive work hours per day
                                     </Label>
@@ -235,7 +235,7 @@
                                             oninput={(e) => (policyState.companyPolicy.maximumConsecutiveWorkHoursPerDay = toNumber(e.currentTarget.value))}
                                     />
                                 </div>
-                                <div class="field">
+                                <div class="field flex flex-col gap-4">
                                     <Label for="maximumConsecutiveWorkHoursPerWeek">
                                         Maximum consecutive work hours per week
                                     </Label>
@@ -290,7 +290,7 @@
             </CardContent>
         </Card>
 
-        <!-- BUTTONS AM SCHLUSS -->
+        <!-- BUTTONS AT THE END -->
         <div class="flex justify-end gap-3 mt-4">
             <Button variant="outline" onclick={policyState.resetAll} disabled={policyState.saving}>
                 Reset
