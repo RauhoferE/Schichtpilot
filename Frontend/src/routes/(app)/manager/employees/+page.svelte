@@ -4,12 +4,15 @@
     import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
     import * as Alert from '$lib/components/ui/alert';
     import * as Table from '$lib/components/ui/table/index.js';
+    import { Checkbox } from '$lib/components/ui/checkbox';
     import { HttpError } from '$lib/customErrors';
     import RefreshCw from 'lucide-svelte/icons/refresh-cw';
+    import ChevronDown from 'lucide-svelte/icons/chevron-down';
+    import ChevronUp from 'lucide-svelte/icons/chevron-up';
 
     import { createUser, getUsers } from '$lib/services/user.service';
     import { addUserToRole, getJobRoles, removeUserToRole } from '$lib/services/jobRole.service';
-    
+
     import type { CreateUserRequest, UserDto } from '$lib/types/user.types';
     import type { JobRoleShortDto } from '$lib/types/jobRole.types';
 
@@ -33,7 +36,7 @@
         street: string;
         city: string;
         postalCode: string;
-        jobRoleId: string;
+        jobRoleIds: string[];
     };
 
     let employees = $state<UserWithId[]>([]);
@@ -41,6 +44,7 @@
     let loading = $state(false);
     let creating = $state(false);
     let savingRoleForUserId = $state<number | null>(null);
+    let expandedEmployeeId = $state<number | null>(null);
 
     let notification = $state<NotificationState>(null);
     let createError = $state('');
@@ -54,10 +58,10 @@
         street: '',
         city: '',
         postalCode: '',
-        jobRoleId: ''
+        jobRoleIds: []
     });
 
-    let selectedRoles = $state<Record<number, string>>({});
+    let selectedRoles = $state<Record<number, string[]>>({});
 
     function notify(type: NotificationType, message: string) {
         notification = { type, message };
@@ -82,12 +86,30 @@
         return fallback;
     }
 
-    function getCurrentRole(user: UserWithId): JobRoleShortDto | null {
-        return user.assignedJobRoles?.[0] ?? null;
+    function getCurrentRoles(user: UserWithId): JobRoleShortDto[] {
+        return user.assignedJobRoles ?? [];
     }
 
-    function formatCurrentRole(user: UserWithId): string {
-        return getCurrentRole(user)?.name ?? 'No role assigned';
+    function formatCurrentRoles(user: UserWithId): string {
+        const roles = getCurrentRoles(user);
+        if (roles.length === 0) return 'No roles assigned';
+        return roles.map((role) => role.name).join(', ');
+    }
+
+    function formatBirthDate(user: UserWithId): string {
+        const raw = (user as any).birthDate ?? (user as any).birthdate;
+        if (!raw) return '—';
+
+        const date = raw instanceof Date ? raw : new Date(raw);
+        if (Number.isNaN(date.getTime())) return '—';
+
+        return date.toLocaleDateString();
+    }
+
+    function formatAddress(user: UserWithId): string {
+        const address = user.addressDto;
+        if (!address) return '—';
+        return `${address.street}, ${address.postalCode} ${address.city}`;
     }
 
     function resetCreateForm() {
@@ -100,9 +122,56 @@
             street: '',
             city: '',
             postalCode: '',
-            jobRoleId: ''
+            jobRoleIds: []
         };
         createError = '';
+    }
+
+    function toggleExpandedEmployee(userId: number) {
+        expandedEmployeeId = expandedEmployeeId === userId ? null : userId;
+    }
+
+    function isRoleSelected(userId: number, roleId: number): boolean {
+        return selectedRoles[userId]?.includes(roleId.toString()) ?? false;
+    }
+
+    function toggleRoleSelection(userId: number, roleId: string, checked: boolean | 'indeterminate') {
+        const current = selectedRoles[userId] ?? [];
+        const isChecked = checked === true;
+
+        if (isChecked) {
+            if (!current.includes(roleId)) {
+                selectedRoles = {
+                    ...selectedRoles,
+                    [userId]: [...current, roleId]
+                };
+            }
+            return;
+        }
+
+        selectedRoles = {
+            ...selectedRoles,
+            [userId]: current.filter((id) => id !== roleId)
+        };
+    }
+
+    function toggleCreateRoleSelection(roleId: string, checked: boolean | 'indeterminate') {
+        const isChecked = checked === true;
+
+        if (isChecked) {
+            if (!createForm.jobRoleIds.includes(roleId)) {
+                createForm = {
+                    ...createForm,
+                    jobRoleIds: [...createForm.jobRoleIds, roleId]
+                };
+            }
+            return;
+        }
+
+        createForm = {
+            ...createForm,
+            jobRoleIds: createForm.jobRoleIds.filter((id) => id !== roleId)
+        };
     }
 
     async function loadEmployees() {
@@ -118,16 +187,16 @@
                 searchstring: ''
             });
 
-            console.log('getUsers result:', result);
             employees = result.users as UserWithId[];
 
-            selectedRoles = {};
+            const nextSelectedRoles: Record<number, string[]> = {};
             for (const employee of employees) {
-                const currentRole = getCurrentRole(employee);
-                selectedRoles[employee.id] = currentRole ? currentRole.id.toString() : '';
+                nextSelectedRoles[employee.id] = (employee.assignedJobRoles ?? []).map((role) =>
+                    role.id.toString()
+                );
             }
+            selectedRoles = nextSelectedRoles;
         } catch (error) {
-            console.error('getUsers failed:', error);
             notifyError(getErrorMessage(error, 'Failed to load employees.'));
         } finally {
             loading = false;
@@ -191,8 +260,8 @@
             return;
         }
 
-        if (!createForm.jobRoleId) {
-            createError = 'Please select a job role.';
+        if (createForm.jobRoleIds.length === 0) {
+            createError = 'Please select at least one job role.';
             return;
         }
 
@@ -219,14 +288,16 @@
             );
 
             if (!createdUser) {
-                notifySuccess('Employee created, but role could not be assigned automatically.');
+                notifySuccess('Employee created, but roles could not be assigned automatically.');
                 resetCreateForm();
                 return;
             }
 
-            await addUserToRole(Number(createForm.jobRoleId), createdUser.id);
+            for (const roleId of createForm.jobRoleIds) {
+                await addUserToRole(Number(roleId), createdUser.id);
+            }
 
-            notifySuccess('Employee created and role assigned successfully.');
+            notifySuccess('Employee created and roles assigned successfully.');
             resetCreateForm();
             await loadEmployees();
         } catch (error) {
@@ -236,34 +307,32 @@
         }
     }
 
-    async function handleSaveRole(user: UserWithId) {
-        const selectedRoleId = selectedRoles[user.id];
+    async function handleSaveRoles(user: UserWithId) {
+        const selectedRoleIds = selectedRoles[user.id] ?? [];
+        const currentRoleIds = (user.assignedJobRoles ?? []).map((role) => role.id.toString());
 
-        if (!selectedRoleId) {
-            notifyError('Please select a job role first.');
-            return;
-        }
+        const rolesToAdd = selectedRoleIds.filter((id) => !currentRoleIds.includes(id));
+        const rolesToRemove = currentRoleIds.filter((id) => !selectedRoleIds.includes(id));
 
-        const currentRole = getCurrentRole(user);
-        const nextRoleId = Number(selectedRoleId);
-
-        if (currentRole?.id === nextRoleId) {
-            notifySuccess('This employee already has that role.');
+        if (rolesToAdd.length === 0 && rolesToRemove.length === 0) {
+            notifySuccess('No role changes detected.');
             return;
         }
 
         savingRoleForUserId = user.id;
         try {
-            if (currentRole) {
-                await removeUserToRole(currentRole.id, user.id);
+            for (const roleId of rolesToRemove) {
+                await removeUserToRole(Number(roleId), user.id);
             }
 
-            await addUserToRole(nextRoleId, user.id);
+            for (const roleId of rolesToAdd) {
+                await addUserToRole(Number(roleId), user.id);
+            }
 
-            notifySuccess('Job role updated successfully.');
+            notifySuccess('Job roles updated successfully.');
             await loadEmployees();
         } catch (error) {
-            notifyError(getErrorMessage(error, 'Failed to update job role.'));
+            notifyError(getErrorMessage(error, 'Failed to update job roles.'));
         } finally {
             savingRoleForUserId = null;
         }
@@ -292,7 +361,7 @@
     <div>
         <h1 class="text-xl font-semibold">Employees</h1>
         <p class="text-sm text-muted-foreground">
-            Create employees and assign job roles for work schedule generation.
+            Create employees, view details, and assign multiple job roles for work schedule generation.
         </p>
     </div>
 
@@ -316,7 +385,7 @@
         <CardHeader>
             <CardTitle>Create employee</CardTitle>
             <CardDescription>
-                Add a new employee and assign a job role immediately.
+                Add a new employee and assign one or more job roles immediately.
             </CardDescription>
         </CardHeader>
 
@@ -369,14 +438,21 @@
                     <input class="border rounded-md px-3 py-2 text-sm" type="number" bind:value={createForm.postalCode} />
                 </div>
 
-                <div class="flex flex-col gap-1 md:col-span-2">
-                    <label class="text-sm font-medium">Job role</label>
-                    <select class="border rounded-md px-3 py-2 text-sm bg-background" bind:value={createForm.jobRoleId}>
-                        <option value="">Select a role</option>
+                <div class="flex flex-col gap-2 md:col-span-2">
+                    <label class="text-sm font-medium">Job roles</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md border p-3">
                         {#each jobRoles as role}
-                            <option value={role.id.toString()}>{role.name}</option>
+                            <label class="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                        checked={createForm.jobRoleIds.includes(role.id.toString())}
+                                        onCheckedChange={(checked) =>
+                                        toggleCreateRoleSelection(role.id.toString(), checked)
+                                    }
+                                />
+                                <span>{role.name}</span>
+                            </label>
                         {/each}
-                    </select>
+                    </div>
                 </div>
             </div>
 
@@ -391,73 +467,148 @@
     <Card>
         <CardHeader class="flex flex-row items-center justify-between gap-4">
             <div>
-               <CardTitle>Assign job roles</CardTitle>
+                <CardTitle>Employee management</CardTitle>
                 <CardDescription>
-                    Update roles for employees already stored in the database.
+                    Click an employee to view more details and update multiple job roles.
                 </CardDescription>
-
             </div>
+
             <Button variant="outline" size="sm" onclick={loadEmployees} disabled={loading}>
                 <RefreshCw class="h-4 w-4 {loading ? 'animate-spin' : ''}" />
                 Refresh
             </Button>
         </CardHeader>
+
         <CardContent>
             {#if loading}
                 <p class="text-sm text-muted-foreground">Loading employees...</p>
             {:else if employees.length === 0}
                 <p class="text-sm text-muted-foreground">No employees found.</p>
             {:else}
-                <Table.Root>
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.Head>Name</Table.Head>
-                            <Table.Head>Email</Table.Head>
-                            <Table.Head>Current role</Table.Head>
-                            <Table.Head>New role</Table.Head>
-                            <Table.Head>Action</Table.Head>
-                        </Table.Row>
-                    </Table.Header>
-
-                    <Table.Body>
-                        {#each employees as employee}
+                <div class="overflow-x-auto">
+                    <Table.Root>
+                        <Table.Header>
                             <Table.Row>
-                              
-                                <Table.Cell class="font-medium">
-                                    {employee.firstName} {employee.lastName}
-                                </Table.Cell>
-
-                                <Table.Cell>{employee.email}</Table.Cell>
-
-                                <Table.Cell class="text-muted-foreground">
-                                    {formatCurrentRole(employee)}
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    <select
-                                            class="border rounded-md px-3 py-2 text-sm bg-background min-w-[180px]"
-                                            bind:value={selectedRoles[employee.id]}
-                                    >
-                                        <option value="">Select a role</option>
-                                        {#each jobRoles as role}
-                                            <option value={role.id.toString()}>{role.name}</option>
-                                        {/each}
-                                    </select>
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    <Button
-                                            size="sm"
-                                            onclick={() => handleSaveRole(employee)}
-                                            disabled={savingRoleForUserId === employee.id}
-                                    >
-                                        {savingRoleForUserId === employee.id ? 'Saving...' : 'Save'}
-                                    </Button>
-                                </Table.Cell>
+                                <Table.Head class="w-[60px]">Details</Table.Head>
+                                <Table.Head>Name</Table.Head>
+                                <Table.Head>Email</Table.Head>
+                                <Table.Head>Current roles</Table.Head>
+                                <Table.Head class="w-[140px]">Action</Table.Head>
                             </Table.Row>
-                        {/each}
-                    </Table.Body>
-                </Table.Root>
+                        </Table.Header>
+
+                        <Table.Body>
+                            {#each employees as employee}
+                                <Table.Row class="align-top">
+                                    <Table.Cell>
+                                        <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-expanded={expandedEmployeeId === employee.id}
+                                                aria-label={expandedEmployeeId === employee.id
+                                                ? `Hide details for ${employee.firstName} ${employee.lastName}`
+                                                : `Show details for ${employee.firstName} ${employee.lastName}`}
+                                                onclick={() => toggleExpandedEmployee(employee.id)}
+                                        >
+                                            {#if expandedEmployeeId === employee.id}
+                                                <ChevronUp class="h-4 w-4" />
+                                            {:else}
+                                                <ChevronDown class="h-4 w-4" />
+                                            {/if}
+                                        </Button>
+                                    </Table.Cell>
+
+                                    <Table.Cell class="font-medium">
+                                        <button
+                                                type="button"
+                                                class="text-left hover:underline"
+                                                aria-expanded={expandedEmployeeId === employee.id}
+                                                onclick={() => toggleExpandedEmployee(employee.id)}
+                                        >
+                                            {employee.firstName} {employee.lastName}
+                                        </button>
+                                    </Table.Cell>
+
+                                    <Table.Cell>{employee.email}</Table.Cell>
+
+                                    <Table.Cell class="text-muted-foreground">
+                                        {formatCurrentRoles(employee)}
+                                    </Table.Cell>
+
+                                    <Table.Cell>
+                                        <Button
+                                                size="sm"
+                                                onclick={() => handleSaveRoles(employee)}
+                                                disabled={savingRoleForUserId === employee.id}
+                                        >
+                                            {savingRoleForUserId === employee.id ? 'Saving...' : 'Save roles'}
+                                        </Button>
+                                    </Table.Cell>
+                                </Table.Row>
+
+                                {#if expandedEmployeeId === employee.id}
+                                    <Table.Row>
+                                        <Table.Cell colspan={5} class="bg-muted/30">
+                                            <div class="space-y-4 rounded-md border bg-background p-4">
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                    <div>
+                                                        <p class="font-medium">Email</p>
+                                                        <p class="text-muted-foreground">{employee.email}</p>
+                                                    </div>
+
+                                                    <div>
+                                                        <p class="font-medium">Birth date</p>
+                                                        <p class="text-muted-foreground">{formatBirthDate(employee)}</p>
+                                                    </div>
+
+                                                    <div class="md:col-span-2">
+                                                        <p class="font-medium">Address</p>
+                                                        <p class="text-muted-foreground">{formatAddress(employee)}</p>
+                                                    </div>
+
+                                                    <div class="md:col-span-2">
+                                                        <p class="font-medium mb-2">Assigned roles</p>
+                                                        {#if getCurrentRoles(employee).length === 0}
+                                                            <p class="text-muted-foreground">No roles assigned.</p>
+                                                        {:else}
+                                                            <div class="flex flex-wrap gap-2">
+                                                                {#each getCurrentRoles(employee) as role}
+                                                                    <span class="rounded-full border px-2 py-1 text-xs">
+                                                                        {role.name}
+                                                                    </span>
+                                                                {/each}
+                                                            </div>
+                                                        {/if}
+                                                    </div>
+                                                </div>
+
+                                                <div class="space-y-2">
+                                                    <p class="text-sm font-medium">Edit job roles</p>
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 rounded-md border p-3">
+                                                        {#each jobRoles as role}
+                                                            <label class="flex items-center gap-2 text-sm">
+                                                                <Checkbox
+                                                                        checked={isRoleSelected(employee.id, role.id)}
+                                                                        onCheckedChange={(checked) =>
+                                                                        toggleRoleSelection(
+                                                                            employee.id,
+                                                                            role.id.toString(),
+                                                                            checked
+                                                                        )}
+                                                                />
+                                                                <span>{role.name}</span>
+                                                            </label>
+                                                        {/each}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Table.Cell>
+                                    </Table.Row>
+                                {/if}
+                            {/each}
+                        </Table.Body>
+                    </Table.Root>
+                </div>
             {/if}
         </CardContent>
     </Card>
