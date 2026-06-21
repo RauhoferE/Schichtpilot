@@ -56,7 +56,12 @@ public class Program
 
         // Database
         builder.Services.AddDbContext<SchichtpilotDbContext>(options =>
-            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(config.GetConnectionString("DefaultConnection"),
+                sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(15),
+                    errorNumbersToAdd: null
+                )));
 
         // Authentication
         var authCookieName = config["AuthCookieName"]

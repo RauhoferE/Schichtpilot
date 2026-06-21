@@ -11,25 +11,6 @@ export function getUserData(userId: number): Promise<UserDto>{
     return get<UserDto>(`${controllerURL}/${userId}`);
 }
 
-/**
-export function getUsers(params: GetUsersRequest): Promise<QueryableJobRoleResponse>{
-    return get<QueryableJobRoleResponse>(`${controllerURL}/all?${qs.stringify(params)}`)
-}
-**/
-/**
-export function getUsers(params: GetUsersRequest): Promise<QueryableJobRoleResponse>{
-    return get<QueryableJobRoleResponse>(
-        `${controllerURL}/all?${qs.stringify(params, { arrayFormat: 'repeat', allowEmptyArrays: true })}`
-    );
-}
-**/
-
-/**
-export function getUsers(params: GetUsersRequest): Promise<QueryableUserResponse> {
-    return get<QueryableUserResponse>(`${controllerURL}/all?${qs.stringify(params)}`);
-}
-**/
-
 export function getUsers(params: GetUsersRequest): Promise<QueryableUserResponse> {
     const query = qs.stringify(
         {

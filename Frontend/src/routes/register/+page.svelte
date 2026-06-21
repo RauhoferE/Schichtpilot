@@ -43,7 +43,7 @@
             return 'A password is required';
         }
 
-        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{12,}$/.test(password)) {
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{12,}$/.test(password)) {
             return 'Password needs to be atleast 12 characters long and contain 1 uppercase, 1 lowercase, 1 number and 1 special character';
         }
 
