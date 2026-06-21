@@ -1,6 +1,7 @@
 ﻿import type { AbsenceDto, AbsenceStatus, AbsenceType } from '$lib/types/absence.types';
+import { createAbsence, getUserAbsences } from '$lib/services/absence.service';
 
-// Labels & styles 
+// Labels & styles
 export const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
     Vacation: 'Vacation',
     SickLeave: 'Sick Leave',
@@ -26,7 +27,7 @@ export const CALENDAR_DOT: Record<AbsenceStatus, string> = {
     Denied: 'bg-red-400',
 };
 
-//Helpers
+// Helpers
 export function fmtDate(iso: string): string {
     const d = new Date(iso);
     return `${d.getDate()}.${d.getMonth() + 1}.${String(d.getFullYear()).slice(2)}`;
@@ -49,7 +50,42 @@ function dateRange(start: string, end: string): string[] {
     return dates;
 }
 
-//  Absence list state (calendar + table + dialog)
+function validateAbsenceForm(form: {
+    absenceType: AbsenceType;
+    startDate: string;
+    endDate: string;
+    message: string;
+}): string | null {
+    if (!form.startDate || !form.endDate) {
+        return 'Please select both a start and end date.';
+    }
+
+    const today = todayIso();
+
+    if (form.startDate < today) {
+        return 'Start date cannot be in the past.';
+    }
+
+    if (form.endDate < today) {
+        return 'End date cannot be in the past.';
+    }
+
+    if (form.endDate < form.startDate) {
+        return 'End date must be on or after the start date.';
+    }
+
+    if (form.message.trim().length < 3) {
+        return 'Message must be at least 3 characters long.';
+    }
+
+    if (form.message.length > 250) {
+        return 'Message must be 250 characters or fewer.';
+    }
+
+    return null;
+}
+
+// Absence list state (calendar + table + dialog)
 export function createAbsenceState() {
     const now = new Date();
 
@@ -64,6 +100,7 @@ export function createAbsenceState() {
 
     const calendarMap = $derived.by(() => {
         const map = new Map<string, AbsenceStatus>();
+
         for (const a of absences) {
             for (const d of dateRange(a.startDate, a.endDate)) {
                 if (!map.has(d) || a.status === 'Approved') {
@@ -71,6 +108,7 @@ export function createAbsenceState() {
                 }
             }
         }
+
         return map;
     });
 
@@ -137,18 +175,7 @@ export function createAbsenceState() {
         errorMessage = '';
 
         try {
-            const res = await fetch('http://localhost:5000/api/absence/user?page=1&pageSize=100', {
-                method: 'GET',
-                credentials: 'include'
-            });
-
-            if (!res.ok) {
-                throw new Error('Failed to load absences.');
-            }
-
-            const data = await res.json();
-
-            absences = data.items ?? data.data ?? data.absences ?? [];
+            absences = await getUserAbsences(1, 100);
 
             if (absences.length > 0 && selectedId === null) {
                 selectedId = absences[0].id;
@@ -175,68 +202,21 @@ export function createAbsenceState() {
     async function submitAbsence() {
         errorMessage = '';
 
-        if (!form.startDate || !form.endDate) {
-            errorMessage = 'Please select both a start and end date.';
-            return;
-        }
-
-        const today = todayIso();
-
-        if (form.startDate < today) {
-            errorMessage = 'Start date cannot be in the past.';
-            return;
-        }
-
-        if (form.endDate < today) {
-            errorMessage = 'End date cannot be in the past.';
-            return;
-        }
-
-        if (form.endDate < form.startDate) {
-            errorMessage = 'End date must be on or after the start date.';
-            return;
-        }
-
-        if (form.message.trim().length < 3) {
-            errorMessage = 'Message must be at least 3 characters long.';
-            return;
-        }
-
-        if (form.message.length > 250) {
-            errorMessage = 'Message must be 250 characters or fewer.';
+        const validationError = validateAbsenceForm(form);
+        if (validationError) {
+            errorMessage = validationError;
             return;
         }
 
         isLoading = true;
 
         try {
-            const payload = {
+            await createAbsence({
                 absenceType: form.absenceType,
                 startDate: form.startDate,
                 endDate: form.endDate,
                 message: form.message
-            };
-
-            const res = await fetch('http://localhost:5000/api/absence', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload)
             });
-
-            if (!res.ok) {
-                let message = 'Failed to submit. Please try again.';
-                try {
-                    const data = await res.json();
-                    if (data?.message) {
-                        message = data.message;
-                    } else if (data?.errorStates?.length) {
-                        message = data.errorStates.map((x: { message: string }) => x.message).join(' ');
-                    }
-                } catch {
-                }
-                throw new Error(message);
-            }
 
             dialogOpen = false;
             form = {
@@ -245,8 +225,11 @@ export function createAbsenceState() {
                 endDate: '',
                 message: '',
             };
+
             successMessage = 'Your absence request has been submitted successfully!';
+
             await loadAbsences();
+
             setTimeout(() => {
                 successMessage = '';
             }, 3000);

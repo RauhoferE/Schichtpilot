@@ -349,14 +349,20 @@
     async function deleteSelectedSchedule() {
         if (!selectedSchedule) return;
 
-        const confirmed = window.confirm(`Delete schedule "${selectedSchedule.name}"? This cannot be undone.`);
+        const scheduleId = selectedSchedule.id;
+        const scheduleName = selectedSchedule.name;
+
+        const confirmed = window.confirm(`Delete schedule "${scheduleName}"? This cannot be undone.`);
         if (!confirmed) return;
 
         try {
-            await deleteSchedule(selectedSchedule.id);
+            await deleteSchedule(scheduleId);
+
+            schedules = schedules.filter(s => s.id !== scheduleId);
             selectedSchedule = null;
+
+            notifySuccess(`Schedule "${scheduleName}" deleted.`);
             await loadSchedules();
-            notifySuccess('Schedule deleted.');
         } catch (error) {
             notifyError(getErrorMessage(error, 'Failed to delete schedule.'));
         }
