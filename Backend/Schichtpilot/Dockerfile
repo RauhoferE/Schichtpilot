@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Schichtpilot/Schichtpilot.csproj", "Schichtpilot/"]
+COPY ["Data/Data.csproj", "Data/"]
+COPY ["Core/Core.csproj", "Core/"]
 RUN dotnet restore "Schichtpilot/Schichtpilot.csproj"
 COPY . .
 WORKDIR "/src/Schichtpilot"

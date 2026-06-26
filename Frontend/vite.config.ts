@@ -11,9 +11,9 @@ export default defineConfig({
 	server: {
         proxy: {
             '/api': {
-                target: 'https://localhost:8081', // 👈 Your ASP.NET Core Local URL
+                target: 'http://localhost:8080', // Docker: backend runs on HTTP:8080
                 changeOrigin: true,
-                secure: false // Allows self-signed development certificates
+                secure: false
             }
         }
     },
